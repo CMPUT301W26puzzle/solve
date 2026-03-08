@@ -3,6 +3,8 @@ package com.example.eventparticipation;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.TypedValue;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -12,6 +14,9 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
@@ -29,8 +34,12 @@ import java.util.Locale;
  * Organizer screen for managing a specific event.
  *
  * <p>This activity loads event details, displays waitlist statistics, and supports
- * event poster upload, update, and removal. It is the main implementation for:</p>
+ * event poster upload, update, and removal.</p>
+ *
+ * <p>Relevant user stories:</p>
  * <ul>
+ *     <li>US 02.02.01 - View the list of entrants in the waiting list</li>
+ *     <li>US 02.02.02 - View entrant locations on a map</li>
  *     <li>US 02.04.01 - Upload an event poster</li>
  *     <li>US 02.04.02 - Update an event poster</li>
  * </ul>
@@ -58,16 +67,16 @@ public class ManageEventActivity extends AppCompatActivity {
     /** Poster preview image. */
     private ImageView imgEventPoster;
 
-    /** Placeholder shown when no poster exists. */
+    /** Placeholder layout shown when no poster exists. */
     private LinearLayout layoutPosterPlaceholder;
 
-    /** Floating action button that removes the current poster. */
+    /** Floating button used to remove the current poster. */
     private FloatingActionButton fabRemovePoster;
 
-    /** Button used when there is no poster yet. */
+    /** Button used to upload a poster when none exists. */
     private MaterialButton btnUploadPoster;
 
-    /** Button used when a poster already exists and needs replacement. */
+    /** Button used to replace an existing poster. */
     private MaterialButton btnUpdatePoster;
 
     /** Button opening the entrant list screen. */
@@ -76,35 +85,35 @@ public class ManageEventActivity extends AppCompatActivity {
     /** Button opening the waitlist map screen. */
     private MaterialButton btnViewMap;
 
-    /** Placeholder lottery action. */
+    /** Placeholder lottery button. */
     private MaterialButton btnRunLottery;
 
-    /** Placeholder QR code action. */
+    /** Placeholder QR code button. */
     private MaterialButton btnShowQRCode;
 
-    /** Placeholder event edit action. */
+    /** Placeholder edit event button. */
     private MaterialButton btnEditEvent;
 
-    /** Current event id. */
+    /** Event id passed into this screen. */
     private String eventId;
 
-    /** Current organizer id. */
+    /** Organizer id passed into this screen. */
     private String organizerId;
 
     /** Indicates whether the event currently has a poster. */
     private boolean hasPoster = false;
 
-    /** Cached poster URL for the current event. */
+    /** Cached poster URL of the current event. */
     private String currentPosterUrl = "";
 
-    /** Firestore database reference. */
+    /** Firestore database instance. */
     private FirebaseFirestore db;
 
-    /** Firebase Storage reference. */
+    /** Firebase Storage instance. */
     private FirebaseStorage storage;
 
     /**
-     * Launcher used to open the system image picker for selecting a poster.
+     * Activity result launcher used to pick an image from the device.
      */
     private final ActivityResultLauncher<String> imagePickerLauncher =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
@@ -114,14 +123,17 @@ public class ManageEventActivity extends AppCompatActivity {
             });
 
     /**
-     * Initializes the screen, validates intent extras, and loads event data.
+     * Initializes the activity, validates intent extras, sets up the toolbar,
+     * and loads event data.
      *
-     * @param savedInstanceState previously saved state bundle
+     * @param savedInstanceState previously saved state bundle, or null
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_manage_event);
+
+        applyWindowInsets();
 
         eventId = getIntent().getStringExtra("EVENT_ID");
         organizerId = getIntent().getStringExtra("ORGANIZER_ID");
@@ -151,6 +163,56 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
+     * Applies status bar insets to the toolbar so that the toolbar content
+     * stays below the system status bar on edge-to-edge devices such as Pixel 9.
+     *
+     * <p>This method increases both the top padding and the toolbar height,
+     * which keeps the back arrow and title visible instead of being clipped.</p>
+     */
+    private void applyWindowInsets() {
+        Toolbar toolbar = findViewById(R.id.toolbar);
+
+        final int originalPaddingLeft = toolbar.getPaddingLeft();
+        final int originalPaddingTop = toolbar.getPaddingTop();
+        final int originalPaddingRight = toolbar.getPaddingRight();
+        final int originalPaddingBottom = toolbar.getPaddingBottom();
+        final int originalToolbarHeight = getToolbarHeight();
+
+        ViewCompat.setOnApplyWindowInsetsListener(toolbar, (view, windowInsets) -> {
+            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars());
+
+            view.setPadding(
+                    originalPaddingLeft,
+                    originalPaddingTop + insets.top,
+                    originalPaddingRight,
+                    originalPaddingBottom
+            );
+
+            ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
+            layoutParams.height = originalToolbarHeight + insets.top;
+            view.setLayoutParams(layoutParams);
+
+            return windowInsets;
+        });
+    }
+
+    /**
+     * Returns the default toolbar height from the current theme.
+     *
+     * @return toolbar height in pixels
+     */
+    private int getToolbarHeight() {
+        TypedValue typedValue = new TypedValue();
+        if (getTheme().resolveAttribute(android.R.attr.actionBarSize, typedValue, true)) {
+            return TypedValue.complexToDimensionPixelSize(
+                    typedValue.data,
+                    getResources().getDisplayMetrics()
+            );
+        }
+        return (int) (56 * getResources().getDisplayMetrics().density);
+    }
+
+    /**
      * Configures the toolbar and enables back navigation.
      */
     private void setupToolbar() {
@@ -166,7 +228,7 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Handles toolbar up navigation.
+     * Handles the toolbar up button.
      *
      * @return always returns {@code true}
      */
@@ -177,7 +239,7 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Binds view references from the layout.
+     * Binds all required views from the layout.
      */
     private void initViews() {
         tvEventName = findViewById(R.id.tvEventName);
@@ -201,7 +263,7 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Registers click actions for poster operations and navigation buttons.
+     * Registers click listeners for poster operations and navigation buttons.
      */
     private void setupClickListeners() {
         btnUploadPoster.setOnClickListener(v -> openImagePicker());
@@ -234,7 +296,7 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Loads the main event document and updates the UI with event and poster data.
+     * Loads the event document from Firestore and updates the UI.
      */
     private void loadEventData() {
         db.collection("organizers")
@@ -277,21 +339,13 @@ public class ManageEventActivity extends AppCompatActivity {
                     }
 
                     updatePosterUI();
-
-                    android.util.Log.d(
-                            "MANAGE_EVENT",
-                            "eventId=" + eventId
-                                    + ", organizerId=" + organizerId
-                                    + ", name=" + rawName
-                                    + ", capacity=" + rawCapacity
-                    );
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Failed to load event: " + e.getMessage(), Toast.LENGTH_LONG).show());
     }
 
     /**
-     * Loads waitlist entries and calculates status counts for summary cards.
+     * Loads waitlist entries and counts waiting, selected, and enrolled entrants.
      */
     private void loadWaitlistCounts() {
         db.collection("organizers")
@@ -326,19 +380,16 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Opens the system image picker for selecting a poster image.
+     * Opens the system image picker for poster selection.
      */
     private void openImagePicker() {
         imagePickerLauncher.launch("image/*");
     }
 
     /**
-     * Uploads the selected poster to Firebase Storage and stores its URL in Firestore.
+     * Uploads a selected poster image to Firebase Storage and saves its URL in Firestore.
      *
-     * <p>If the event already has a poster, this method replaces it with the new image,
-     * which satisfies the poster update user story.</p>
-     *
-     * @param imageUri URI of the selected local image
+     * @param imageUri selected local image URI
      */
     private void uploadPosterToFirebase(Uri imageUri) {
         StorageReference posterRef = storage.getReference()
@@ -379,7 +430,7 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Removes the poster URL from Firestore and updates the poster UI to empty state.
+     * Removes the current poster URL from Firestore and resets poster UI state.
      */
     private void removePoster() {
         db.collection("organizers")
@@ -399,7 +450,7 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Refreshes poster-related controls depending on whether a poster currently exists.
+     * Updates poster-related UI controls based on whether a poster exists.
      */
     private void updatePosterUI() {
         if (hasPoster) {
@@ -418,10 +469,10 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Formats a date value for UI display.
+     * Formats a date for display in the event info card.
      *
      * @param date raw date value
-     * @return formatted date string, or {@code "-"} if null
+     * @return formatted date string, or "-" if null
      */
     private String formatDate(Date date) {
         if (date == null) {
@@ -432,17 +483,7 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Converts a nullable string into a display-safe fallback value.
-     *
-     * @param value raw text value
-     * @return original value, or {@code "-"} if null
-     */
-    private String safe(String value) {
-        return value == null ? "-" : value;
-    }
-
-    /**
-     * Reloads event data when the activity returns to the foreground.
+     * Reloads event details and waitlist counts whenever the activity resumes.
      */
     @Override
     protected void onResume() {

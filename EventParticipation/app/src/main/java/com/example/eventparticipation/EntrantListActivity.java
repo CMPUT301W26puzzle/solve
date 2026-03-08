@@ -3,7 +3,9 @@ package com.example.eventparticipation;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.TypedValue;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -11,6 +13,9 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -25,56 +30,64 @@ import java.util.List;
 /**
  * Organizer screen for viewing entrants who joined a specific event waitlist.
  *
- * <p>This activity supports tab-based filtering, keyword search by name or email,
- * and empty-state handling. It is the main implementation for US 02.02.01.</p>
+ * <p>This activity supports tab-based filtering, search by name or email,
+ * and empty-state handling.</p>
+ *
+ * <p>Relevant user story:</p>
+ * <ul>
+ *     <li>US 02.02.01 - View the list of entrants who joined the waiting list</li>
+ * </ul>
  */
 public class EntrantListActivity extends AppCompatActivity {
 
     /** RecyclerView displaying entrant rows. */
     private RecyclerView rvEntrants;
 
-    /** Adapter backing the entrant list UI. */
+    /** Adapter used by the entrant list. */
     private EntrantAdapter entrantAdapter;
 
-    /** Full entrant set loaded from Firestore. */
+    /** Full list loaded from Firestore. */
     private final List<Entrant> entrantList = new ArrayList<>();
 
-    /** Filtered entrant set currently shown in the UI. */
+    /** Filtered list currently shown in the UI. */
     private final List<Entrant> filteredList = new ArrayList<>();
 
-    /** Tab layout used for status filters. */
+    /** Tab layout for status filtering. */
     private TabLayout tabLayout;
 
-    /** Search input for filtering by name or email. */
+    /** Search field used for name/email filtering. */
     private EditText etSearch;
 
-    /** Empty state container shown when no results exist. */
+    /** Empty state layout shown when no results exist. */
     private LinearLayout layoutEmptyState;
 
     /** Placeholder export button. */
     private FloatingActionButton fabExport;
 
-    /** Firestore id of the selected event. */
+    /** Event id passed into this activity. */
     private String eventId;
 
-    /** Firestore id of the organizer that owns the event. */
+    /** Organizer id passed into this activity. */
     private String organizerId;
 
-    /** Current status filter value. */
+    /** Current status filter. */
     private String currentFilter = "all";
 
-    /** Firestore database reference. */
+    /** Firestore database instance. */
     private FirebaseFirestore db;
 
     /**
-     * Initializes the screen and loads waitlist entrants.
+     * Initializes the activity, validates intent extras, sets up the toolbar,
+     * and loads waitlist entrants.
      *
-     * @param savedInstanceState previously saved state bundle
+     * @param savedInstanceState previously saved state bundle, or null
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_entrant_list);
+
+        applyWindowInsets();
 
         eventId = getIntent().getStringExtra("EVENT_ID");
         organizerId = getIntent().getStringExtra("ORGANIZER_ID");
@@ -101,6 +114,53 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
+     * Applies status bar insets to the toolbar so that the toolbar content
+     * stays below the system status bar on edge-to-edge devices.
+     */
+    private void applyWindowInsets() {
+        Toolbar toolbar = findViewById(R.id.toolbar);
+
+        final int originalPaddingLeft = toolbar.getPaddingLeft();
+        final int originalPaddingTop = toolbar.getPaddingTop();
+        final int originalPaddingRight = toolbar.getPaddingRight();
+        final int originalPaddingBottom = toolbar.getPaddingBottom();
+        final int originalToolbarHeight = getToolbarHeight();
+
+        ViewCompat.setOnApplyWindowInsetsListener(toolbar, (view, windowInsets) -> {
+            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars());
+
+            view.setPadding(
+                    originalPaddingLeft,
+                    originalPaddingTop + insets.top,
+                    originalPaddingRight,
+                    originalPaddingBottom
+            );
+
+            ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
+            layoutParams.height = originalToolbarHeight + insets.top;
+            view.setLayoutParams(layoutParams);
+
+            return windowInsets;
+        });
+    }
+
+    /**
+     * Returns the default toolbar height from the current theme.
+     *
+     * @return toolbar height in pixels
+     */
+    private int getToolbarHeight() {
+        TypedValue typedValue = new TypedValue();
+        if (getTheme().resolveAttribute(android.R.attr.actionBarSize, typedValue, true)) {
+            return TypedValue.complexToDimensionPixelSize(
+                    typedValue.data,
+                    getResources().getDisplayMetrics()
+            );
+        }
+        return (int) (56 * getResources().getDisplayMetrics().density);
+    }
+
+    /**
      * Configures the toolbar and enables back navigation.
      */
     private void setupToolbar() {
@@ -116,7 +176,7 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Handles toolbar up navigation.
+     * Handles the toolbar up button.
      *
      * @return always returns {@code true}
      */
@@ -127,7 +187,7 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Binds view references from the layout.
+     * Binds layout views.
      */
     private void initViews() {
         rvEntrants = findViewById(R.id.rvEntrants);
@@ -138,7 +198,7 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Configures the RecyclerView and adapter.
+     * Configures the RecyclerView and its adapter.
      */
     private void setupRecyclerView() {
         entrantAdapter = new EntrantAdapter(filteredList);
@@ -147,7 +207,7 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Sets listeners for tab filtering, text search, and placeholder actions.
+     * Registers listeners for tabs, search, and placeholder actions.
      */
     private void setupListeners() {
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
@@ -208,7 +268,7 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Loads waitlist entrants from Firestore for the current event.
+     * Loads waitlist entrants from Firestore.
      */
     private void loadEntrants() {
         db.collection("organizers")
@@ -234,7 +294,7 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Applies the current status tab filter and search text to rebuild the visible list.
+     * Applies both status filtering and text search to the entrant list.
      */
     private void applyFilterAndSearch() {
         String query = etSearch.getText() == null
@@ -260,10 +320,10 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Checks whether a given entrant matches the selected status filter.
+     * Checks whether an entrant matches the current status filter.
      *
      * @param entrant entrant to inspect
-     * @param filter current status filter
+     * @param filter current filter string
      * @return {@code true} if the entrant should be shown
      */
     private boolean matchesStatusFilter(Entrant entrant, String filter) {
@@ -277,7 +337,7 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Updates the visible UI state after filtering.
+     * Updates visible UI state after filtering.
      */
     private void updateUI() {
         if (filteredList.isEmpty()) {
@@ -292,7 +352,7 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Recomputes tab titles with counts for each status.
+     * Recomputes tab titles with entrant counts for each status.
      */
     private void updateTabCounts() {
         int allCount = entrantList.size();
@@ -326,10 +386,10 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Safely sets a tab title when the tab exists.
+     * Safely updates tab text if the tab exists.
      *
      * @param index tab index
-     * @param text title text
+     * @param text tab title text
      */
     private void setTabText(int index, String text) {
         TabLayout.Tab tab = tabLayout.getTabAt(index);
@@ -339,10 +399,10 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Converts null text into an empty string for filtering operations.
+     * Converts a nullable string into a non-null value for filtering.
      *
-     * @param value raw text
-     * @return non-null string
+     * @param value raw value
+     * @return empty string when null, otherwise the original value
      */
     @NonNull
     private String safe(String value) {
