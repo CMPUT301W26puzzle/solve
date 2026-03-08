@@ -1,0 +1,212 @@
+package com.example.eventparticipation;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+/**
+ * Organizer dashboard screen that displays summary statistics and event cards.
+ *
+ * <p>This screen serves as the main entry point to organizer actions such as managing
+ * an event, viewing entrants, and opening related event tools.</p>
+ */
+public class OrganizerDashboardActivity extends AppCompatActivity {
+
+    /** Demo organizer id currently used to query event data. */
+    private static final String ORGANIZER_ID = "organizer_demo_001";
+
+    /** RecyclerView showing organizer events. */
+    private RecyclerView rvEvents;
+
+    /** Adapter for the event list. */
+    private EventAdapter eventAdapter;
+
+    /** Backing event data set. */
+    private List<Event> eventList;
+
+    /** Statistic showing total number of events. */
+    private TextView tvTotalEvents;
+
+    /** Statistic showing currently active events. */
+    private TextView tvActiveEvents;
+
+    /** Statistic showing total event capacity. */
+    private TextView tvTotalCapacity;
+
+    /** Loading state container. */
+    private View layoutLoading;
+
+    /** Empty/error state container. */
+    private View layoutEmptyState;
+
+    /** Firestore database reference. */
+    private FirebaseFirestore db;
+
+    /**
+     * Initializes the dashboard and loads organizer events.
+     *
+     * @param savedInstanceState previously saved state bundle
+     */
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_organizer_dashboard);
+
+        db = FirebaseFirestore.getInstance();
+
+        initViews();
+        setupRecyclerView();
+        loadEvents();
+    }
+
+    /**
+     * Binds layout views.
+     */
+    private void initViews() {
+        rvEvents = findViewById(R.id.rvEvents);
+        tvTotalEvents = findViewById(R.id.tvTotalEvents);
+        tvActiveEvents = findViewById(R.id.tvActiveEvents);
+        tvTotalCapacity = findViewById(R.id.tvTotalCapacity);
+        layoutLoading = findViewById(R.id.layoutLoading);
+        layoutEmptyState = findViewById(R.id.layoutEmptyState);
+    }
+
+    /**
+     * Configures the dashboard RecyclerView and item click callbacks.
+     */
+    private void setupRecyclerView() {
+        eventList = new ArrayList<>();
+
+        eventAdapter = new EventAdapter(eventList, new OnEventClickListener() {
+            @Override
+            public void onManageClick(Event event) {
+                Intent intent = new Intent(
+                        OrganizerDashboardActivity.this,
+                        ManageEventActivity.class
+                );
+                intent.putExtra("EVENT_ID", event.getId());
+                intent.putExtra("ORGANIZER_ID", ORGANIZER_ID);
+                startActivity(intent);
+            }
+
+            @Override
+            public void onEntrantsClick(Event event) {
+                Intent intent = new Intent(
+                        OrganizerDashboardActivity.this,
+                        EntrantListActivity.class
+                );
+                intent.putExtra("EVENT_ID", event.getId());
+                intent.putExtra("ORGANIZER_ID", ORGANIZER_ID);
+                startActivity(intent);
+            }
+
+            @Override
+            public void onLotteryClick(Event event) {
+                Toast.makeText(
+                        OrganizerDashboardActivity.this,
+                        "Lottery feature coming soon",
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+
+            @Override
+            public void onQRCodeClick(Event event) {
+                Toast.makeText(
+                        OrganizerDashboardActivity.this,
+                        "QR Code feature coming soon",
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+
+            @Override
+            public void onViewClick(Event event) {
+                Toast.makeText(
+                        OrganizerDashboardActivity.this,
+                        "View event feature coming soon",
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+        });
+
+        rvEvents.setLayoutManager(new LinearLayoutManager(this));
+        rvEvents.setAdapter(eventAdapter);
+    }
+
+    /**
+     * Loads organizer events from Firestore.
+     */
+    private void loadEvents() {
+        layoutLoading.setVisibility(View.VISIBLE);
+        layoutEmptyState.setVisibility(View.GONE);
+        rvEvents.setVisibility(View.GONE);
+
+        db.collection("organizers")
+                .document(ORGANIZER_ID)
+                .collection("events")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    eventList.clear();
+
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        Event event = doc.toObject(Event.class);
+                        event.setId(doc.getId());
+                        eventList.add(event);
+                    }
+
+                    updateStatistics();
+                    eventAdapter.notifyDataSetChanged();
+
+                    layoutLoading.setVisibility(View.GONE);
+
+                    if (eventList.isEmpty()) {
+                        layoutEmptyState.setVisibility(View.VISIBLE);
+                        rvEvents.setVisibility(View.GONE);
+                    } else {
+                        layoutEmptyState.setVisibility(View.GONE);
+                        rvEvents.setVisibility(View.VISIBLE);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    layoutLoading.setVisibility(View.GONE);
+                    layoutEmptyState.setVisibility(View.VISIBLE);
+                    rvEvents.setVisibility(View.GONE);
+                    Toast.makeText(this, "Failed to load events", Toast.LENGTH_LONG).show();
+                });
+    }
+
+    /**
+     * Recomputes dashboard statistics from the currently loaded events.
+     */
+    private void updateStatistics() {
+        int totalEvents = eventList.size();
+        int activeEvents = 0;
+        int totalCapacity = 0;
+
+        Date now = new Date();
+
+        for (Event event : eventList) {
+            if (event.getRegistrationEnd() != null && event.getRegistrationEnd().after(now)) {
+                activeEvents++;
+            }
+
+            totalCapacity += event.getCapacity();
+        }
+
+        tvTotalEvents.setText(String.valueOf(totalEvents));
+        tvActiveEvents.setText(String.valueOf(activeEvents));
+        tvTotalCapacity.setText(String.valueOf(totalCapacity));
+    }
+}

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "224787789260",
+    "project_id": "eventparticipation-7522d",
+    "storage_bucket": "eventparticipation-7522d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:224787789260:android:b01312a5693ae8847ed969",
+        "android_client_info": {
+          "package_name": "com.example.eventparticipation"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDwXI0M24r_2MQ2_7rIlhCbB5nY_rJOpPU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
