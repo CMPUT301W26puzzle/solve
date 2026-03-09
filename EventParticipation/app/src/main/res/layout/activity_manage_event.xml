@@ -61,7 +61,7 @@
                         android:id="@+id/tvEventName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Tech Conference 2026"
+                        android:text="Event Name"
                         android:textSize="20sp"
                         android:textStyle="bold"
                         android:textColor="@android:color/black"
@@ -83,7 +83,7 @@
                             android:id="@+id/tvEventDate"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="March 15, 2026"
+                            android:text="Date not available"
                             android:textColor="@color/gray_600"
                             android:layout_marginStart="8dp" />
 
@@ -104,7 +104,7 @@
                             android:id="@+id/tvEventCapacity"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Capacity: 100"
+                            android:text="Capacity: 0"
                             android:textColor="@color/gray_600"
                             android:layout_marginStart="8dp" />
 
@@ -275,7 +275,7 @@
                                 android:id="@+id/tvWaitingCount"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="45"
+                                android:text="0"
                                 android:textSize="32sp"
                                 android:textStyle="bold"
                                 android:textColor="@color/blue_600" />
@@ -300,7 +300,7 @@
                                 android:id="@+id/tvSelectedCount"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="30"
+                                android:text="0"
                                 android:textSize="32sp"
                                 android:textStyle="bold"
                                 android:textColor="@color/green_600" />
@@ -325,7 +325,7 @@
                                 android:id="@+id/tvEnrolledCount"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="25"
+                                android:text="0"
                                 android:textSize="32sp"
                                 android:textStyle="bold"
                                 android:textColor="@color/purple_600" />

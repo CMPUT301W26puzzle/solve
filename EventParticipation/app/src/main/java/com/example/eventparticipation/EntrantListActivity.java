@@ -30,8 +30,8 @@ import java.util.List;
 /**
  * Organizer screen for viewing entrants who joined a specific event waitlist.
  *
- * <p>This activity supports tab-based filtering, search by name or email,
- * and empty-state handling.</p>
+ * <p>This activity supports status-tab filtering, search by name or email,
+ * and displays an empty state when no matching entrants exist.</p>
  *
  * <p>Relevant user story:</p>
  * <ul>
@@ -49,10 +49,10 @@ public class EntrantListActivity extends AppCompatActivity {
     /** Full list loaded from Firestore. */
     private final List<Entrant> entrantList = new ArrayList<>();
 
-    /** Filtered list currently shown in the UI. */
-    private final List<Entrant> filteredList = new ArrayList<>();
+    /** List currently displayed in the UI after filtering and search. */
+    private final List<Entrant> displayedList = new ArrayList<>();
 
-    /** Tab layout for status filtering. */
+    /** Tab layout used for status filtering. */
     private TabLayout tabLayout;
 
     /** Search field used for name/email filtering. */
@@ -70,7 +70,7 @@ public class EntrantListActivity extends AppCompatActivity {
     /** Organizer id passed into this activity. */
     private String organizerId;
 
-    /** Current status filter. */
+    /** Current status filter selected from tabs. */
     private String currentFilter = "all";
 
     /** Firestore database instance. */
@@ -80,7 +80,7 @@ public class EntrantListActivity extends AppCompatActivity {
      * Initializes the activity, validates intent extras, sets up the toolbar,
      * and loads waitlist entrants.
      *
-     * @param savedInstanceState previously saved state bundle, or null
+     * @param savedInstanceState previously saved state bundle, or {@code null}
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -187,7 +187,7 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Binds layout views.
+     * Binds layout views from the XML layout.
      */
     private void initViews() {
         rvEntrants = findViewById(R.id.rvEntrants);
@@ -201,13 +201,13 @@ public class EntrantListActivity extends AppCompatActivity {
      * Configures the RecyclerView and its adapter.
      */
     private void setupRecyclerView() {
-        entrantAdapter = new EntrantAdapter(filteredList);
+        entrantAdapter = new EntrantAdapter(displayedList);
         rvEntrants.setLayoutManager(new LinearLayoutManager(this));
         rvEntrants.setAdapter(entrantAdapter);
     }
 
     /**
-     * Registers listeners for tabs, search, and placeholder actions.
+     * Registers listeners for status tabs, search input, and the export placeholder action.
      */
     private void setupListeners() {
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
@@ -238,16 +238,19 @@ public class EntrantListActivity extends AppCompatActivity {
 
             @Override
             public void onTabUnselected(TabLayout.Tab tab) {
+                // No action needed.
             }
 
             @Override
             public void onTabReselected(TabLayout.Tab tab) {
+                // No action needed.
             }
         });
 
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // No action needed.
             }
 
             @Override
@@ -257,18 +260,18 @@ public class EntrantListActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
+                // No action needed.
             }
         });
 
         fabExport.setOnClickListener(v ->
                 Toast.makeText(this, "Export feature coming soon", Toast.LENGTH_SHORT).show());
-
-        findViewById(R.id.btnFilter).setOnClickListener(v ->
-                Toast.makeText(this, "Filter options coming soon", Toast.LENGTH_SHORT).show());
     }
 
     /**
-     * Loads waitlist entrants from Firestore.
+     * Loads all entrants from the event waitlist stored in Firestore.
+     * Each document is converted into an {@link Entrant} object and added
+     * to the in-memory list before filtering is applied.
      */
     private void loadEntrants() {
         db.collection("organizers")
@@ -294,14 +297,14 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Applies both status filtering and text search to the entrant list.
+     * Applies the current status filter and search query to the loaded entrants.
      */
     private void applyFilterAndSearch() {
         String query = etSearch.getText() == null
                 ? ""
                 : etSearch.getText().toString().trim().toLowerCase();
 
-        filteredList.clear();
+        displayedList.clear();
 
         for (Entrant entrant : entrantList) {
             if (!matchesStatusFilter(entrant, currentFilter)) {
@@ -312,7 +315,7 @@ public class EntrantListActivity extends AppCompatActivity {
             String email = safe(entrant.getEntrantEmail()).toLowerCase();
 
             if (query.isEmpty() || name.contains(query) || email.contains(query)) {
-                filteredList.add(entrant);
+                displayedList.add(entrant);
             }
         }
 
@@ -320,27 +323,25 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Checks whether an entrant matches the current status filter.
+     * Returns whether the entrant matches the selected status tab.
      *
-     * @param entrant entrant to inspect
-     * @param filter current filter string
-     * @return {@code true} if the entrant should be shown
+     * @param entrant entrant to evaluate
+     * @param filter current status filter
+     * @return true if the entrant should be shown
      */
     private boolean matchesStatusFilter(Entrant entrant, String filter) {
-        String status = entrant.getStatus();
-
         if ("all".equals(filter)) {
             return true;
         }
-
-        return filter.equals(status);
+        return filter.equalsIgnoreCase(safe(entrant.getStatus()));
     }
 
     /**
-     * Updates visible UI state after filtering.
+     * Updates the visible UI state after filtering.
+     * Shows the empty state when no entrants match the current criteria.
      */
     private void updateUI() {
-        if (filteredList.isEmpty()) {
+        if (displayedList.isEmpty()) {
             rvEntrants.setVisibility(View.GONE);
             layoutEmptyState.setVisibility(View.VISIBLE);
         } else {
@@ -362,19 +363,23 @@ public class EntrantListActivity extends AppCompatActivity {
         int cancelledCount = 0;
 
         for (Entrant entrant : entrantList) {
-            String status = entrant.getStatus();
+            String status = safe(entrant.getStatus()).toLowerCase();
 
-            if ("waiting".equals(status)) {
-                waitingCount++;
-            }
-            if ("selected".equals(status)) {
-                selectedCount++;
-            }
-            if ("enrolled".equals(status)) {
-                enrolledCount++;
-            }
-            if ("cancelled".equals(status)) {
-                cancelledCount++;
+            switch (status) {
+                case "waiting":
+                    waitingCount++;
+                    break;
+                case "selected":
+                    selectedCount++;
+                    break;
+                case "enrolled":
+                    enrolledCount++;
+                    break;
+                case "cancelled":
+                    cancelledCount++;
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -399,7 +404,7 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Converts a nullable string into a non-null value for filtering.
+     * Converts a nullable string into a non-null value for safe filtering.
      *
      * @param value raw value
      * @return empty string when null, otherwise the original value

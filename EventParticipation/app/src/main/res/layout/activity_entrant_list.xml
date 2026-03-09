@@ -22,7 +22,6 @@
             app:title="Entrants List"
             app:titleTextColor="@android:color/white" />
 
-        <!-- Filter Tabs -->
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tabLayout"
             android:layout_width="match_parent"
@@ -36,28 +35,27 @@
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="All (75)" />
+                android:text="All (0)" />
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Waiting (45)" />
+                android:text="Waiting (0)" />
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Selected (30)" />
+                android:text="Selected (0)" />
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Enrolled (25)" />
+                android:text="Enrolled (0)" />
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Cancelled (5)" />
-
+                android:text="Cancelled (0)" />
         </com.google.android.material.tabs.TabLayout>
 
     </com.google.android.material.appbar.AppBarLayout>
@@ -80,15 +78,15 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:padding="4dp"
-                android:gravity="center_vertical">
+                android:padding="4dp">
 
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    android:src="@drawable/ic_search"
                     android:layout_marginStart="12dp"
+                    android:src="@drawable/ic_search"
                     app:tint="@color/gray_400" />
 
                 <EditText
@@ -96,21 +94,10 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:background="@android:color/transparent"
                     android:hint="Search entrants..."
                     android:padding="12dp"
-                    android:background="@android:color/transparent"
                     android:textSize="16sp" />
-
-                <ImageView
-                    android:id="@+id/btnFilter"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_filter"
-                    android:layout_marginEnd="12dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    app:tint="@color/gray_400" />
 
             </LinearLayout>
 
@@ -122,8 +109,8 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:paddingHorizontal="16dp"
             android:clipToPadding="false"
+            android:paddingHorizontal="16dp"
             tools:listitem="@layout/item_entrant" />
 
         <!-- Empty State -->
@@ -132,8 +119,8 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:orientation="vertical"
             android:gravity="center"
+            android:orientation="vertical"
             android:padding="32dp"
             android:visibility="gone">
 
@@ -146,17 +133,17 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
                 android:text="No entrants yet"
                 android:textSize="18sp"
-                android:textStyle="bold"
-                android:layout_marginTop="16dp" />
+                android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:text="Share your event to get entrants"
-                android:textColor="@color/gray_600"
-                android:layout_marginTop="8dp" />
+                android:textColor="@color/gray_600" />
 
         </LinearLayout>
 
@@ -169,7 +156,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
-        app:srcCompat="@drawable/ic_download"
-        app:backgroundTint="@color/purple_600" />
+        android:contentDescription="Export entrants"
+        app:backgroundTint="@color/purple_600"
+        app:srcCompat="@drawable/ic_download" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

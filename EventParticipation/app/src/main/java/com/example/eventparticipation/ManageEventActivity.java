@@ -12,6 +12,7 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
@@ -155,6 +156,7 @@ public class ManageEventActivity extends AppCompatActivity {
 
         setupToolbar();
         initViews();
+        setInitialPlaceholderValues();
         setupClickListeners();
         updatePosterUI();
 
@@ -227,11 +229,6 @@ public class ManageEventActivity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(v -> finish());
     }
 
-    /**
-     * Handles the toolbar up button.
-     *
-     * @return always returns {@code true}
-     */
     @Override
     public boolean onSupportNavigateUp() {
         finish();
@@ -239,7 +236,7 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Binds all required views from the layout.
+     * Binds layout views from the XML layout.
      */
     private void initViews() {
         tvEventName = findViewById(R.id.tvEventName);
@@ -252,9 +249,9 @@ public class ManageEventActivity extends AppCompatActivity {
         imgEventPoster = findViewById(R.id.imgEventPoster);
         layoutPosterPlaceholder = findViewById(R.id.layoutPosterPlaceholder);
         fabRemovePoster = findViewById(R.id.fabRemovePoster);
-
         btnUploadPoster = findViewById(R.id.btnUploadPoster);
         btnUpdatePoster = findViewById(R.id.btnUpdatePoster);
+
         btnViewEntrants = findViewById(R.id.btnViewEntrants);
         btnViewMap = findViewById(R.id.btnViewMap);
         btnRunLottery = findViewById(R.id.btnRunLottery);
@@ -263,23 +260,40 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Registers click listeners for poster operations and navigation buttons.
+     * Sets safe placeholder values before Firebase data finishes loading.
+     * This prevents old sample values from briefly flashing on screen.
+     */
+    private void setInitialPlaceholderValues() {
+        tvEventName.setText("Event Name");
+        tvEventDate.setText("Date not available");
+        tvEventCapacity.setText("Capacity: 0");
+
+        tvWaitingCount.setText("0");
+        tvSelectedCount.setText("0");
+        tvEnrolledCount.setText("0");
+
+        currentPosterUrl = "";
+        hasPoster = false;
+        imgEventPoster.setImageDrawable(null);
+    }
+
+    /**
+     * Registers click listeners for screen actions.
      */
     private void setupClickListeners() {
         btnUploadPoster.setOnClickListener(v -> openImagePicker());
         btnUpdatePoster.setOnClickListener(v -> openImagePicker());
-
         fabRemovePoster.setOnClickListener(v -> removePoster());
 
         btnViewEntrants.setOnClickListener(v -> {
-            Intent intent = new Intent(ManageEventActivity.this, EntrantListActivity.class);
+            Intent intent = new Intent(this, EntrantListActivity.class);
             intent.putExtra("EVENT_ID", eventId);
             intent.putExtra("ORGANIZER_ID", organizerId);
             startActivity(intent);
         });
 
         btnViewMap.setOnClickListener(v -> {
-            Intent intent = new Intent(ManageEventActivity.this, WaitlistMapActivity.class);
+            Intent intent = new Intent(this, WaitlistMapActivity.class);
             intent.putExtra("EVENT_ID", eventId);
             intent.putExtra("ORGANIZER_ID", organizerId);
             startActivity(intent);
@@ -289,14 +303,14 @@ public class ManageEventActivity extends AppCompatActivity {
                 Toast.makeText(this, "Lottery feature coming soon", Toast.LENGTH_SHORT).show());
 
         btnShowQRCode.setOnClickListener(v ->
-                Toast.makeText(this, "QR Code feature coming soon", Toast.LENGTH_SHORT).show());
+                Toast.makeText(this, "QR code feature coming soon", Toast.LENGTH_SHORT).show());
 
         btnEditEvent.setOnClickListener(v ->
                 Toast.makeText(this, "Edit event feature coming soon", Toast.LENGTH_SHORT).show());
     }
 
     /**
-     * Loads the event document from Firestore and updates the UI.
+     * Loads event details from Firestore and updates the event info UI.
      */
     private void loadEventData() {
         db.collection("organizers")
@@ -304,30 +318,27 @@ public class ManageEventActivity extends AppCompatActivity {
                 .collection("events")
                 .document(eventId)
                 .get()
-                .addOnSuccessListener(doc -> {
-                    if (!doc.exists()) {
-                        Toast.makeText(this, "Event document not found", Toast.LENGTH_LONG).show();
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (!documentSnapshot.exists()) {
+                        Toast.makeText(this, "Event not found", Toast.LENGTH_LONG).show();
+                        finish();
                         return;
                     }
 
-                    String rawName = doc.getString("name");
-                    Long rawCapacity = doc.getLong("capacity");
+                    String name = safe(documentSnapshot.getString("name"));
+                    String posterUrl = safe(documentSnapshot.getString("posterUrl"));
 
-                    tvEventName.setText(rawName != null && !rawName.trim().isEmpty() ? rawName : "-");
-                    tvEventCapacity.setText("Capacity: " + (rawCapacity != null ? rawCapacity : 0));
+                    Long capacityLong = documentSnapshot.getLong("capacity");
+                    int capacity = capacityLong == null ? 0 : capacityLong.intValue();
 
-                    Date startTime = doc.getDate("startTime");
-                    if (startTime != null) {
-                        tvEventDate.setText(formatDate(startTime));
-                    } else {
-                        tvEventDate.setText("-");
-                    }
+                    Object eventDateObject = documentSnapshot.get("eventDate");
+                    String formattedDate = formatEventDate(eventDateObject);
 
-                    currentPosterUrl = doc.getString("posterUrl");
-                    if (currentPosterUrl == null) {
-                        currentPosterUrl = "";
-                    }
+                    tvEventName.setText(name.isEmpty() ? "Event Name" : name);
+                    tvEventDate.setText(formattedDate);
+                    tvEventCapacity.setText("Capacity: " + capacity);
 
+                    currentPosterUrl = posterUrl;
                     hasPoster = !currentPosterUrl.isEmpty();
 
                     if (hasPoster) {
@@ -377,6 +388,27 @@ public class ManageEventActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Failed to load waitlist counts", Toast.LENGTH_SHORT).show());
+    }
+
+    /**
+     * Updates poster-related controls depending on whether a poster exists.
+     */
+    private void updatePosterUI() {
+        if (hasPoster) {
+            imgEventPoster.setVisibility(ViewGroup.VISIBLE);
+            layoutPosterPlaceholder.setVisibility(ViewGroup.GONE);
+            fabRemovePoster.setVisibility(ViewGroup.VISIBLE);
+
+            btnUploadPoster.setEnabled(false);
+            btnUpdatePoster.setEnabled(true);
+        } else {
+            imgEventPoster.setVisibility(ViewGroup.GONE);
+            layoutPosterPlaceholder.setVisibility(ViewGroup.VISIBLE);
+            fabRemovePoster.setVisibility(ViewGroup.GONE);
+
+            btnUploadPoster.setEnabled(true);
+            btnUpdatePoster.setEnabled(false);
+        }
     }
 
     /**
@@ -450,45 +482,39 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Updates poster-related UI controls based on whether a poster exists.
-     */
-    private void updatePosterUI() {
-        if (hasPoster) {
-            imgEventPoster.setVisibility(android.view.View.VISIBLE);
-            layoutPosterPlaceholder.setVisibility(android.view.View.GONE);
-            fabRemovePoster.setVisibility(android.view.View.VISIBLE);
-            btnUploadPoster.setEnabled(false);
-            btnUpdatePoster.setEnabled(true);
-        } else {
-            imgEventPoster.setVisibility(android.view.View.GONE);
-            layoutPosterPlaceholder.setVisibility(android.view.View.VISIBLE);
-            fabRemovePoster.setVisibility(android.view.View.GONE);
-            btnUploadPoster.setEnabled(true);
-            btnUpdatePoster.setEnabled(false);
-        }
-    }
-
-    /**
-     * Formats a date for display in the event info card.
+     * Formats an event date object into display text.
      *
-     * @param date raw date value
-     * @return formatted date string, or "-" if null
+     * @param eventDateObject raw Firestore event date value
+     * @return formatted date string, or a safe fallback
      */
-    private String formatDate(Date date) {
-        if (date == null) {
-            return "-";
+    @NonNull
+    private String formatEventDate(Object eventDateObject) {
+        if (eventDateObject instanceof com.google.firebase.Timestamp) {
+            Date date = ((com.google.firebase.Timestamp) eventDateObject).toDate();
+            return new SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(date);
         }
-        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
-        return sdf.format(date);
+
+        if (eventDateObject instanceof Date) {
+            return new SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+                    .format((Date) eventDateObject);
+        }
+
+        if (eventDateObject instanceof String) {
+            String value = ((String) eventDateObject).trim();
+            return value.isEmpty() ? "Date not available" : value;
+        }
+
+        return "Date not available";
     }
 
     /**
-     * Reloads event details and waitlist counts whenever the activity resumes.
+     * Converts a nullable string into a non-null value.
+     *
+     * @param value raw value
+     * @return empty string when null, otherwise the original value
      */
-    @Override
-    protected void onResume() {
-        super.onResume();
-        loadEventData();
-        loadWaitlistCounts();
+    @NonNull
+    private String safe(String value) {
+        return value == null ? "" : value;
     }
 }
