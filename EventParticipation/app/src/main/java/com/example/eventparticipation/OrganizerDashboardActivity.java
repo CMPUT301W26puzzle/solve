@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -70,6 +71,7 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
         initViews();
         setupRecyclerView();
         loadEvents();
+        setupListeners();
     }
 
     /**
@@ -208,5 +210,14 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
         tvTotalEvents.setText(String.valueOf(totalEvents));
         tvActiveEvents.setText(String.valueOf(activeEvents));
         tvTotalCapacity.setText(String.valueOf(totalCapacity));
+    }
+
+    private void setupListeners() {
+        FloatingActionButton fabAddEvent = findViewById(R.id.fabAddEvent);
+        fabAddEvent.setOnClickListener(v -> {
+            // navigate to the creation activity
+            Intent intent = new Intent(OrganizerDashboardActivity.this, CreateEventActivity.class);
+            startActivity(intent);
+        });
     }
 }
