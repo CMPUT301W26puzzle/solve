@@ -279,6 +279,7 @@ public class EntrantListActivity extends AppCompatActivity {
                 .collection("events")
                 .document(eventId)
                 .collection("waitlist")
+                .orderBy("joinedAt", com.google.firebase.firestore.Query.Direction.ASCENDING)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     entrantList.clear();
