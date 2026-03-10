@@ -1,0 +1,33 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- outer square -->
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M3,3h6v6H3z"/>
+
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M15,3h6v6h-6z"/>
+
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M3,15h6v6H3z"/>
+
+    <!-- small QR squares -->
+    <path
+        android:fillColor="#9E9E9E"
+        android:pathData="M14,14h2v2h-2z"/>
+
+    <path
+        android:fillColor="#9E9E9E"
+        android:pathData="M18,14h2v2h-2z"/>
+
+    <path
+        android:fillColor="#9E9E9E"
+        android:pathData="M14,18h2v2h-2z"/>
+
+</vector>
