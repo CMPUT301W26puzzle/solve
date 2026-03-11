@@ -82,6 +82,14 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
         tvTotalCapacity = findViewById(R.id.tvTotalCapacity);
         layoutLoading = findViewById(R.id.layoutLoading);
         layoutEmptyState = findViewById(R.id.layoutEmptyState);
+
+        //return to entrant (currently just goes back to role select screen)
+        findViewById(R.id.btnBackToEntrant).setOnClickListener(v -> {
+            Intent intent = new Intent(this, SelectRoleActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(intent);
+            finish();
+        });
     }
 
     /**
