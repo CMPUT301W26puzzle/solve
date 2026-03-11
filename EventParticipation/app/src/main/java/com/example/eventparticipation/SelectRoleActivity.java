@@ -52,8 +52,7 @@ public class SelectRoleActivity extends AppCompatActivity {
                     startActivity(new Intent(this, OrganizerDashboardActivity.class));
                     break;
                 case "entrant":
-                    // TODO: replace with EntrantDashboardActivity when built
-                    Toast.makeText(this, "Entrant dashboard coming soon", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(this, EntrantDashboardActivity.class));
                     break;
                 case "admin":
                     // TODO: replace with AdminDashboardActivity when built
