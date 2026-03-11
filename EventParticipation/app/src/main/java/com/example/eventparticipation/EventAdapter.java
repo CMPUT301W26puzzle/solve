@@ -70,7 +70,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         Event event = events.get(position);
 
         holder.tvEventName.setText(event.getName());
-        holder.tvEventDate.setText(dateFormat.format(event.getStartTime()));
+        holder.tvEventDate.setText(event.getStartTime() != null ? dateFormat.format(event.getStartTime()) : "Date TBD");
         holder.tvEventCapacity.setText("Capacity: " + event.getCapacity());
 
         holder.btnManageEvent.setOnClickListener(v -> listener.onManageClick(event));
