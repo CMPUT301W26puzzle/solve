@@ -16,7 +16,8 @@ import com.google.zxing.qrcode.QRCodeWriter;
  *
  <p>Relevant user stories:</p>
  * <ul>
- *     <li>US 02.01.01 As an organizer I want to create a new event and generate a unique promotional QR code that links to the event description and event poster in the app.</li>
+ * <li>US 01.06.01 As an entrant I want to view event details within the app by scanning the promotional QR code</li>
+ * <li>US 02.01.01 As an organizer I want to create a new event and generate a unique promotional QR code that links to the event description and event poster in the app.</li>
  * </ul>
  */
 public class QRCodeGenerator {

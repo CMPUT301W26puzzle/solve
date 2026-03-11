@@ -4,9 +4,19 @@ import java.util.Date;
 
 /**
  * Model class representing an event with lottery and requirement settings.
- * * <p>This class acts as a Data Transfer Object (DTO) for Firebase Firestore,
- * holding all the necessary details to manage an event's lifecycle, capacity,
- * waitlist restrictions, and location requirements.</p>
+ *
+ * <p>Acts as the primary Data Transfer Object (DTO) for Firebase Firestore,
+ * encapsulating all details of an event including its waitlist restrictions, capacity,
+ * promotional materials, and schedule.</p>
+ *
+ *
+ * <p>Relevant user stories:</p>
+ * <ul>
+ * <li>US 01.01.03 - View a list of events</li>
+ * <li>US 02.01.01 - Create a new event</li>
+ * <li>US 02.01.04 - Set a registration period</li>
+ * <li>US 02.03.01 - Optionally limit waitlist capacity</li>
+ * </ul>
  */
 public class Event {
 
@@ -51,6 +61,15 @@ public class Event {
 
     /** The current number of entrants waiting on the waitlist. */
     private int waitingCount;
+
+    /** The count of entrants currently selected by the lottery. */
+    private int selectedCount;
+
+    /** The latitude of the event venue. */
+    private Double venueLat;
+
+    /** The longitude of the event venue.  */
+    private Double venueLng;
 
     /** * Default constructor required for Firebase Firestore object mapping.
      */
@@ -251,4 +270,46 @@ public class Event {
      * @param waitingCount The new waitlist count.
      */
     public void setWaitingCount(int waitingCount) { this.waitingCount = waitingCount; }
+
+    /**
+     * Retrieves the number of entrants currently waiting on the waitlist.
+     *
+     * @return The count of selected entrants.
+     */
+    public int getSelectedCount() { return selectedCount; }
+
+    /**
+     * Sets the number of entrants currently selected for the event.
+     *
+     * @param selectedCount The new selected count.
+     */
+    public void setSelectedCount(int selectedCount) { this.selectedCount = selectedCount; }
+
+    /**
+     * Retrieves the venue latitude.
+     *
+     * @return The venue latitude.
+     */
+    public Double getVenueLat() { return venueLat; }
+
+    /**
+     * Sets the event latitude.
+     *
+     * @param venueLat The venue latitude.
+     */
+    public void setVenueLat(Double venueLat) { this.venueLat = venueLat; }
+
+    /**
+     * Retrieves the venue longitude.
+     *
+     * @return The venue longitude.
+     */
+    public Double getVenueLng() { return venueLng; }
+
+    /**
+     * Sets the event longitude.
+     *
+     * @param venueLng The venue longitude.
+     */
+    public void setVenueLng(Double venueLng) { this.venueLng = venueLng; }
 }
