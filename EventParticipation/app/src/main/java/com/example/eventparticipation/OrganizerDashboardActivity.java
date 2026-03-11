@@ -221,11 +221,22 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        FloatingActionButton fabAddEvent = findViewById(R.id.fabAddEvent);
-        fabAddEvent.setOnClickListener(v -> {
+        // setup the main "Create New Event" button
+        com.google.android.material.button.MaterialButton btnCreateEvent = findViewById(R.id.btnCreateEvent);
+        btnCreateEvent.setOnClickListener(v -> {
             // navigate to the creation activity
             Intent intent = new Intent(OrganizerDashboardActivity.this, CreateEventActivity.class);
             startActivity(intent);
         });
+
+        // setup the "Create Event" button that shows when the list is empty
+        com.google.android.material.button.MaterialButton btnCreateEventEmpty = findViewById(R.id.btnCreateEventEmpty);
+        if (btnCreateEventEmpty != null) {
+            btnCreateEventEmpty.setOnClickListener(v -> {
+                // navigate to the creation activity
+                Intent intent = new Intent(OrganizerDashboardActivity.this, CreateEventActivity.class);
+                startActivity(intent);
+            });
+        }
     }
 }
