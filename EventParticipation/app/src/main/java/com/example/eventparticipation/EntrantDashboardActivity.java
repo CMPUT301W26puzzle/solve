@@ -147,24 +147,24 @@ public class EntrantDashboardActivity extends AppCompatActivity {
     /**
      * Loads all events from the top-level Firestore "events" collection.
      */
+    /**
+     * Loads all events from the top-level Firestore "events" collection.
+     */
     private void loadEvents() {
         progressBar.setVisibility(View.GONE);
         layoutEmptyState.setVisibility(View.GONE);
 
-        // Temporary hardcoded event for testing
-        Event testEvent = new Event(
-                "test_001",
-                "organizer_demo_001",
-                "Spring Music Festival",
-                new Date(),
-                500,
-                new Date(System.currentTimeMillis() + 86400000L + 82800000L),
-                "android.resource://com.example.eventparticipation/" + R.drawable.poster_tech_conference,
-                234,
-                0,
-                450,
-                "Central Park Music Plaza"
-        );
+        Event testEvent = new Event();
+        testEvent.setId("test_001");
+        testEvent.setOrganizerId("organizer_demo_001");
+        testEvent.setName("Spring Music Festival");
+        testEvent.setStartTime(new Date());
+        testEvent.setCapacity(500);
+        testEvent.setRegistrationStart(new Date());
+        testEvent.setRegistrationEnd(new Date(System.currentTimeMillis() + 86400000L)); // +1 day
+        testEvent.setPosterUrl("android.resource://com.example.eventparticipation/" + R.drawable.poster_tech_conference);
+        testEvent.setGeolocationRequired(false);
+        testEvent.setWaitlistLimit(450);
 
         allEvents.clear();
         allEvents.add(testEvent);

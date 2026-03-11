@@ -27,7 +27,7 @@ public class CreateEventActivity extends AppCompatActivity {
     private ImageView imgPoster;
     private MaterialButton btnDates, btnSave;
 
-    private String organizerId = "organizer_demo_001";
+    private final String organizerId = "organizer_demo_001";
     private Uri selectedImageUri;
     private Date regStart, regEnd;
 
@@ -71,13 +71,13 @@ public class CreateEventActivity extends AppCompatActivity {
         btnDates.setOnClickListener(v -> {
             MaterialDatePicker<androidx.core.util.Pair<Long, Long>> datePicker =
                     MaterialDatePicker.Builder.dateRangePicker()
-                            .setTitleText("select registration period")
+                            .setTitleText(R.string.select_registration_period)
                             .build();
             datePicker.show(getSupportFragmentManager(), "RANGE");
             datePicker.addOnPositiveButtonClickListener(selection -> {
                 regStart = new Date(selection.first);
                 regEnd = new Date(selection.second);
-                btnDates.setText("period set");
+                btnDates.setText(R.string.period_set);
             });
         });
 
