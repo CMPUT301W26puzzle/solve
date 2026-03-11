@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -12,13 +11,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.EventParticipation">
-
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAQyWamTqPjrZFluuRUGfjOKuppb57Irqs" />
 
         <activity
-            android:name=".OrganizerDashboardActivity"
+            android:name=".SelectRoleActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -26,6 +24,7 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".OrganizerDashboardActivity" android:exported="false" />
         <activity android:name=".ManageEventActivity" android:exported="false" />
         <activity android:name=".EntrantListActivity" android:exported="false" />
         <activity android:name=".WaitlistMapActivity" android:exported="false" />
