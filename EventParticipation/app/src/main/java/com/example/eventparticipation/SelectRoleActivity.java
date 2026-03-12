@@ -49,12 +49,14 @@ public class SelectRoleActivity extends AppCompatActivity {
 
             switch (selectedRole) {
                 case "organizer":
-                    startActivity(new Intent(this, OrganizerDashboardActivity.class));
+                    openOrganizerFlow();
                     break;
                 case "entrant":
-                    startActivity(new Intent(this, EntrantDashboardActivity.class));
+                    openEntrantFlow();
                     break;
                 case "admin":
+                    // TODO: see openAdminFlow() method implementation
+                    openAdminFlow();
                     // TODO: replace with AdminDashboardActivity when built
                     Toast.makeText(this, "Admin dashboard coming soon", Toast.LENGTH_SHORT).show();
                     break;
@@ -95,5 +97,105 @@ public class SelectRoleActivity extends AppCompatActivity {
                 cardAdmin.setCardBackgroundColor(0xFFEEF2FF);
                 break;
         }
+    }
+
+    /**
+     * Starts the entrant flow.
+     *
+     * <p>This method gets the device ID, validates it, checks whether
+     *  * the entrant profile already exists in Firestore, creates it if needed,
+     *  * and then opens the entrant dashboard.</p>
+     */
+    private void openEntrantFlow() {
+        String entrantId = DeviceIdProvider.getId(this);
+
+        if (!DeviceIdProvider.isValidId(entrantId)) {
+            Toast.makeText(this, "Failed to get device ID", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        new ProfileInitializer().ensureEntrantProfileExists(
+                entrantId,
+                new ProfileInitializer.Callback() {
+                    @Override
+                    public void onSuccess() {
+                        startActivity(new Intent(SelectRoleActivity.this, EntrantDashboardActivity.class));
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+                        Toast.makeText(SelectRoleActivity.this,
+                                "Failed to initialize entrant profile",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+    }
+
+    /**
+     * Starts the organizer flow.
+     *
+     * <p>This method gets the device ID, validates it, checks whether
+     *  * the organizer profile already exists in Firestore, creates it if needed,
+     *  * and then opens the organizer dashboard.</p>
+     */
+    private void openOrganizerFlow() {
+        String organizerId = DeviceIdProvider.getId(this);
+
+        if (!DeviceIdProvider.isValidId(organizerId)) {
+            Toast.makeText(this, "Failed to get device ID", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        new ProfileInitializer().ensureOrganizerProfileExists(
+                organizerId,
+                new ProfileInitializer.Callback() {
+                    @Override
+                    public void onSuccess() {
+                        startActivity(new Intent(SelectRoleActivity.this, OrganizerDashboardActivity.class));
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+                        Toast.makeText(SelectRoleActivity.this,
+                                "Failed to initialize organizer profile",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+    }
+
+    /**
+     * Starts the admin flow.
+     *
+     * <p>This method gets the device ID, validates it, checks whether
+     *  * the admin profile already exists in Firestore, creates it if needed,
+     *  * and then opens the admin dashboard.</p>
+     */
+    private void openAdminFlow() {
+        String adminId = DeviceIdProvider.getId(this);
+
+        if (!DeviceIdProvider.isValidId(adminId)) {
+            Toast.makeText(this, "Failed to get device ID", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        new ProfileInitializer().ensureAdminProfileExists(
+                adminId,
+                new ProfileInitializer.Callback() {
+                    @Override
+                    public void onSuccess() {
+                        // TODO: uncomment the line below when AdminDashboardActivity is built
+                        // startActivity(new Intent(SelectRoleActivity.this, AdminDashboardActivity.class));
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+                        Toast.makeText(SelectRoleActivity.this,
+                                "Failed to initialize admin profile",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
     }
 }
