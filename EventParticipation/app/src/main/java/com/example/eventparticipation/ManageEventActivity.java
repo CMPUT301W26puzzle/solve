@@ -5,6 +5,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.ViewGroup;
+import android.text.InputType;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -21,6 +23,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -299,8 +302,7 @@ public class ManageEventActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        btnRunLottery.setOnClickListener(v ->
-                Toast.makeText(this, "Lottery feature coming soon", Toast.LENGTH_SHORT).show());
+        btnRunLottery.setOnClickListener(v -> showRunLotteryDialog());
 
         btnShowQRCode.setOnClickListener(v ->
                 Toast.makeText(this, "QR code feature coming soon", Toast.LENGTH_SHORT).show());
@@ -309,19 +311,53 @@ public class ManageEventActivity extends AppCompatActivity {
                 Toast.makeText(this, "Edit event feature coming soon", Toast.LENGTH_SHORT).show());
     }
 
+    private void showRunLotteryDialog() {
+        EditText input = new EditText(this);
+        input.setHint("Number of entrants to select");
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Run Lottery")
+                .setMessage("Select how many entrants should receive invitations.")
+                .setView(input)
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Run", (dialog, which) -> {
+                    String value = input.getText() == null ? "" : input.getText().toString().trim();
+                    if (value.isEmpty()) {
+                        Toast.makeText(this, "Enter a lottery size", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    int sampleSize;
+                    try {
+                        sampleSize = Integer.parseInt(value);
+                    } catch (NumberFormatException e) {
+                        Toast.makeText(this, "Enter a valid number", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    new WaitlistController().runLottery(eventId, sampleSize)
+                            .addOnSuccessListener(unused -> {
+                                Toast.makeText(this, "Lottery complete. Notifications sent.", Toast.LENGTH_SHORT).show();
+                                loadWaitlistCounts();
+                            })
+                            .addOnFailureListener(e -> Toast.makeText(this,
+                                    e.getMessage() != null ? e.getMessage() : "Failed to run lottery",
+                                    Toast.LENGTH_LONG).show());
+                })
+                .show();
+    }
+
     /**
      * Loads event details from Firestore and updates the event info UI.
      */
     private void loadEventData() {
-        db.collection("organizers")
-                .document(organizerId)
-                .collection("events")
+        db.collection("events")
                 .document(eventId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (!documentSnapshot.exists()) {
-                        Toast.makeText(this, "Event not found", Toast.LENGTH_LONG).show();
-                        finish();
+                        loadEventDataFromOrganizerFallback();
                         return;
                     }
 
@@ -351,14 +387,43 @@ public class ManageEventActivity extends AppCompatActivity {
 
                     updatePosterUI();
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to load event: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                .addOnFailureListener(e -> loadEventDataFromOrganizerFallback());
     }
 
     /**
      * Loads waitlist entries and counts waiting, selected, and enrolled entrants.
      */
     private void loadWaitlistCounts() {
+        db.collection("events")
+                .document(eventId)
+                .collection("waitingList")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    int waiting = 0;
+                    int selected = 0;
+                    int enrolled = 0;
+
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        String status = doc.getString("status");
+
+                        if ("waiting".equals(status)) {
+                            waiting++;
+                        } else if ("selected".equals(status)) {
+                            selected++;
+                        } else if ("enrolled".equals(status)) {
+                            enrolled++;
+                        }
+                    }
+
+                    tvWaitingCount.setText(String.valueOf(waiting));
+                    tvSelectedCount.setText(String.valueOf(selected));
+                    tvEnrolledCount.setText(String.valueOf(enrolled));
+                })
+                .addOnFailureListener(e -> loadWaitlistCountsFromOrganizerFallback());
+    }
+
+
+    private void loadWaitlistCountsFromOrganizerFallback() {
         db.collection("organizers")
                 .document(organizerId)
                 .collection("events")
@@ -505,6 +570,50 @@ public class ManageEventActivity extends AppCompatActivity {
         }
 
         return "Date not available";
+    }
+
+
+    private void loadEventDataFromOrganizerFallback() {
+        db.collection("organizers")
+                .document(organizerId)
+                .collection("events")
+                .document(eventId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (!documentSnapshot.exists()) {
+                        Toast.makeText(this, "Event not found", Toast.LENGTH_LONG).show();
+                        finish();
+                        return;
+                    }
+
+                    String name = safe(documentSnapshot.getString("name"));
+                    String posterUrl = safe(documentSnapshot.getString("posterUrl"));
+
+                    Long capacityLong = documentSnapshot.getLong("capacity");
+                    int capacity = capacityLong == null ? 0 : capacityLong.intValue();
+
+                    Object eventDateObject = documentSnapshot.get("eventDate");
+                    String formattedDate = formatEventDate(eventDateObject);
+
+                    tvEventName.setText(name.isEmpty() ? "Event Name" : name);
+                    tvEventDate.setText(formattedDate);
+                    tvEventCapacity.setText("Capacity: " + capacity);
+
+                    currentPosterUrl = posterUrl;
+                    hasPoster = !currentPosterUrl.isEmpty();
+
+                    if (hasPoster) {
+                        Glide.with(this)
+                                .load(currentPosterUrl)
+                                .into(imgEventPoster);
+                    } else {
+                        imgEventPoster.setImageDrawable(null);
+                    }
+
+                    updatePosterUI();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to load event: " + e.getMessage(), Toast.LENGTH_LONG).show());
     }
 
     /**

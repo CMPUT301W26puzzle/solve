@@ -42,8 +42,8 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
     /** Organizer ID that owns this event. */
     private String organizerId;
 
-    /** Temporary hardcoded device/user ID until auth is implemented. */
-    private static final String DEVICE_ID = "device_demo_001";
+    /** Current entrant id used for waitlist and notification actions. */
+    private String entrantId;
 
     private ImageView ivEventPoster;
     private TextView tvEventName, tvEventPrice;
@@ -68,6 +68,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_entrant_event_detail);
 
         db = FirebaseFirestore.getInstance();
+        entrantId = DeviceIdProvider.getId(this);
 
         eventId    = getIntent().getStringExtra("EVENT_ID");
         organizerId = getIntent().getStringExtra("ORGANIZER_ID");
@@ -195,10 +196,13 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         if (eventId == null) return;
 
         db.collection("events").document(eventId)
-                .collection("waitingList").document(DEVICE_ID)
+                .collection("waitingList").document(entrantId)
                 .get()
                 .addOnSuccessListener(doc -> {
-                    isOnWaitingList = doc.exists();
+                    String status = doc.getString("status");
+                    isOnWaitingList = doc.exists()
+                            && !"declined".equals(status)
+                            && !"not_selected".equals(status);
                     updateButton();
                 })
                 .addOnFailureListener(e -> updateButton());
@@ -216,9 +220,10 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         DocumentReference eventRef = db.collection("events").document(eventId);
 
         // Add device to waitingList subcollection
-        eventRef.collection("waitingList").document(DEVICE_ID)
+        eventRef.collection("waitingList").document(entrantId)
                 .set(new java.util.HashMap<String, Object>() {{
-                    put("deviceId", DEVICE_ID);
+                    put("deviceId", entrantId);
+                    put("entrantId", entrantId);
                     put("joinedAt", new Date());
                     put("status", "waiting");
                 }})
@@ -230,7 +235,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                     Toast.makeText(this, "Joined waiting list!", Toast.LENGTH_SHORT).show();
                 })
                 .addOnFailureListener(e ->
-                    Toast.makeText(this, "Failed to join waiting list", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Failed to join waiting list", Toast.LENGTH_SHORT).show()
                 );
     }
 
@@ -241,20 +246,13 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         if (eventId == null) return;
 
         DocumentReference eventRef = db.collection("events").document(eventId);
-        DocumentReference waitRef = eventRef.collection("waitingList").document(DEVICE_ID);
+        DocumentReference waitRef = eventRef.collection("waitingList").document(entrantId);
 
         waitRef.get().addOnSuccessListener(doc -> {
             String status = doc.getString("status");
 
             if ("selected".equals(status)) {
-                // Declining an invitation — mark as declined, trigger redraw
-                waitRef.update("status", "declined")
-                        .addOnSuccessListener(unused -> {
-                            triggerRedraw(eventRef);
-                            isOnWaitingList = false;
-                            updateButton();
-                            Toast.makeText(this, "Invitation declined", Toast.LENGTH_SHORT).show();
-                        });
+                declineSelectedInvitation(eventRef, waitRef);
             } else {
                 // Leaving waiting list normally
                 waitRef.delete().addOnSuccessListener(unused -> {
@@ -267,6 +265,47 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         });
     }
 
+
+    private void declineSelectedInvitation(DocumentReference eventRef, DocumentReference waitRef) {
+        waitRef.update(
+                        "status", "declined",
+                        "respondedAt", FieldValue.serverTimestamp())
+                .addOnSuccessListener(unused -> {
+                    eventRef.update("selectedCount", FieldValue.increment(-1));
+                    markInvitationNotificationsDeclined();
+                    triggerRedraw(eventRef);
+                    isOnWaitingList = false;
+                    updateButton();
+                    Toast.makeText(this, "Invitation declined", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to decline invitation", Toast.LENGTH_SHORT).show());
+    }
+
+    private void markInvitationNotificationsDeclined() {
+        db.collection("entrants")
+                .document(entrantId)
+                .collection("notifications")
+                .whereEqualTo("eventId", eventId)
+                .whereEqualTo("type", NotificationItem.TYPE_SELECTED)
+                .whereEqualTo("actionStatus", NotificationItem.ACTION_PENDING)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (querySnapshot.isEmpty()) {
+                        return;
+                    }
+                    com.google.firebase.firestore.WriteBatch batch = db.batch();
+                    for (DocumentSnapshot notificationDoc : querySnapshot.getDocuments()) {
+                        batch.update(notificationDoc.getReference(),
+                                "unread", false,
+                                "actionRequired", false,
+                                "actionStatus", NotificationItem.ACTION_DECLINED,
+                                "respondedAt", FieldValue.serverTimestamp());
+                    }
+                    batch.commit();
+                });
+    }
+
     /**
      * Updates the join/leave button label and color based on current waiting list status.
      */
@@ -274,7 +313,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         if (isOnWaitingList) {
             // Check what their status is
             db.collection("events").document(eventId)
-                    .collection("waitingList").document(DEVICE_ID)
+                    .collection("waitingList").document(entrantId)
                     .get()
                     .addOnSuccessListener(doc -> {
                         String status = doc.getString("status");
@@ -301,21 +340,11 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
      * @param eventRef reference to the event document
      */
     private void triggerRedraw(DocumentReference eventRef) {
-        eventRef.collection("waitingList")
-                .whereEqualTo("status", "waiting")
-                .get()
-                .addOnSuccessListener(query -> {
-                    if (query.isEmpty()) return;
-
-                    // Pick a random entrant from the waiting list
-                    int randomIndex = (int) (Math.random() * query.size());
-                    DocumentSnapshot chosen = query.getDocuments().get(randomIndex);
-
-                    // Promote them to selected
-                    chosen.getReference().update("status", "selected")
-                            .addOnSuccessListener(unused ->
-                                    Toast.makeText(this, "A new entrant has been selected", Toast.LENGTH_SHORT).show()
-                            );
+        new WaitlistController().drawReplacement(eventId)
+                .addOnSuccessListener(replacementId -> {
+                    if (replacementId != null) {
+                        Toast.makeText(this, "A new entrant has been selected", Toast.LENGTH_SHORT).show();
+                    }
                 });
     }
 }
