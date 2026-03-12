@@ -151,27 +151,36 @@ public class EntrantDashboardActivity extends AppCompatActivity {
      * Loads all events from the top-level Firestore "events" collection.
      */
     private void loadEvents() {
-        progressBar.setVisibility(View.GONE);
+        progressBar.setVisibility(View.VISIBLE);
         layoutEmptyState.setVisibility(View.GONE);
+        rvEntrantEvents.setVisibility(View.GONE);
 
-        Event testEvent = new Event();
-        testEvent.setId("test_001");
-        testEvent.setOrganizerId("organizer_demo_001");
-        testEvent.setName("Spring Music Festival");
-        testEvent.setStartTime(new Date());
-        testEvent.setCapacity(500);
-        testEvent.setRegistrationStart(new Date());
-        testEvent.setRegistrationEnd(new Date(System.currentTimeMillis() + 86400000L)); // +1 day
-        testEvent.setPosterUrl("android.resource://com.example.eventparticipation/" + R.drawable.poster_tech_conference);
-        testEvent.setGeolocationRequired(false);
-        testEvent.setWaitlistLimit(450);
-
-        allEvents.clear();
-        allEvents.add(testEvent);
-        filteredEvents.clear();
-        filteredEvents.addAll(allEvents);
-        eventAdapter.notifyDataSetChanged();
-        rvEntrantEvents.setVisibility(View.VISIBLE);
+        db.collection("events")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    allEvents.clear();
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        Event event = doc.toObject(Event.class);
+                        event.setId(doc.getId());
+                        allEvents.add(event);
+                    }
+                    filteredEvents.clear();
+                    filteredEvents.addAll(allEvents);
+                    eventAdapter.notifyDataSetChanged();
+                    progressBar.setVisibility(View.GONE);
+                    if (filteredEvents.isEmpty()) {
+                        layoutEmptyState.setVisibility(View.VISIBLE);
+                        rvEntrantEvents.setVisibility(View.GONE);
+                    } else {
+                        layoutEmptyState.setVisibility(View.GONE);
+                        rvEntrantEvents.setVisibility(View.VISIBLE);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    progressBar.setVisibility(View.GONE);
+                    layoutEmptyState.setVisibility(View.VISIBLE);
+                    Toast.makeText(this, "Failed to load events", Toast.LENGTH_LONG).show();
+                });
     }
 
     /**
