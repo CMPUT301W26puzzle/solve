@@ -1,6 +1,9 @@
 package com.example.eventparticipation;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -12,6 +15,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -38,6 +42,8 @@ import java.util.List;
  */
 public class EntrantDashboardActivity extends AppCompatActivity {
 
+    private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 2001;
+
     private RecyclerView rvEntrantEvents;
     private EntrantEventAdapter eventAdapter;
     private List<Event> allEvents;
@@ -56,6 +62,9 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         setContentView(R.layout.activity_entrant_dashboard);
 
         db = FirebaseFirestore.getInstance();
+
+        NotificationHelper.createNotificationChannel(this);
+        requestNotificationPermissionIfNeeded();
 
         initViews();
         setupRecyclerView();
@@ -127,14 +136,12 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             if (id == R.id.nav_home) {
                 return true;
             } else if (id == R.id.nav_my_events) {
-                // TODO: start EntrantMyEventsActivity
-                Toast.makeText(this, "My Events coming soon", Toast.LENGTH_SHORT).show();
                 return true;
             } else if (id == R.id.nav_scan) {
                 Toast.makeText(this, "Scan coming soon", Toast.LENGTH_SHORT).show();
                 return true;
             } else if (id == R.id.nav_notifications) {
-                Toast.makeText(this, "Notifications coming soon", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(this, NotificationsActivity.class));
                 return true;
             } else if (id == R.id.nav_profile) {
                 Toast.makeText(this, "Profile coming soon", Toast.LENGTH_SHORT).show();
@@ -148,37 +155,38 @@ public class EntrantDashboardActivity extends AppCompatActivity {
      * Loads all events from the top-level Firestore "events" collection.
      */
     private void loadEvents() {
-        progressBar.setVisibility(View.GONE);
+        progressBar.setVisibility(View.VISIBLE);
         layoutEmptyState.setVisibility(View.GONE);
+        rvEntrantEvents.setVisibility(View.GONE);
 
-        // Temporary hardcoded event for testing
-        Event testEvent = new Event(
-                "test_001",
-                "organizer_demo_001",
-                "Spring Music Festival",
-                new Date(),
-                500,
-                new Date(System.currentTimeMillis() + 86400000L + 82800000L),
-                "android.resource://com.example.eventparticipation/" + R.drawable.poster_tech_conference,
-                234,
-                0,
-                450,
-                "Central Park Music Plaza"
-        );
-
-        allEvents.clear();
-        allEvents.add(testEvent);
-        filteredEvents.clear();
-        filteredEvents.addAll(allEvents);
-        eventAdapter.notifyDataSetChanged();
-        rvEntrantEvents.setVisibility(View.VISIBLE);
+        db.collection("events")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    allEvents.clear();
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        Event event = doc.toObject(Event.class);
+                        event.setId(doc.getId());
+                        allEvents.add(event);
+                    }
+                    filteredEvents.clear();
+                    filteredEvents.addAll(allEvents);
+                    eventAdapter.notifyDataSetChanged();
+                    progressBar.setVisibility(View.GONE);
+                    if (filteredEvents.isEmpty()) {
+                        layoutEmptyState.setVisibility(View.VISIBLE);
+                        rvEntrantEvents.setVisibility(View.GONE);
+                    } else {
+                        layoutEmptyState.setVisibility(View.GONE);
+                        rvEntrantEvents.setVisibility(View.VISIBLE);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    progressBar.setVisibility(View.GONE);
+                    layoutEmptyState.setVisibility(View.VISIBLE);
+                    Toast.makeText(this, "Failed to load events", Toast.LENGTH_LONG).show();
+                });
     }
 
-    /**
-     * Filters the displayed events by name matching the search query.
-     *
-     * @param query search text
-     */
     private void filterEvents(String query) {
         filteredEvents.clear();
 
@@ -201,6 +209,18 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         } else {
             layoutEmptyState.setVisibility(View.GONE);
             rvEntrantEvents.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        NOTIFICATION_PERMISSION_REQUEST_CODE
+                );
+            }
         }
     }
 }

@@ -22,14 +22,19 @@ import androidx.core.view.WindowInsetsCompat;
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+
 
 /**
  * Organizer screen for managing a specific event.
@@ -299,8 +304,7 @@ public class ManageEventActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        btnRunLottery.setOnClickListener(v ->
-                Toast.makeText(this, "Lottery feature coming soon", Toast.LENGTH_SHORT).show());
+        btnRunLottery.setOnClickListener(v -> runLotteryAndNotifyEntrants());
 
         btnShowQRCode.setOnClickListener(v ->
                 Toast.makeText(this, "QR code feature coming soon", Toast.LENGTH_SHORT).show());
@@ -460,6 +464,121 @@ public class ManageEventActivity extends AppCompatActivity {
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
     }
+
+
+
+    private void runLotteryAndNotifyEntrants() {
+        db.collection("organizers")
+                .document(organizerId)
+                .collection("events")
+                .document(eventId)
+                .get()
+                .addOnSuccessListener(eventDoc -> {
+                    if (!eventDoc.exists()) {
+                        Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    Long capacityLong = eventDoc.getLong("capacity");
+                    int capacity = capacityLong == null ? 0 : capacityLong.intValue();
+                    String eventName = safe(eventDoc.getString("name"));
+
+                    db.collection("organizers")
+                            .document(organizerId)
+                            .collection("events")
+                            .document(eventId)
+                            .collection("waitlist")
+                            .get()
+                            .addOnSuccessListener(this::processLotteryResults)
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(this, "Failed to load waitlist", Toast.LENGTH_SHORT).show());
+
+                    voidRunLotteryState.capacity = capacity;
+                    voidRunLotteryState.eventName = eventName;
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to load event", Toast.LENGTH_SHORT).show());
+    }
+
+    private static class RunLotteryState {
+        int capacity = 0;
+        String eventName = "";
+    }
+
+    private final RunLotteryState voidRunLotteryState = new RunLotteryState();
+
+    private void processLotteryResults(QuerySnapshot querySnapshot) {
+        List<QueryDocumentSnapshot> waitingDocs = new ArrayList<>();
+        int enrolledCount = 0;
+        int selectedCount = 0;
+
+        for (com.google.firebase.firestore.QueryDocumentSnapshot doc : querySnapshot) {
+            String status = doc.getString("status");
+            if ("waiting".equals(status)) {
+                waitingDocs.add(doc);
+            } else if ("enrolled".equals(status)) {
+                enrolledCount++;
+            } else if ("selected".equals(status)) {
+                selectedCount++;
+            }
+        }
+
+        waitingDocs.sort((doc1, doc2) -> {
+            Timestamp t1 = doc1.getTimestamp("joinedAt");
+            Timestamp t2 = doc2.getTimestamp("joinedAt");
+
+            long time1 = t1 == null ? Long.MAX_VALUE : t1.toDate().getTime();
+            long time2 = t2 == null ? Long.MAX_VALUE : t2.toDate().getTime();
+
+            return Long.compare(time1, time2);
+        });
+
+        int availableSlots = voidRunLotteryState.capacity - enrolledCount - selectedCount;
+        if (availableSlots < 0) {
+            availableSlots = 0;
+        }
+
+        LotteryResultManager lotteryResultManager = new LotteryResultManager();
+
+        int selectedNow = Math.min(availableSlots, waitingDocs.size());
+
+        for (int i = 0; i < waitingDocs.size(); i++) {
+            com.google.firebase.firestore.QueryDocumentSnapshot doc = waitingDocs.get(i);
+
+            String entrantId = doc.getString("entrantId");
+            if (entrantId == null || entrantId.trim().isEmpty()) {
+                entrantId = doc.getId();
+            }
+
+            if (i < selectedNow) {
+                lotteryResultManager.markEntrantSelected(
+                        this,
+                        organizerId,
+                        eventId,
+                        entrantId,
+                        voidRunLotteryState.eventName
+                );
+            } else {
+                lotteryResultManager.markEntrantNotSelected(
+                        this,
+                        organizerId,
+                        eventId,
+                        entrantId,
+                        voidRunLotteryState.eventName
+                );
+            }
+        }
+
+        loadWaitlistCounts();
+
+        Toast.makeText(
+                this,
+                "Lottery complete. Selected: " + selectedNow + ", Not selected: " + Math.max(0, waitingDocs.size() - selectedNow),
+                Toast.LENGTH_LONG
+        ).show();
+    }
+
+
 
     /**
      * Removes the current poster URL from Firestore and resets poster UI state.

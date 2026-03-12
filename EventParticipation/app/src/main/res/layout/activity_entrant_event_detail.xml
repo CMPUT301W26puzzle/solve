@@ -350,6 +350,17 @@
                 android:backgroundTint="#000000"
                 app:cornerRadius="12dp"
                 android:layout_marginBottom="24dp" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDeclineInvitation"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="Decline Invitation"
+                android:textSize="16sp"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#CC0000"
+                app:cornerRadius="12dp"
+                android:layout_marginBottom="24dp"
+                android:visibility="gone" />
 
         </LinearLayout>
     </LinearLayout>

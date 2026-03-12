@@ -12,47 +12,28 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 /**
- * RecyclerView adapter for displaying events on the entrant dashboard.
+ * RecyclerView adapter for displaying events to entrants on their dashboard.
  *
- * <p>Renders event cards with poster image, title, price, description,
- * date, location, waiting/enrolled counts, tags, and registration countdown.</p>
- *
- * <p>Relevant user stories:</p>
- * <ul>
- *     <li>US 01.01.01 - Join waiting list (card tap navigates to detail)</li>
- *     <li>US 01.05.04 - Show waiting list count on card</li>
- * </ul>
+ * <p>Shows event details like poster, name, date, location, and registration status.</p>
  */
-public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapter.EntrantEventViewHolder> {
+public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapter.EventViewHolder> {
 
-    /** Event items to display. */
-    private List<Event> events;
-
-    /** Callback for card tap navigation. */
-    private OnEntrantEventClickListener listener;
-
-    /** Date formatter for event start time. */
-    private SimpleDateFormat dateFormat;
+    private final List<Event> events;
+    private final OnEntrantEventClickListener listener;
+    private final SimpleDateFormat dateFormat;
 
     /**
-     * Click listener interface for entrant event cards.
+     * Interface for handling clicks on entrant events.
      */
     public interface OnEntrantEventClickListener {
         void onEventClick(Event event);
     }
 
-    /**
-     * Creates an entrant event adapter.
-     *
-     * @param events   event list to display
-     * @param listener click callback
-     */
     public EntrantEventAdapter(List<Event> events, OnEntrantEventClickListener listener) {
         this.events = events;
         this.listener = listener;
@@ -61,72 +42,64 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
 
     @NonNull
     @Override
-    public EntrantEventViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public EventViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_entrant_event, parent, false);
-        return new EntrantEventViewHolder(view);
+        return new EventViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull EntrantEventViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         Event event = events.get(position);
 
-        // Title
-        holder.tvEventName.setText(event.getName() != null ? event.getName() : "");
+        holder.tvEventName.setText(event.getName());
+        holder.tvEventPrice.setText("Free"); // Default to Free as price is not in Event model
 
-        // Price badge — show "Free" if capacity is 0 price indicator, otherwise hide for now
-        // TODO: add price field to Event model when available
-        holder.tvEventPrice.setVisibility(View.GONE);
-
-        // Description — not in model yet, hide for now
+        // Description is not in the model, using a placeholder or empty
         holder.tvEventDescription.setVisibility(View.GONE);
 
-        // Date
         if (event.getStartTime() != null) {
             holder.tvEventDate.setText(dateFormat.format(event.getStartTime()));
         } else {
             holder.tvEventDate.setText("Date TBD");
         }
 
-        // Location
-        String location = event.getVenueAddress();
-        holder.tvEventLocation.setText(location != null && !location.isEmpty() ? location : "Location TBD");
+        holder.tvEventLocation.setText(event.getVenueAddress() != null ? event.getVenueAddress() : "Venue TBD");
 
-        // Enrolled / Waiting count (US 01.05.04)
-        String counts = event.getEnrolledCount() + "/" + event.getCapacity()
-                + " enrolled • " + event.getWaitingCount() + " waiting";
+        String counts = event.getEnrolledCount() + "/" + event.getCapacity() + " enrolled • " +
+                event.getWaitingCount() + " waiting";
         holder.tvEventCounts.setText(counts);
 
-        // Tags — hidden until tag field added to model
-        holder.tvTag1.setVisibility(View.GONE);
-        holder.tvTag2.setVisibility(View.GONE);
-
-        // Countdown to registration end
+        // Handle countdown if registration end is available
         if (event.getRegistrationEnd() != null) {
-            long diff = event.getRegistrationEnd().getTime() - new Date().getTime();
+            long diff = event.getRegistrationEnd().getTime() - System.currentTimeMillis();
             if (diff > 0) {
                 long days = TimeUnit.MILLISECONDS.toDays(diff);
                 long hours = TimeUnit.MILLISECONDS.toHours(diff) % 24;
                 holder.tvCountdown.setText(days + "d " + hours + "h left");
                 holder.tvCountdown.setVisibility(View.VISIBLE);
             } else {
-                holder.tvCountdown.setText("Closed");
-                holder.tvCountdown.setTextColor(0xFFAAAAAA);
+                holder.tvCountdown.setText("Registration Closed");
                 holder.tvCountdown.setVisibility(View.VISIBLE);
             }
         } else {
             holder.tvCountdown.setVisibility(View.GONE);
         }
 
-        // Poster image
+        // Tags - can be static for now as not in model
+        holder.tvTag1.setText("Event");
+        holder.tvTag2.setVisibility(View.GONE);
+
         if (event.getPosterUrl() != null && !event.getPosterUrl().isEmpty()) {
-            Glide.with(holder.ivEventPoster.getContext())
-                    .load(android.net.Uri.parse(event.getPosterUrl()))
+            Glide.with(holder.itemView.getContext())
+                    .load(event.getPosterUrl())
+                    .placeholder(R.drawable.ic_image_placeholder)
                     .centerCrop()
                     .into(holder.ivEventPoster);
+        } else {
+            holder.ivEventPoster.setImageResource(R.drawable.ic_image_placeholder);
         }
 
-        // Card click → event detail
         holder.itemView.setOnClickListener(v -> listener.onEventClick(event));
     }
 
@@ -135,44 +108,24 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
         return events.size();
     }
 
-    /**
-     * Updates the displayed list and refreshes the RecyclerView.
-     *
-     * @param newEvents updated event list
-     */
-    public void updateEvents(List<Event> newEvents) {
-        this.events = newEvents;
-        notifyDataSetChanged();
-    }
-
-    /**
-     * ViewHolder for a single entrant event card.
-     */
-    static class EntrantEventViewHolder extends RecyclerView.ViewHolder {
-
+    static class EventViewHolder extends RecyclerView.ViewHolder {
         ImageView ivEventPoster;
-        TextView tvEventName;
-        TextView tvEventPrice;
-        TextView tvEventDescription;
-        TextView tvEventDate;
-        TextView tvEventLocation;
-        TextView tvEventCounts;
-        TextView tvTag1;
-        TextView tvTag2;
-        TextView tvCountdown;
+        TextView tvEventName, tvEventPrice, tvEventDescription;
+        TextView tvEventDate, tvEventLocation, tvEventCounts;
+        TextView tvTag1, tvTag2, tvCountdown;
 
-        public EntrantEventViewHolder(@NonNull View itemView) {
+        public EventViewHolder(@NonNull View itemView) {
             super(itemView);
-            ivEventPoster      = itemView.findViewById(R.id.ivEventPoster);
-            tvEventName        = itemView.findViewById(R.id.tvEventName);
-            tvEventPrice       = itemView.findViewById(R.id.tvEventPrice);
+            ivEventPoster = itemView.findViewById(R.id.ivEventPoster);
+            tvEventName = itemView.findViewById(R.id.tvEventName);
+            tvEventPrice = itemView.findViewById(R.id.tvEventPrice);
             tvEventDescription = itemView.findViewById(R.id.tvEventDescription);
-            tvEventDate        = itemView.findViewById(R.id.tvEventDate);
-            tvEventLocation    = itemView.findViewById(R.id.tvEventLocation);
-            tvEventCounts      = itemView.findViewById(R.id.tvEventCounts);
-            tvTag1             = itemView.findViewById(R.id.tvTag1);
-            tvTag2             = itemView.findViewById(R.id.tvTag2);
-            tvCountdown        = itemView.findViewById(R.id.tvCountdown);
+            tvEventDate = itemView.findViewById(R.id.tvEventDate);
+            tvEventLocation = itemView.findViewById(R.id.tvEventLocation);
+            tvEventCounts = itemView.findViewById(R.id.tvEventCounts);
+            tvTag1 = itemView.findViewById(R.id.tvTag1);
+            tvTag2 = itemView.findViewById(R.id.tvTag2);
+            tvCountdown = itemView.findViewById(R.id.tvCountdown);
         }
     }
 }

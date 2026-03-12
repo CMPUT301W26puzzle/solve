@@ -1,5 +1,6 @@
 package com.example.eventparticipation;
 
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
@@ -17,7 +18,9 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Event detail screen for entrants.
@@ -53,9 +56,12 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
     private TextView tvRegistrationDeadline;
     private TextView tvAbout;
     private MaterialButton btnJoinLeave;
+    private MaterialButton btnDeclineInvitation;
 
     private FirebaseFirestore db;
     private boolean isOnWaitingList = false;
+    private String currentStatus = "";
+    private String currentNotificationId = null;
 
     private SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault());
     private SimpleDateFormat timeFormat = new SimpleDateFormat("h:mm a", Locale.getDefault());
@@ -70,15 +76,13 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
 
         eventId    = getIntent().getStringExtra("EVENT_ID");
         organizerId = getIntent().getStringExtra("ORGANIZER_ID");
+        currentNotificationId = getIntent().getStringExtra("NOTIFICATION_ID");
 
         initViews();
         loadEventFromIntent();
         checkWaitingListStatus();
     }
 
-    /**
-     * Binds layout views and sets up back button and join/leave button.
-     */
     private void initViews() {
         ivEventPoster        = findViewById(R.id.ivEventPoster);
         tvEventName          = findViewById(R.id.tvEventName);
@@ -93,27 +97,28 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         tvCapacity           = findViewById(R.id.tvCapacity);
         tvEnrolledWaiting    = findViewById(R.id.tvEnrolledWaiting);
         tvRegistrationDeadline = findViewById(R.id.tvRegistrationDeadline);
-        tvAbout              = findViewById(R.id.tvAbout);
-        btnJoinLeave         = findViewById(R.id.btnJoinLeave);
+        tvAbout = findViewById(R.id.tvAbout);
+        btnJoinLeave = findViewById(R.id.btnJoinLeave);
+        btnDeclineInvitation = findViewById(R.id.btnDeclineInvitation);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
         btnJoinLeave.setOnClickListener(v -> {
             if (isOnWaitingList) {
                 leaveWaitingList();
-            } else {
+            } else if ("".equals(currentStatus)) {
                 joinWaitingList();
+            }
+        });
+
+        btnDeclineInvitation.setOnClickListener(v -> {
+            if ("selected".equals(currentStatus)) {
+                declineInvitation();
             }
         });
     }
 
-    /**
-     * Populates the UI using the Event passed via Intent extras.
-     * Falls back to Firestore fetch if no extras are present.
-     */
     private void loadEventFromIntent() {
-        // For now populate with the hardcoded test data passed via intent
-        // When Firestore is wired, replace this with a db.get() call
         tvEventName.setText(getIntent().getStringExtra("EVENT_NAME") != null
                 ? getIntent().getStringExtra("EVENT_NAME") : "Event");
 
@@ -186,28 +191,21 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                 });
     }
 
-    /**
-     * Checks Firestore to see if this device is already on the waiting list,
-     * then updates the button label accordingly.
-     */
     private void checkWaitingListStatus() {
-        if (eventId == null) return;
+        if (eventId == null || organizerId == null) return;
 
         db.collection("events").document(eventId)
                 .collection("waitingList").document(DEVICE_ID)
                 .get()
                 .addOnSuccessListener(doc -> {
                     isOnWaitingList = doc.exists();
-                    updateButton();
+                    updateButtons();
                 })
-                .addOnFailureListener(e -> updateButton());
+                .addOnFailureListener(e -> updateButtons());
     }
 
-    /**
-     * Adds this device to the event's waiting list in Firestore (US 01.01.01).
-     */
     private void joinWaitingList() {
-        if (eventId == null) {
+        if (eventId == null || organizerId == null) {
             Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -225,7 +223,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                     // Increment waiting count atomically
                     eventRef.update("waitingCount", FieldValue.increment(1));
                     isOnWaitingList = true;
-                    updateButton();
+                    updateButtons();
                     Toast.makeText(this, "Joined waiting list!", Toast.LENGTH_SHORT).show();
                 })
                 .addOnFailureListener(e ->
@@ -237,7 +235,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
      * Removes this device from the event's waiting list in Firestore (US 01.01.02).
      */
     private void leaveWaitingList() {
-        if (eventId == null) {
+        if (eventId == null || organizerId == null) {
             Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -250,26 +248,108 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                     // Decrement waiting count atomically
                     eventRef.update("waitingCount", FieldValue.increment(-1));
                     isOnWaitingList = false;
-                    updateButton();
+                    updateButtons();
                     Toast.makeText(this, "Left waiting list", Toast.LENGTH_SHORT).show();
                 })
                 .addOnFailureListener(e ->
-                    Toast.makeText(this, "Failed to leave waiting list", Toast.LENGTH_SHORT).show()
-                );
+                        Toast.makeText(this, "Failed to leave waiting list", Toast.LENGTH_SHORT).show());
     }
 
-    /**
-     * Updates the join/leave button label and color based on current waiting list status.
-     */
-    private void updateButton() {
-        if (isOnWaitingList) {
+    private void acceptInvitation() {
+        if (eventId == null || organizerId == null) {
+            Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        db.collection("organizers")
+                .document(organizerId)
+                .collection("events")
+                .document(eventId)
+                .collection("waitlist")
+                .document(DEVICE_ID)
+                .update("status", "enrolled")
+                .addOnSuccessListener(unused -> {
+                    if (currentNotificationId != null) {
+                        db.collection("users")
+                                .document(DEVICE_ID)
+                                .collection("notifications")
+                                .document(currentNotificationId)
+                                .update("status", "accepted", "read", true);
+                    }
+
+                    currentStatus = "enrolled";
+                    updateButtons();
+                    Toast.makeText(this, "Invitation accepted", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to accept invitation", Toast.LENGTH_SHORT).show());
+    }
+
+    private void declineInvitation() {
+        if (eventId == null || organizerId == null) {
+            Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        db.collection("organizers")
+                .document(organizerId)
+                .collection("events")
+                .document(eventId)
+                .collection("waitlist")
+                .document(DEVICE_ID)
+                .update("status", "cancelled")
+                .addOnSuccessListener(unused -> {
+                    if (currentNotificationId != null) {
+                        db.collection("users")
+                                .document(DEVICE_ID)
+                                .collection("notifications")
+                                .document(currentNotificationId)
+                                .update("status", "declined", "read", true);
+                    }
+
+                    currentStatus = "cancelled";
+                    updateButtons();
+                    Toast.makeText(this, "Invitation declined", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to decline invitation", Toast.LENGTH_SHORT).show());
+    }
+
+    private void updateButtons() {
+        btnJoinLeave.setEnabled(true);
+        btnDeclineInvitation.setVisibility(View.GONE);
+
+        if ("selected".equals(currentStatus)) {
+            btnJoinLeave.setText("Accept Invitation");
+            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF000000));
+
+            btnDeclineInvitation.setVisibility(View.VISIBLE);
+            btnDeclineInvitation.setText("Decline Invitation");
+            btnDeclineInvitation.setBackgroundTintList(ColorStateList.valueOf(0xFFCC0000));
+
+        } else if ("waiting".equals(currentStatus)) {
             btnJoinLeave.setText("Leave Waiting List");
-            btnJoinLeave.setBackgroundTintList(
-                    android.content.res.ColorStateList.valueOf(0xFFCC0000));
+            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFFCC0000));
+
+        } else if ("enrolled".equals(currentStatus)) {
+            btnJoinLeave.setText("Already Enrolled");
+            btnJoinLeave.setEnabled(false);
+            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF6B7280));
+
+        } else if ("cancelled".equals(currentStatus)) {
+            btnJoinLeave.setText("Invitation Declined");
+            btnJoinLeave.setEnabled(false);
+            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF6B7280));
+
+        } else if ("not_selected".equals(currentStatus)) {
+            btnJoinLeave.setText("Not Selected");
+            btnJoinLeave.setEnabled(false);
+            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF6B7280));
+
         } else {
             btnJoinLeave.setText("Join Waiting List");
-            btnJoinLeave.setBackgroundTintList(
-                    android.content.res.ColorStateList.valueOf(0xFF000000));
+            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF000000));
         }
     }
 }
+/////doneMTZDELETELATER
