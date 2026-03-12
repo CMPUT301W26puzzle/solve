@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">EventParticipation</string>
+    <string name="period_set">period set</string>
+    <string name="select_registration_period">select registration period</string>
 </resources>
