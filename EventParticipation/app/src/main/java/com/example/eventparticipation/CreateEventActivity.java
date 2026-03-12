@@ -146,95 +146,168 @@ public class CreateEventActivity extends AppCompatActivity {
         if (selectedImageUri != null) {
             uploadAndSave();
         } else {
-            // TODO: unhardcode these
-            int capacity = 0;
-            String address = "";
-            Double lat = 53.5232;
-            Double lng = -113.5263;
-
-            saveToFirestore("", organizerId, capacity, address, lat, lng);
+            Integer parsedLimit = null;
+            String limitText = etWaitlistLimit.getText().toString().trim();
+            if (!limitText.isEmpty()) {
+                try { parsedLimit = Integer.parseInt(limitText); }
+                catch (NumberFormatException ignored) {}
+            }
+            saveToFirestore(
+                    etName.getText().toString().trim(), // name
+                    organizerId,                        // organizerId
+                    null,                               // facilityId (default "")
+                    selectedImageUri != null ? selectedImageUri.toString() : null, // posterUrl
+                    null,                               // qrCodeUrl (default "")
+                    "University of Alberta",            // venueAddress
+                    swGeo.isChecked(),                  // geolocationRequired
+                    0,                                  // capacity
+                    0,                                  // enrolledCount
+                    0,                                  // waitingCount
+                    0,                                  // selectedCount
+                    53.5232,                            // venueLat
+                    -113.5263,                          // venueLng
+                    null,                               // startTime (default now)
+                    regStart,                           // registrationStart
+                    regEnd,                             // registrationEnd
+                    parsedLimit                         // waitlistLimit
+            );
         }
     }
 
     /**
      * Uploads the selected poster to Firebase Storage and proceeds to save the
-     * document upon success.
+     * document upon success, passing all necessary fields to saveToFirestore.
      */
     private void uploadAndSave() {
         String path = "posters/" + System.currentTimeMillis() + ".jpg";
         StorageReference ref = storage.getReference().child(path);
+
         // TODO: unhardcode these
         int capacity = 0;
         String address = "";
         Double lat = 53.5232;
         Double lng = -113.5263;
 
+        // safely parse the waitlist limit before the upload starts
+        Integer parsedLimit = null;
+        String limitText = etWaitlistLimit.getText().toString().trim();
+        if (!limitText.isEmpty()) {
+            try {
+                parsedLimit = Integer.parseInt(limitText);
+            } catch (NumberFormatException ignored) {}
+        }
+        // needed to be final for the lambda expression below
+        final Integer finalWaitlistLimit = parsedLimit;
+
         ref.putFile(selectedImageUri)
                 .continueWithTask(task -> ref.getDownloadUrl())
-                .addOnSuccessListener(uri -> saveToFirestore(uri.toString(), organizerId, capacity, address, lat, lng))
+                .addOnSuccessListener(uri -> saveToFirestore(
+                        etName.getText().toString().trim(), // name
+                        organizerId,                        // organizerId
+                        null,                               // facilityId
+                        uri.toString(),                     // posterUrl
+                        null,                               // qrCodeUrl
+                        address,                            // venueAddress
+                        swGeo.isChecked(),                  // geolocationRequired
+                        capacity,                           // capacity
+                        0,                                  // enrolledCount
+                        0,                                  // waitingCount
+                        0,                                  // selectedCount
+                        lat,                                // venueLat
+                        lng,                                // venueLng
+                        null,                               // startTime
+                        regStart,                           // registrationStart
+                        regEnd,                             // registrationEnd
+                        finalWaitlistLimit                  // waitlistLimit
+                ))
                 .addOnFailureListener(e -> Toast.makeText(this, "Upload failed", Toast.LENGTH_SHORT).show());
     }
 
     /**
-     * Packages the event details into a map and saves it as a new document.
-     * All fields are dynamically passed or extracted from the UI, and types are strictly
-     * enforced to match the Event.java model to prevent deserialization crashes.
+     * Packages the event details into a map and saves it as a new document in Firestore.
+     * Every possible field from the Event model is accepted as an input parameter.
+     * If any parameter is passed as null, the method applies a safe default to ensure
+     * the resulting document strictly matches the Event.java model, preventing
+     * NullPointerExceptions in the UI adapters.
      *
-     * @param posterUrl          The download URL of the event poster.
-     * @param currentOrganizerId The ID of the currently logged-in organizer.
-     * @param capacity           The maximum number of attendees allowed.
-     * @param venueAddress       The string representation of the venue location.
-     * @param venueLat           The double-precision latitude.
-     * @param venueLng           The double-precision longitude.
+     * @param name                The display name or title of the event.
+     * @param organizerId         The ID of the currently logged-in organizer.
+     * @param facilityId          The ID of the facility where this event is being hosted.
+     * @param posterUrl           The cloud storage download URL for the event's promotional poster.
+     * @param qrCodeUrl           The cloud storage download URL for the generated QR code.
+     * @param venueAddress        The physical address or location name of the event venue.
+     * @param geolocationRequired Flag indicating whether an entrant must provide their geolocation to join the waitlist.
+     * @param capacity            The maximum number of attendees allowed to enroll in the event.
+     * @param enrolledCount       The current number of entrants who have been successfully enrolled.
+     * @param waitingCount        The current number of entrants waiting on the waitlist.
+     * @param selectedCount       The count of entrants currently selected by the lottery.
+     * @param venueLat            The double-precision latitude of the venue location.
+     * @param venueLng            The double-precision longitude of the venue location.
+     * @param startTime           The scheduled start date and time of the event.
+     * @param registrationStart   The date and time when the waitlist registration period opens.
+     * @param registrationEnd     The date and time when the waitlist registration period closes.
+     * @param waitlistLimit       An optional cap on the maximum number of entrants allowed on the waitlist (null for unlimited).
      */
-    private void saveToFirestore(String posterUrl,
-                                 String currentOrganizerId,
-                                 int capacity,
-                                 String venueAddress,
-                                 Double venueLat,
-                                 Double venueLng) {
+    private void saveToFirestore(
+            String name,
+            String organizerId,
+            String facilityId,
+            String posterUrl,
+            String qrCodeUrl,
+            String venueAddress,
+            Boolean geolocationRequired,
+            Integer capacity,
+            Integer enrolledCount,
+            Integer waitingCount,
+            Integer selectedCount,
+            Double venueLat,
+            Double venueLng,
+            Date startTime,
+            Date registrationStart,
+            Date registrationEnd,
+            Integer waitlistLimit) {
 
         Map<String, Object> map = new HashMap<>();
-        map.put("name", etName.getText().toString().trim());
-        map.put("organizerId", currentOrganizerId);
-        map.put("posterUrl", posterUrl);
-        map.put("geolocationRequired", swGeo.isChecked());
-        map.put("venueAddress", venueAddress);
-        map.put("venueLat", venueLat);
-        map.put("venueLng", venueLng);
-        map.put("capacity", capacity);
-        map.put("waitingCount", 0);
-        map.put("selectedCount", 0);
-        map.put("enrolledCount", 0);
 
-        if (regStart != null) {
-            map.put("registrationStart", regStart);
-            map.put("registrationEnd", regEnd);
-        }
+        // strings
+        map.put("name", name != null ? name : "");
+        map.put("organizerId", organizerId != null ? organizerId : "");
+        map.put("facilityId", facilityId != null ? facilityId : "");
+        map.put("posterUrl", posterUrl != null ? posterUrl : "");
+        map.put("qrCodeUrl", qrCodeUrl != null ? qrCodeUrl : "");
+        map.put("venueAddress", venueAddress != null ? venueAddress : "");
 
-        // map.put("startTime", eventStartTime);
+        // booleans
+        map.put("geolocationRequired", geolocationRequired != null ? geolocationRequired : false);
 
-        // optional waitlist limit
-        String limitText = etWaitlistLimit.getText().toString().trim();
-        if (!limitText.isEmpty()) {
-            try {
-                map.put("waitlistLimit", Integer.parseInt(limitText));
-            } catch (NumberFormatException e) {
-                map.put("waitlistLimit", null); // Safe fallback
-            }
-        } else {
-            map.put("waitlistLimit", null);
-        }
+        // numbers
+        map.put("capacity", capacity != null ? capacity : 0);
+        map.put("enrolledCount", enrolledCount != null ? enrolledCount : 0);
+        map.put("waitingCount", waitingCount != null ? waitingCount : 0);
+        map.put("selectedCount", selectedCount != null ? selectedCount : 0);
+        map.put("venueLat", venueLat != null ? venueLat : 0.0);
+        map.put("venueLng", venueLng != null ? venueLng : 0.0);
+
+        // dates
+        Date fallbackDate = new Date();
+        map.put("startTime", startTime != null ? startTime : fallbackDate);
+        map.put("registrationStart", registrationStart != null ? registrationStart : fallbackDate);
+        map.put("registrationEnd", registrationEnd != null ? registrationEnd : fallbackDate);
+
+        map.put("waitlistLimit", waitlistLimit);
+
+        // ensure we have a valid path for firestore even if organizerId was null
+        String safeOrganizerId = organizerId != null && !organizerId.isEmpty() ? organizerId : "unknown_organizer";
 
         // save to the nested subcollection: /organizers/{organizerId}/events/
         db.collection("organizers")
-                .document(currentOrganizerId)
+                .document(safeOrganizerId)
                 .collection("events")
                 .add(map)
                 .addOnSuccessListener(docRef -> {
                     String newEventId = docRef.getId();
-                    // generate and upload the QR Code
-                    uploadQRCode(newEventId, currentOrganizerId, docRef);
+                    // Generate and upload the QR Code (which will update the qrCodeUrl field)
+                    uploadQRCode(newEventId, safeOrganizerId, docRef);
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Failed to create event: " + e.getMessage(), Toast.LENGTH_SHORT).show()

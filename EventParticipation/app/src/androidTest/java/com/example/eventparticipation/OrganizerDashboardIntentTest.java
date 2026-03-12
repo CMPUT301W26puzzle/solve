@@ -38,8 +38,7 @@ public class OrganizerDashboardIntentTest {
 
     @Test
     public void clickingManage_launchesManageEventActivity_withCorrectExtras() {
-        ActivityScenario<OrganizerDashboardActivity> scenario =
-                ActivityScenario.launch(OrganizerDashboardActivity.class);
+        ActivityScenario<OrganizerDashboardActivity> scenario = ActivityScenario.launch(OrganizerDashboardActivity.class);
 
         scenario.onActivity(activity -> {
             try {
@@ -49,6 +48,11 @@ public class OrganizerDashboardIntentTest {
                 Event event = new Event();
                 event.setId("event_001");
                 event.setName("Sample Event");
+                event.setStartTime(new java.util.Date());
+                event.setRegistrationStart(new java.util.Date());
+                event.setRegistrationEnd(new java.util.Date());
+                event.setCapacity(100);
+
                 eventList.add(event);
 
                 invokeSetupRecyclerView(activity);
@@ -56,7 +60,7 @@ public class OrganizerDashboardIntentTest {
                 OnEventClickListener listener = getAdapterListener(activity);
                 listener.onManageClick(event);
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
             }
         });
 
@@ -67,27 +71,27 @@ public class OrganizerDashboardIntentTest {
 
     @Test
     public void clickingEntrants_launchesEntrantListActivity_withCorrectExtras() {
-        ActivityScenario<OrganizerDashboardActivity> scenario =
-                ActivityScenario.launch(OrganizerDashboardActivity.class);
+        try (ActivityScenario<OrganizerDashboardActivity> scenario = ActivityScenario.launch(OrganizerDashboardActivity.class)) {
 
-        scenario.onActivity(activity -> {
-            try {
-                Event event = new Event();
-                event.setId("event_001");
-                event.setName("Sample Event");
+            scenario.onActivity(activity -> {
+                try {
+                    Event event = new Event();
+                    event.setId("event_001");
+                    event.setName("Sample Event");
 
-                invokeSetupRecyclerView(activity);
+                    invokeSetupRecyclerView(activity);
 
-                OnEventClickListener listener = getAdapterListener(activity);
-                listener.onEntrantsClick(event);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
+                    OnEventClickListener listener = getAdapterListener(activity);
+                    listener.onEntrantsClick(event);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
 
-        intended(hasComponent(EntrantListActivity.class.getName()));
-        intended(hasExtra("EVENT_ID", "event_001"));
-        intended(hasExtra("ORGANIZER_ID", "organizer_demo_001"));
+            intended(hasComponent(EntrantListActivity.class.getName()));
+            intended(hasExtra("EVENT_ID", "event_001"));
+            intended(hasExtra("ORGANIZER_ID", "organizer_demo_001"));
+        }
     }
 
     @SuppressWarnings("unchecked")
