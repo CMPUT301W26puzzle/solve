@@ -127,8 +127,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             if (id == R.id.nav_home) {
                 return true;
             } else if (id == R.id.nav_my_events) {
-                // TODO: start EntrantMyEventsActivity
-                Toast.makeText(this, "My Events coming soon", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(this, EntrantMyEventsActivity.class));
                 return true;
             } else if (id == R.id.nav_scan) {
                 Toast.makeText(this, "Scan coming soon", Toast.LENGTH_SHORT).show();
