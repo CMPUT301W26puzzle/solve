@@ -32,6 +32,7 @@
         <activity android:name=".CreateEventActivity" android:exported="false" />
         <activity android:name=".EntrantDashboardActivity" android:exported="false" />
         <activity android:name=".EntrantEventDetailActivity" android:exported="false" />
+        <activity android:name=".EntrantMyEventsActivity" android:exported="false" />
 
     </application>
 </manifest>
