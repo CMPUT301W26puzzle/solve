@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -241,11 +242,23 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         }
 
         DocumentReference eventRef = db.collection("events").document(eventId);
+        DocumentReference waitRef = eventRef.collection("waitingList").document(DEVICE_ID);
 
-        eventRef.collection("waitingList").document(DEVICE_ID)
-                .delete()
-                .addOnSuccessListener(unused -> {
-                    // Decrement waiting count atomically
+        waitRef.get().addOnSuccessListener(doc -> {
+            String status = doc.getString("status");
+
+            if ("selected".equals(status)) {
+                // Declining an invitation — mark as declined, trigger redraw
+                waitRef.update("status", "declined")
+                        .addOnSuccessListener(unused -> {
+                            triggerRedraw(eventRef);
+                            isOnWaitingList = false;
+                            updateButton();
+                            Toast.makeText(this, "Invitation declined", Toast.LENGTH_SHORT).show();
+                        });
+            } else {
+                // Leaving waiting list normally
+                waitRef.delete().addOnSuccessListener(unused -> {
                     eventRef.update("waitingCount", FieldValue.increment(-1));
                     isOnWaitingList = false;
                     updateButtons();
@@ -350,6 +363,30 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
             btnJoinLeave.setText("Join Waiting List");
             btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF000000));
         }
+    }
+
+    /**
+     * Picks a random waiting entrant and promotes them to selected (US 01.05.01).
+     *
+     * @param eventRef reference to the event document
+     */
+    private void triggerRedraw(DocumentReference eventRef) {
+        eventRef.collection("waitingList")
+                .whereEqualTo("status", "waiting")
+                .get()
+                .addOnSuccessListener(query -> {
+                    if (query.isEmpty()) return;
+
+                    // Pick a random entrant from the waiting list
+                    int randomIndex = (int) (Math.random() * query.size());
+                    DocumentSnapshot chosen = query.getDocuments().get(randomIndex);
+
+                    // Promote them to selected
+                    chosen.getReference().update("status", "selected")
+                            .addOnSuccessListener(unused ->
+                                    Toast.makeText(this, "A new entrant has been selected", Toast.LENGTH_SHORT).show()
+                            );
+                });
     }
 }
 /////doneMTZDELETELATER

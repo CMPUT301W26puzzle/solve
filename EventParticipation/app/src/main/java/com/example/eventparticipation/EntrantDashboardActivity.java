@@ -154,6 +154,9 @@ public class EntrantDashboardActivity extends AppCompatActivity {
     /**
      * Loads all events from the top-level Firestore "events" collection.
      */
+    /**
+     * Loads all events from the top-level Firestore "events" collection.
+     */
     private void loadEvents() {
         progressBar.setVisibility(View.VISIBLE);
         layoutEmptyState.setVisibility(View.GONE);
