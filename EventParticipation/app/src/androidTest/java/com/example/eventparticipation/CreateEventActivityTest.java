@@ -11,8 +11,12 @@ import static androidx.test.espresso.intent.Intents.intending;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.matcher.ViewMatchers.isChecked;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
+import static androidx.test.espresso.matcher.ViewMatchers.isEnabled;
+import static androidx.test.espresso.matcher.ViewMatchers.withContentDescription;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
+
+import static org.hamcrest.CoreMatchers.containsString;
 
 import android.app.Instrumentation;
 import android.content.Intent;
@@ -27,6 +31,10 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
 
 /**
  * UI Tests for Event Creation User Stories.
@@ -80,9 +88,16 @@ public class CreateEventActivityTest {
         // SELECT REGISTRATION DATES (US 02.01.04)
         onView(withId(R.id.btnDateRange)).perform(click());
 
-        // wait for the Date Picker dialog to appear and click its "Save" button
+        // Select today
+        onView(withContentDescription(containsString("Today")))
+                .perform(click());
+
+        // Select tomorrow
+        clickTomorrow();
+
+        // Confirm selected date range
         onView(withId(com.google.android.material.R.id.confirm_button))
-                .check(matches(isDisplayed()))
+                .check(matches(isEnabled()))
                 .perform(click());
 
         // verify the button text changed to reflect the selected dates
@@ -145,5 +160,18 @@ public class CreateEventActivityTest {
         onView(withId(R.id.etWaitlistLimit))
                 .perform(typeText("500"), closeSoftKeyboard())
                 .check(matches(withText("500")));
+    }
+    /**
+     * Selects tomorrow in the currently visible MaterialDatePicker.
+     */
+    private void clickTomorrow() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_MONTH, 1);
+
+        SimpleDateFormat formatter = new SimpleDateFormat("MMMM d", Locale.ENGLISH);
+        String tomorrow = formatter.format(calendar.getTime());
+
+        onView(withContentDescription(containsString(tomorrow)))
+                .perform(click());
     }
 }

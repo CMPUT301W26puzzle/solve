@@ -73,6 +73,11 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
         loadEvents();
         setupListeners();
     }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadEvents();
+    }
 
     /**
      * Binds layout views.
