@@ -56,7 +56,7 @@ public class ManageEventActivity extends AppCompatActivity {
     /** Event date label. */
     private TextView tvEventDate;
 
-    /** Event waitlist limit/capacity label. */
+    /** Event capacity label. */
     private TextView tvEventCapacity;
 
     /** Waiting count label. */
@@ -151,6 +151,12 @@ public class ManageEventActivity extends AppCompatActivity {
             return;
         }
 
+        if (organizerId == null || organizerId.trim().isEmpty()) {
+            Toast.makeText(this, "Missing ORGANIZER_ID", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+
         db = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
 
@@ -173,15 +179,22 @@ public class ManageEventActivity extends AppCompatActivity {
      * which keeps the back arrow and title visible instead of being clipped.</p>
      */
     private void applyWindowInsets() {
+        // The toolbar view to apply edge-to-edge padding to
         Toolbar toolbar = findViewById(R.id.toolbar);
 
+        // Captured original left padding of the toolbar
         final int originalPaddingLeft = toolbar.getPaddingLeft();
+        // Captured original top padding of the toolbar
         final int originalPaddingTop = toolbar.getPaddingTop();
+        // Captured original right padding of the toolbar
         final int originalPaddingRight = toolbar.getPaddingRight();
+        // Captured original bottom padding of the toolbar
         final int originalPaddingBottom = toolbar.getPaddingBottom();
+        // Captured default defined height of the toolbar from the theme
         final int originalToolbarHeight = getToolbarHeight();
 
         ViewCompat.setOnApplyWindowInsetsListener(toolbar, (view, windowInsets) -> {
+            // Extracted system insets specifically for the status bar
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars());
 
             view.setPadding(
@@ -191,6 +204,7 @@ public class ManageEventActivity extends AppCompatActivity {
                     originalPaddingBottom
             );
 
+            // Layout parameter references used to dynamically adjust the view's height
             ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
             layoutParams.height = originalToolbarHeight + insets.top;
             view.setLayoutParams(layoutParams);
@@ -205,6 +219,7 @@ public class ManageEventActivity extends AppCompatActivity {
      * @return toolbar height in pixels
      */
     private int getToolbarHeight() {
+        // Holder object to resolve attribute data dynamically from the context's theme
         TypedValue typedValue = new TypedValue();
         if (getTheme().resolveAttribute(android.R.attr.actionBarSize, typedValue, true)) {
             return TypedValue.complexToDimensionPixelSize(
@@ -219,6 +234,7 @@ public class ManageEventActivity extends AppCompatActivity {
      * Configures the toolbar and enables back navigation.
      */
     private void setupToolbar() {
+        // The toolbar view fetched from the layout file
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -263,11 +279,12 @@ public class ManageEventActivity extends AppCompatActivity {
 
     /**
      * Sets safe placeholder values before Firebase data finishes loading.
+     * This prevents old sample values from briefly flashing on screen.
      */
     private void setInitialPlaceholderValues() {
         tvEventName.setText("Event Name");
         tvEventDate.setText("Date not available");
-        tvEventCapacity.setText("Waitlist Limit: None");
+        tvEventCapacity.setText("Waitlist Limit: Unlimited");
 
         tvWaitingCount.setText("0");
         tvSelectedCount.setText("0");
@@ -287,6 +304,7 @@ public class ManageEventActivity extends AppCompatActivity {
         fabRemovePoster.setOnClickListener(v -> removePoster());
 
         btnViewEntrants.setOnClickListener(v -> {
+            // Intent to navigate to the list of waiting entrants
             Intent intent = new Intent(this, EntrantListActivity.class);
             intent.putExtra("EVENT_ID", eventId);
             intent.putExtra("ORGANIZER_ID", organizerId);
@@ -294,6 +312,7 @@ public class ManageEventActivity extends AppCompatActivity {
         });
 
         btnViewMap.setOnClickListener(v -> {
+            // Intent to navigate to the geographical map of waitlisted users
             Intent intent = new Intent(this, WaitlistMapActivity.class);
             intent.putExtra("EVENT_ID", eventId);
             intent.putExtra("ORGANIZER_ID", organizerId);
@@ -317,6 +336,7 @@ public class ManageEventActivity extends AppCompatActivity {
      * Shows a dialog to collect the sample size and triggers the lottery algorithm.
      */
     private void showRunLotteryDialog() {
+        // Text input field provided to the MaterialAlertDialog to gather sample size
         EditText input = new EditText(this);
         input.setHint("Number of entrants to select");
         input.setInputType(InputType.TYPE_CLASS_NUMBER);
@@ -327,12 +347,14 @@ public class ManageEventActivity extends AppCompatActivity {
                 .setView(input)
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Run", (dialog, which) -> {
+                    // Raw string value extracted from the edit text view
                     String value = input.getText() == null ? "" : input.getText().toString().trim();
                     if (value.isEmpty()) {
                         Toast.makeText(this, "Enter a lottery size", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
+                    // Parsed integer designating the quantity of users to sample
                     int sampleSize;
                     try {
                         sampleSize = Integer.parseInt(value);
@@ -371,7 +393,7 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Loads event details from the root "events" collection and updates the event info UI.
+     * Loads event details from Firestore and updates the event info UI.
      */
     private void loadEventData() {
         db.collection("events")
@@ -388,15 +410,14 @@ public class ManageEventActivity extends AppCompatActivity {
                     String posterUrl = safe(documentSnapshot.getString("posterUrl"));
 
                     Long limitLong = documentSnapshot.getLong("waitlistLimit");
-                    int waitlistLimit = limitLong == null ? 0 : limitLong.intValue();
+                    String limitText = limitLong == null ? "Unlimited" : String.valueOf(limitLong);
 
-                    // Using registration end date since startTime was removed
-                    Object regEndDateObject = documentSnapshot.get("registrationEnd");
-                    String formattedDate = formatEventDate(regEndDateObject);
+                    Object eventDateObject = documentSnapshot.get("registrationStart");
+                    String formattedDate = formatEventDate(eventDateObject);
 
                     tvEventName.setText(name.isEmpty() ? "Event Name" : name);
-                    tvEventDate.setText("Registration ends: " + formattedDate);
-                    tvEventCapacity.setText(waitlistLimit > 0 ? "Waitlist Limit: " + waitlistLimit : "Waitlist Limit: Unlimited");
+                    tvEventDate.setText(formattedDate);
+                    tvEventCapacity.setText("Waitlist Limit: " + limitText);
 
                     currentPosterUrl = posterUrl;
                     hasPoster = !currentPosterUrl.isEmpty();
@@ -419,18 +440,20 @@ public class ManageEventActivity extends AppCompatActivity {
      * Loads waitlist entries and counts waiting, selected, and enrolled entrants.
      */
     private void loadWaitlistCounts() {
-        db.collection("organizers")
-                .document(organizerId)
-                .collection("events")
+        db.collection("events")
                 .document(eventId)
                 .collection("waitlist")
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
+                    // Running tally for the users whose status is currently "waiting"
                     int waiting = 0;
+                    // Running tally for the users whose status is currently "selected"
                     int selected = 0;
+                    // Running tally for the users whose status is currently "enrolled"
                     int enrolled = 0;
 
                     for (QueryDocumentSnapshot doc : querySnapshot) {
+                        // The string denoting the waitlist progression status of an individual document
                         String status = doc.getString("status");
 
                         if ("waiting".equals(status)) {
@@ -486,11 +509,12 @@ public class ManageEventActivity extends AppCompatActivity {
     private void uploadPosterToFirebase(Uri imageUri) {
         // Concrete storage path pointing to the event poster jpg location in Google Cloud Storage
         StorageReference posterRef = storage.getReference()
-                .child("posters/" + eventId + "/poster.jpg");
+                .child("posters/" + organizerId + "/" + eventId + "/poster.jpg");
 
         posterRef.putFile(imageUri)
                 .continueWithTask(task -> {
                     if (!task.isSuccessful()) {
+                        // The potential error emitted during the firebase storage upload action
                         Exception exception = task.getException();
                         if (exception != null) {
                             throw exception;
@@ -502,9 +526,7 @@ public class ManageEventActivity extends AppCompatActivity {
                     currentPosterUrl = downloadUri.toString();
                     hasPoster = true;
 
-                    db.collection("organizers")
-                            .document(organizerId)
-                            .collection("events")
+                    db.collection("events")
                             .document(eventId)
                             .update("posterUrl", currentPosterUrl)
                             .addOnSuccessListener(unused -> {
@@ -526,9 +548,7 @@ public class ManageEventActivity extends AppCompatActivity {
      * Removes the current poster URL from Firestore and resets poster UI state.
      */
     private void removePoster() {
-        db.collection("organizers")
-                .document(organizerId)
-                .collection("events")
+        db.collection("events")
                 .document(eventId)
                 .update("posterUrl", "")
                 .addOnSuccessListener(unused -> {
@@ -551,6 +571,7 @@ public class ManageEventActivity extends AppCompatActivity {
     @NonNull
     private String formatEventDate(Object eventDateObject) {
         if (eventDateObject instanceof com.google.firebase.Timestamp) {
+            // Standard Java date instance mapped directly from the incoming Firebase Timestamp
             Date date = ((com.google.firebase.Timestamp) eventDateObject).toDate();
             return new SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(date);
         }
@@ -561,6 +582,7 @@ public class ManageEventActivity extends AppCompatActivity {
         }
 
         if (eventDateObject instanceof String) {
+            // Trimmed plain text string fallback for unparseable dates
             String value = ((String) eventDateObject).trim();
             return value.isEmpty() ? "Date not available" : value;
         }

@@ -176,7 +176,7 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
 
                         // Check if this device is in the waitingList subcollection
                         db.collection("events").document(doc.getId())
-                                .collection("waitingList").document(entrantId)
+                                .collection("waitList").document(entrantId)
                                 .get()
                                 .addOnSuccessListener(waitDoc -> {
                                     if (waitDoc.exists()) {
@@ -312,7 +312,7 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
 
             holder.tvEventName.setText(event.getName() != null ? event.getName() : "");
             holder.tvEventLocation.setText(event.getVenueAddress() != null ? event.getVenueAddress() : "Location TBD");
-            holder.tvEventDate.setText(event.getStartTime() != null ? dateFormat.format(event.getStartTime()) : "Date TBD");
+            holder.tvEventDate.setText(event.getRegistrationStart() != null ? dateFormat.format(event.getRegistrationStart()) : "Date TBD");
 
             // Status badge
             holder.tvStatus.setText(capitalize(item.status));

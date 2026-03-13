@@ -26,10 +26,10 @@ import org.junit.runner.RunWith;
 public class WaitlistMapActivityTest {
 
     /**
-     * Verifies that the map screen launches successfully with valid extras.
+     * Verifies that the map screen launches successfully with a valid event id.
      */
     @Test
-    public void launchWithValidExtras_showsToolbar() throws InterruptedException {
+    public void launchWithValidEventId_showsToolbar() throws InterruptedException {
         ActivityScenario.launch(validIntent());
 
         Thread.sleep(3000);
@@ -43,7 +43,6 @@ public class WaitlistMapActivityTest {
                 WaitlistMapActivity.class
         );
         intent.putExtra("EVENT_ID", "event_001");
-        intent.putExtra("ORGANIZER_ID", "organizer_demo_001");
         return intent;
     }
 }

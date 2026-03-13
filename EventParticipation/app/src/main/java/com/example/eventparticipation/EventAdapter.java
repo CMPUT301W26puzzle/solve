@@ -24,13 +24,13 @@ import java.util.Locale;
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHolder> {
 
     /** Event items displayed in the dashboard. */
-    private List<Event> events;
+    private final List<Event> events;
 
     /** Callback listener handling event card actions. */
-    private OnEventClickListener listener;
+    private final OnEventClickListener listener;
 
     /** Formatter used for displaying event dates. */
-    private SimpleDateFormat dateFormat;
+    private final SimpleDateFormat dateFormat;
 
     /**
      * Creates an event adapter.
@@ -69,8 +69,21 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         Event event = events.get(position);
 
+
         holder.tvEventName.setText(event.getName());
-        holder.tvEventDate.setText(event.getStartTime() != null ? dateFormat.format(event.getStartTime()) : "Date TBD");
+
+
+        if (event.getRegistrationStart() != null && event.getRegistrationEnd() != null) {
+
+            String start = dateFormat.format(event.getRegistrationStart());
+            String end = dateFormat.format(event.getRegistrationEnd());
+
+            holder.tvEventDate.setText(start + " - " + end);
+
+        } else {
+            holder.tvEventDate.setText("Date TBD");
+        }
+
         holder.tvEventCapacity.setText("Capacity: " + event.getCapacity());
 
         holder.btnManageEvent.setOnClickListener(v -> listener.onManageClick(event));
@@ -137,4 +150,3 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         }
     }
 }
-

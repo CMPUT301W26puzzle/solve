@@ -82,8 +82,8 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
         holder.tvEventDescription.setVisibility(View.GONE);
 
         // Date
-        if (event.getStartTime() != null) {
-            holder.tvEventDate.setText(dateFormat.format(event.getStartTime()));
+        if (event.getRegistrationStart() != null) {
+            holder.tvEventDate.setText(dateFormat.format(event.getRegistrationStart()));
         } else {
             holder.tvEventDate.setText("Date TBD");
         }

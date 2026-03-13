@@ -130,25 +130,7 @@ public class Event {
      */
     public void setName(String name) { this.name = name; }
 
-    /**
-     * Retrieves the scheduled start time of the event.
-     *
-     * @return The event's start time as a {@link Date} object.
-     */
-    public Date getStartTime() { return startTime; }
 
-    /**
-     * Sets the scheduled start time of the event.
-     *
-     * @param startTime The start time to set.
-     */
-    public void setStartTime(Date startTime) { this.startTime = startTime; }
-
-    /**
-     * Retrieves the opening date and time for event registration.
-     *
-     * @return The registration start date.
-     */
     public Date getRegistrationStart() { return registrationStart; }
 
     /**
