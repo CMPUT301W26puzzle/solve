@@ -1,78 +1,70 @@
 package com.example.eventparticipation;
 
 import static androidx.test.espresso.Espresso.onView;
+import static androidx.test.espresso.action.ViewActions.scrollTo;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.isNotEnabled;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 
 import android.content.Intent;
-import android.os.SystemClock;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Espresso test for upload poster button state.
  *
  * <p>User story covered:</p>
  * <ul>
- *     <li>US 02.04.01 - As an organizer, I want to upload an event poster</li>
+ * <li>US 02.04.01 - As an organizer, I want to upload an event poster</li>
  * </ul>
  */
 @RunWith(AndroidJUnit4.class)
 public class ManageEventActivityUploadPosterTest {
 
+    private static final String EVENT_ID = "event_001";
+    private static final String ORG_ID = "organizer_demo_001";
+
     /**
-     * Verifies that the upload poster button becomes disabled
-     * when the event already has a poster in Firestore.
+     * Seeds Firestore with an event that HAS a poster.
      */
+    @Before
+    public void setUp() throws Exception {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        Map<String, Object> data = new HashMap<>();
+        data.put("name", "Poster Event");
+        data.put("posterUrl", "http://example.com/image.png"); // If poster exists, Upload is disabled
+
+        Tasks.await(db.collection("organizers").document(ORG_ID)
+                .collection("events").document(EVENT_ID)
+                .set(data), 5, TimeUnit.SECONDS);
+    }
+
     @Test
     public void uploadPosterButton_isDisabled_whenPosterAlreadyExists() {
-        ActivityScenario.launch(validIntent());
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), ManageEventActivity.class);
+        intent.putExtra("EVENT_ID", EVENT_ID);
+        intent.putExtra("ORGANIZER_ID", ORG_ID);
 
-        waitForButtonState(R.id.btnUploadPoster, false, 8000);
-
-        onView(withId(R.id.btnUploadPoster)).check(matches(isDisplayed()));
-        onView(withId(R.id.btnUploadPoster)).check(matches(isNotEnabled()));
-    }
-
-    private Intent validIntent() {
-        Intent intent = new Intent(
-                ApplicationProvider.getApplicationContext(),
-                ManageEventActivity.class
-        );
-        intent.putExtra("EVENT_ID", "event_001");
-        intent.putExtra("ORGANIZER_ID", "organizer_demo_001");
-        return intent;
-    }
-
-    private void waitForButtonState(int viewId, boolean expectedEnabled, long timeoutMs) {
-        long start = SystemClock.elapsedRealtime();
-        AssertionError lastError = null;
-
-        while (SystemClock.elapsedRealtime() - start < timeoutMs) {
-            try {
-                if (expectedEnabled) {
-                    onView(withId(viewId)).check(matches(isDisplayed()));
-                    onView(withId(viewId)).check(matches(androidx.test.espresso.matcher.ViewMatchers.isEnabled()));
-                } else {
-                    onView(withId(viewId)).check(matches(isDisplayed()));
-                    onView(withId(viewId)).check(matches(isNotEnabled()));
-                }
-                return;
-            } catch (AssertionError e) {
-                lastError = e;
-                SystemClock.sleep(300);
-            }
-        }
-
-        if (lastError != null) {
-            throw lastError;
+        try (ActivityScenario<ManageEventActivity> scenario = ActivityScenario.launch(intent)) {
+            // Scroll to find the button and verify it is disabled
+            onView(withId(R.id.btnUploadPoster))
+                    .perform(scrollTo())
+                    .check(matches(isDisplayed()))
+                    .check(matches(isNotEnabled()));
         }
     }
 }

@@ -340,7 +340,8 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
      * @param eventRef reference to the event document
      */
     private void triggerRedraw(DocumentReference eventRef) {
-        new WaitlistController().drawReplacement(eventId)
+        // passed both organizerId and eventId to match the updated WaitlistController signature
+        new WaitlistController().drawReplacement(organizerId, eventId)
                 .addOnSuccessListener(replacementId -> {
                     if (replacementId != null) {
                         Toast.makeText(this, "A new entrant has been selected", Toast.LENGTH_SHORT).show();
