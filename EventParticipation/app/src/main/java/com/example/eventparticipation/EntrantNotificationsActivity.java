@@ -22,7 +22,7 @@ import java.util.List;
 /**
  * Entrant notifications screen.
  */
-public class EntrantNotificationsActivity extends AppCompatActivity implements NotificationAdapter.Listener {
+public class EntrantNotificationsActivity extends BaseEntrantActivity implements NotificationAdapter.Listener {
 
     public static final String EXTRA_TEST_MODE = "TEST_MODE";
     public static final String EXTRA_TEST_NOTIFICATIONS = "TEST_NOTIFICATIONS";
@@ -51,7 +51,7 @@ public class EntrantNotificationsActivity extends AppCompatActivity implements N
 
         initViews();
         setupRecyclerView();
-        setupBottomNav();
+        setupBottomNav(R.id.nav_notifications);
 
         if (isTestMode) {
             loadTestNotifications();
@@ -88,31 +88,31 @@ public class EntrantNotificationsActivity extends AppCompatActivity implements N
         rvNotifications.setAdapter(adapter);
     }
 
-    private void setupBottomNav() {
-        BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
-        bottomNav.setSelectedItemId(R.id.nav_notifications);
-        bottomNav.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_notifications) {
-                return true;
-            } else if (id == R.id.nav_home) {
-                startActivity(new Intent(this, EntrantDashboardActivity.class));
-                finish();
-                return true;
-            } else if (id == R.id.nav_my_events) {
-                startActivity(new Intent(this, EntrantMyEventsActivity.class));
-                finish();
-                return true;
-            } else if (id == R.id.nav_scan) {
-                Toast.makeText(this, "Scan coming soon", Toast.LENGTH_SHORT).show();
-                return true;
-            } else if (id == R.id.nav_profile) {
-                Toast.makeText(this, "Profile coming soon", Toast.LENGTH_SHORT).show();
-                return true;
-            }
-            return false;
-        });
-    }
+//    private void setupBottomNav() {
+//        BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
+//        bottomNav.setSelectedItemId(R.id.nav_notifications);
+//        bottomNav.setOnItemSelectedListener(item -> {
+//            int id = item.getItemId();
+//            if (id == R.id.nav_notifications) {
+//                return true;
+//            } else if (id == R.id.nav_home) {
+//                startActivity(new Intent(this, EntrantDashboardActivity.class));
+//                finish();
+//                return true;
+//            } else if (id == R.id.nav_my_events) {
+//                startActivity(new Intent(this, EntrantMyEventsActivity.class));
+//                finish();
+//                return true;
+//            } else if (id == R.id.nav_scan) {
+//                Toast.makeText(this, "Scan coming soon", Toast.LENGTH_SHORT).show();
+//                return true;
+//            } else if (id == R.id.nav_profile) {
+//                Toast.makeText(this, "Profile coming soon", Toast.LENGTH_SHORT).show();
+//                return true;
+//            }
+//            return false;
+//        });
+//    }
 
     @SuppressWarnings("unchecked")
     private void loadTestNotifications() {

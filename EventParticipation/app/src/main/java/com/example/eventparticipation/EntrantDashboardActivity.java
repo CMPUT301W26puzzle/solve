@@ -11,6 +11,7 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -35,7 +36,7 @@ import java.util.List;
  *     <li>US 01.05.04 - Waiting list count shown on each card</li>
  * </ul>
  */
-public class EntrantDashboardActivity extends AppCompatActivity {
+public class EntrantDashboardActivity extends BaseEntrantActivity {
 
     private RecyclerView rvEntrantEvents;
     private EntrantEventAdapter eventAdapter;
@@ -59,8 +60,9 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         initViews();
         setupRecyclerView();
         setupSearch();
-        setupBottomNav();
+        setupBottomNav(R.id.nav_home);
         loadEvents();
+        setupOptOutToggle();
     }
 
     /**
@@ -116,30 +118,30 @@ public class EntrantDashboardActivity extends AppCompatActivity {
     /**
      * Wires the bottom navigation bar.
      */
-    private void setupBottomNav() {
-        BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
-        bottomNav.setSelectedItemId(R.id.nav_home);
-
-        bottomNav.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_home) {
-                return true;
-            } else if (id == R.id.nav_my_events) {
-                startActivity(new Intent(this, EntrantMyEventsActivity.class));
-                return true;
-            } else if (id == R.id.nav_scan) {
-                Toast.makeText(this, "Scan coming soon", Toast.LENGTH_SHORT).show();
-                return true;
-            } else if (id == R.id.nav_notifications) {
-                startActivity(new Intent(this, EntrantNotificationsActivity.class));
-                return true;
-            } else if (id == R.id.nav_profile) {
-                Toast.makeText(this, "Profile coming soon", Toast.LENGTH_SHORT).show();
-                return true;
-            }
-            return false;
-        });
-    }
+//    private void setupBottomNav() {
+//        BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
+//        bottomNav.setSelectedItemId(R.id.nav_home);
+//
+//        bottomNav.setOnItemSelectedListener(item -> {
+//            int id = item.getItemId();
+//            if (id == R.id.nav_home) {
+//                return true;
+//            } else if (id == R.id.nav_my_events) {
+//                startActivity(new Intent(this, EntrantMyEventsActivity.class));
+//                return true;
+//            } else if (id == R.id.nav_scan) {
+//                Toast.makeText(this, "Scan coming soon", Toast.LENGTH_SHORT).show();
+//                return true;
+//            } else if (id == R.id.nav_notifications) {
+//                Toast.makeText(this, "Notifications coming soon", Toast.LENGTH_SHORT).show();
+//                return true;
+//            } else if (id == R.id.nav_profile) {
+//                startActivity(new Intent(this, ProfileActivity.class));
+//                return true;
+//            }
+//            return false;
+//        });
+//    }
 
     /**
      * Loads all events from the top-level Firestore "events" collection.
@@ -208,5 +210,41 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             layoutEmptyState.setVisibility(View.GONE);
             rvEntrantEvents.setVisibility(View.VISIBLE);
         }
+    }
+
+    /**
+     * Sets up the notification opt-out switch.
+     * Fetches the current preference from Firestore and updates it when toggled.
+     * US 01.04.03 As an entrant I want to opt out of receiving notifications from organizers and admins
+     */
+    private void setupOptOutToggle() {
+        com.google.android.material.materialswitch.MaterialSwitch switchOptOut = findViewById(R.id.switchOptOut);
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        String entrantId = DeviceIdProvider.getId(this);
+
+        // fetch the user's current preference from Firestore so the switch shows the correct state
+        db.collection("entrants").document(entrantId).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists() && documentSnapshot.contains("optOutNotifications")) {
+                        Boolean isOptedOut = documentSnapshot.getBoolean("optOutNotifications");
+                        switchOptOut.setChecked(isOptedOut != null && isOptedOut);
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to load notification settings", Toast.LENGTH_SHORT).show()
+                );
+
+        // listen for the user toggling the switch and save it to the database
+        switchOptOut.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            db.collection("entrants").document(entrantId)
+                    .update("optOutNotifications", isChecked)
+                    .addOnSuccessListener(aVoid -> {
+                        String msg = isChecked ? "Notifications disabled" : "Notifications enabled";
+                        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this, "Failed to update settings", Toast.LENGTH_SHORT).show()
+                    );
+        });
     }
 }

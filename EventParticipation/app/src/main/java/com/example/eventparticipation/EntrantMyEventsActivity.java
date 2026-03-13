@@ -36,7 +36,7 @@ import java.util.Locale;
  *     <li>US 01.05.01 - Another chance if selected user declines (shows re-selected status)</li>
  * </ul>
  */
-public class EntrantMyEventsActivity extends AppCompatActivity {
+public class EntrantMyEventsActivity extends BaseEntrantActivity {
 
     /** Current entrant id for Firestore queries. */
     private  String entrantId = "device_demo_001";;
@@ -81,7 +81,7 @@ public class EntrantMyEventsActivity extends AppCompatActivity {
         initViews();
         setupTabs();
         setupRecyclerView();
-        setupBottomNav();
+        setupBottomNav(R.id.nav_my_events);
         loadMyEvents();
     }
 
