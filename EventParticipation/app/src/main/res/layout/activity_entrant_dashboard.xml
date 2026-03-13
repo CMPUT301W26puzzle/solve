@@ -140,6 +140,15 @@
 
             </LinearLayout>
 
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/switchOptOut"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="24dp"
+                android:text="Opt out of organizer notifications"
+                android:textSize="16sp" />
+
             <!-- Loading -->
             <ProgressBar
                 android:id="@+id/progressBar"

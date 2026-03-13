@@ -42,10 +42,10 @@ import java.util.Locale;
  *
  * <p>Relevant user stories:</p>
  * <ul>
- *     <li>US 02.02.01 - View the list of entrants in the waiting list</li>
- *     <li>US 02.02.02 - View entrant locations on a map</li>
- *     <li>US 02.04.01 - Upload an event poster</li>
- *     <li>US 02.04.02 - Update an event poster</li>
+ * <li>US 02.02.01 - View the list of entrants in the waiting list</li>
+ * <li>US 02.02.02 - View entrant locations on a map</li>
+ * <li>US 02.04.01 - Upload an event poster</li>
+ * <li>US 02.04.02 - Update an event poster</li>
  * </ul>
  */
 public class ManageEventActivity extends AppCompatActivity {
@@ -91,6 +91,9 @@ public class ManageEventActivity extends AppCompatActivity {
 
     /** Placeholder lottery button. */
     private MaterialButton btnRunLottery;
+
+    /** Button to draw a replacement applicant. */
+    private MaterialButton btnDrawReplacement;
 
     /** Placeholder QR code button. */
     private MaterialButton btnShowQRCode;
@@ -163,6 +166,7 @@ public class ManageEventActivity extends AppCompatActivity {
         setupClickListeners();
         updatePosterUI();
 
+        // Using direct paths instead of fallbacks for consistency
         loadEventData();
         loadWaitlistCounts();
     }
@@ -175,15 +179,22 @@ public class ManageEventActivity extends AppCompatActivity {
      * which keeps the back arrow and title visible instead of being clipped.</p>
      */
     private void applyWindowInsets() {
+        // The toolbar view to apply edge-to-edge padding to
         Toolbar toolbar = findViewById(R.id.toolbar);
 
+        // Captured original left padding of the toolbar
         final int originalPaddingLeft = toolbar.getPaddingLeft();
+        // Captured original top padding of the toolbar
         final int originalPaddingTop = toolbar.getPaddingTop();
+        // Captured original right padding of the toolbar
         final int originalPaddingRight = toolbar.getPaddingRight();
+        // Captured original bottom padding of the toolbar
         final int originalPaddingBottom = toolbar.getPaddingBottom();
+        // Captured default defined height of the toolbar from the theme
         final int originalToolbarHeight = getToolbarHeight();
 
         ViewCompat.setOnApplyWindowInsetsListener(toolbar, (view, windowInsets) -> {
+            // Extracted system insets specifically for the status bar
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars());
 
             view.setPadding(
@@ -193,6 +204,7 @@ public class ManageEventActivity extends AppCompatActivity {
                     originalPaddingBottom
             );
 
+            // Layout parameter references used to dynamically adjust the view's height
             ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
             layoutParams.height = originalToolbarHeight + insets.top;
             view.setLayoutParams(layoutParams);
@@ -207,6 +219,7 @@ public class ManageEventActivity extends AppCompatActivity {
      * @return toolbar height in pixels
      */
     private int getToolbarHeight() {
+        // Holder object to resolve attribute data dynamically from the context's theme
         TypedValue typedValue = new TypedValue();
         if (getTheme().resolveAttribute(android.R.attr.actionBarSize, typedValue, true)) {
             return TypedValue.complexToDimensionPixelSize(
@@ -221,6 +234,7 @@ public class ManageEventActivity extends AppCompatActivity {
      * Configures the toolbar and enables back navigation.
      */
     private void setupToolbar() {
+        // The toolbar view fetched from the layout file
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -258,6 +272,7 @@ public class ManageEventActivity extends AppCompatActivity {
         btnViewEntrants = findViewById(R.id.btnViewEntrants);
         btnViewMap = findViewById(R.id.btnViewMap);
         btnRunLottery = findViewById(R.id.btnRunLottery);
+        btnDrawReplacement = findViewById(R.id.btnDrawReplacement);
         btnShowQRCode = findViewById(R.id.btnShowQRCode);
         btnEditEvent = findViewById(R.id.btnEditEvent);
     }
@@ -289,6 +304,7 @@ public class ManageEventActivity extends AppCompatActivity {
         fabRemovePoster.setOnClickListener(v -> removePoster());
 
         btnViewEntrants.setOnClickListener(v -> {
+            // Intent to navigate to the list of waiting entrants
             Intent intent = new Intent(this, EntrantListActivity.class);
             intent.putExtra("EVENT_ID", eventId);
             intent.putExtra("ORGANIZER_ID", organizerId);
@@ -296,6 +312,7 @@ public class ManageEventActivity extends AppCompatActivity {
         });
 
         btnViewMap.setOnClickListener(v -> {
+            // Intent to navigate to the geographical map of waitlisted users
             Intent intent = new Intent(this, WaitlistMapActivity.class);
             intent.putExtra("EVENT_ID", eventId);
             intent.putExtra("ORGANIZER_ID", organizerId);
@@ -304,6 +321,10 @@ public class ManageEventActivity extends AppCompatActivity {
 
         btnRunLottery.setOnClickListener(v -> showRunLotteryDialog());
 
+        if (btnDrawReplacement != null) {
+            btnDrawReplacement.setOnClickListener(v -> drawReplacementApplicant());
+        }
+
         btnShowQRCode.setOnClickListener(v ->
                 Toast.makeText(this, "QR code feature coming soon", Toast.LENGTH_SHORT).show());
 
@@ -311,7 +332,11 @@ public class ManageEventActivity extends AppCompatActivity {
                 Toast.makeText(this, "Edit event feature coming soon", Toast.LENGTH_SHORT).show());
     }
 
+    /**
+     * Shows a dialog to collect the sample size and triggers the lottery algorithm.
+     */
     private void showRunLotteryDialog() {
+        // Text input field provided to the MaterialAlertDialog to gather sample size
         EditText input = new EditText(this);
         input.setHint("Number of entrants to select");
         input.setInputType(InputType.TYPE_CLASS_NUMBER);
@@ -322,12 +347,14 @@ public class ManageEventActivity extends AppCompatActivity {
                 .setView(input)
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Run", (dialog, which) -> {
+                    // Raw string value extracted from the edit text view
                     String value = input.getText() == null ? "" : input.getText().toString().trim();
                     if (value.isEmpty()) {
                         Toast.makeText(this, "Enter a lottery size", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
+                    // Parsed integer designating the quantity of users to sample
                     int sampleSize;
                     try {
                         sampleSize = Integer.parseInt(value);
@@ -336,7 +363,7 @@ public class ManageEventActivity extends AppCompatActivity {
                         return;
                     }
 
-                    new WaitlistController().runLottery(eventId, sampleSize)
+                    new WaitlistController().runLottery(organizerId, eventId, sampleSize)
                             .addOnSuccessListener(unused -> {
                                 Toast.makeText(this, "Lottery complete. Notifications sent.", Toast.LENGTH_SHORT).show();
                                 loadWaitlistCounts();
@@ -349,25 +376,51 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
+     * Draws a single replacement using WaitlistController.
+     */
+    private void drawReplacementApplicant() {
+        new WaitlistController().drawReplacement(organizerId, eventId)
+                .addOnSuccessListener(entrantId -> {
+                    if (entrantId != null) {
+                        Toast.makeText(this, "Replacement drawn successfully!", Toast.LENGTH_SHORT).show();
+                        loadWaitlistCounts(); // Refresh UI counts
+                    } else {
+                        Toast.makeText(this, "Waitlist is empty. No replacement drawn.", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to draw replacement.", Toast.LENGTH_SHORT).show());
+    }
+
+    /**
      * Loads event details from Firestore and updates the event info UI.
      */
     private void loadEventData() {
-        db.collection("events")
+        db.collection("organizers")
+                .document(organizerId)
+                .collection("events")
                 .document(eventId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (!documentSnapshot.exists()) {
-                        loadEventDataFromOrganizerFallback();
+                        Toast.makeText(this, "Event not found", Toast.LENGTH_LONG).show();
+                        finish();
                         return;
                     }
 
+                    // Safely parsed string matching the event's descriptive title
                     String name = safe(documentSnapshot.getString("name"));
+                    // Safely parsed string matching the cloud URL of the event poster
                     String posterUrl = safe(documentSnapshot.getString("posterUrl"));
 
+                    // Raw Long object parsed from the capacity document field
                     Long capacityLong = documentSnapshot.getLong("capacity");
+                    // Base integer value denoting maximum possible enrolled participants
                     int capacity = capacityLong == null ? 0 : capacityLong.intValue();
 
+                    // Weakly typed object containing the raw Firestore date entry
                     Object eventDateObject = documentSnapshot.get("eventDate");
+                    // Human readable date string converted dynamically from the date object
                     String formattedDate = formatEventDate(eventDateObject);
 
                     tvEventName.setText(name.isEmpty() ? "Event Name" : name);
@@ -387,43 +440,14 @@ public class ManageEventActivity extends AppCompatActivity {
 
                     updatePosterUI();
                 })
-                .addOnFailureListener(e -> loadEventDataFromOrganizerFallback());
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to load event: " + e.getMessage(), Toast.LENGTH_LONG).show());
     }
 
     /**
      * Loads waitlist entries and counts waiting, selected, and enrolled entrants.
      */
     private void loadWaitlistCounts() {
-        db.collection("events")
-                .document(eventId)
-                .collection("waitingList")
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    int waiting = 0;
-                    int selected = 0;
-                    int enrolled = 0;
-
-                    for (QueryDocumentSnapshot doc : querySnapshot) {
-                        String status = doc.getString("status");
-
-                        if ("waiting".equals(status)) {
-                            waiting++;
-                        } else if ("selected".equals(status)) {
-                            selected++;
-                        } else if ("enrolled".equals(status)) {
-                            enrolled++;
-                        }
-                    }
-
-                    tvWaitingCount.setText(String.valueOf(waiting));
-                    tvSelectedCount.setText(String.valueOf(selected));
-                    tvEnrolledCount.setText(String.valueOf(enrolled));
-                })
-                .addOnFailureListener(e -> loadWaitlistCountsFromOrganizerFallback());
-    }
-
-
-    private void loadWaitlistCountsFromOrganizerFallback() {
         db.collection("organizers")
                 .document(organizerId)
                 .collection("events")
@@ -431,11 +455,15 @@ public class ManageEventActivity extends AppCompatActivity {
                 .collection("waitlist")
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
+                    // Running tally for the users whose status is currently "waiting"
                     int waiting = 0;
+                    // Running tally for the users whose status is currently "selected"
                     int selected = 0;
+                    // Running tally for the users whose status is currently "enrolled"
                     int enrolled = 0;
 
                     for (QueryDocumentSnapshot doc : querySnapshot) {
+                        // The string denoting the waitlist progression status of an individual document
                         String status = doc.getString("status");
 
                         if ("waiting".equals(status)) {
@@ -489,12 +517,14 @@ public class ManageEventActivity extends AppCompatActivity {
      * @param imageUri selected local image URI
      */
     private void uploadPosterToFirebase(Uri imageUri) {
+        // Concrete storage path pointing to the event poster jpg location in Google Cloud Storage
         StorageReference posterRef = storage.getReference()
                 .child("posters/" + organizerId + "/" + eventId + "/poster.jpg");
 
         posterRef.putFile(imageUri)
                 .continueWithTask(task -> {
                     if (!task.isSuccessful()) {
+                        // The potential error emitted during the firebase storage upload action
                         Exception exception = task.getException();
                         if (exception != null) {
                             throw exception;
@@ -555,6 +585,7 @@ public class ManageEventActivity extends AppCompatActivity {
     @NonNull
     private String formatEventDate(Object eventDateObject) {
         if (eventDateObject instanceof com.google.firebase.Timestamp) {
+            // Standard Java date instance mapped directly from the incoming Firebase Timestamp
             Date date = ((com.google.firebase.Timestamp) eventDateObject).toDate();
             return new SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(date);
         }
@@ -565,6 +596,7 @@ public class ManageEventActivity extends AppCompatActivity {
         }
 
         if (eventDateObject instanceof String) {
+            // Trimmed plain text string fallback for unparseable dates
             String value = ((String) eventDateObject).trim();
             return value.isEmpty() ? "Date not available" : value;
         }
@@ -572,53 +604,8 @@ public class ManageEventActivity extends AppCompatActivity {
         return "Date not available";
     }
 
-
-    private void loadEventDataFromOrganizerFallback() {
-        db.collection("organizers")
-                .document(organizerId)
-                .collection("events")
-                .document(eventId)
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (!documentSnapshot.exists()) {
-                        Toast.makeText(this, "Event not found", Toast.LENGTH_LONG).show();
-                        finish();
-                        return;
-                    }
-
-                    String name = safe(documentSnapshot.getString("name"));
-                    String posterUrl = safe(documentSnapshot.getString("posterUrl"));
-
-                    Long capacityLong = documentSnapshot.getLong("capacity");
-                    int capacity = capacityLong == null ? 0 : capacityLong.intValue();
-
-                    Object eventDateObject = documentSnapshot.get("eventDate");
-                    String formattedDate = formatEventDate(eventDateObject);
-
-                    tvEventName.setText(name.isEmpty() ? "Event Name" : name);
-                    tvEventDate.setText(formattedDate);
-                    tvEventCapacity.setText("Capacity: " + capacity);
-
-                    currentPosterUrl = posterUrl;
-                    hasPoster = !currentPosterUrl.isEmpty();
-
-                    if (hasPoster) {
-                        Glide.with(this)
-                                .load(currentPosterUrl)
-                                .into(imgEventPoster);
-                    } else {
-                        imgEventPoster.setImageDrawable(null);
-                    }
-
-                    updatePosterUI();
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to load event: " + e.getMessage(), Toast.LENGTH_LONG).show());
-    }
-
     /**
-     * Converts a nullable string into a non-null value.
-     *
+     * Converts a nullable string into a non-null value
      * @param value raw value
      * @return empty string when null, otherwise the original value
      */
