@@ -183,6 +183,7 @@ public class EntrantNotificationsActivity extends BaseEntrantActivity implements
 
         Intent intent = new Intent(this, EntrantEventDetailActivity.class);
         intent.putExtra("EVENT_ID", item.getEventId());
+        intent.putExtra("ORGANIZER_ID", "");
         intent.putExtra("EVENT_NAME", item.getEventName());
         startActivity(intent);
     }
