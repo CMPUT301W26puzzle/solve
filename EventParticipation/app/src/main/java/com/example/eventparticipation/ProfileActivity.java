@@ -23,7 +23,7 @@ import java.util.Map;
  *     <li>US 01.02.02 - As an entrant I want to update information such as name, email and contact information on my profile</li>
  * </ul>
  */
-public class ProfileActivity extends AppCompatActivity {
+public class ProfileActivity extends BaseEntrantActivity {
 
     private TextInputEditText etName;
     private TextInputEditText etEmail;
@@ -43,6 +43,7 @@ public class ProfileActivity extends AppCompatActivity {
         entrantId = DeviceIdProvider.getId(this);
 
         initViews();
+        setupBottomNav(R.id.nav_profile);
 
         if (!DeviceIdProvider.isValidId(entrantId)) {
             Toast.makeText(this, "Failed to get device ID", Toast.LENGTH_SHORT).show();
