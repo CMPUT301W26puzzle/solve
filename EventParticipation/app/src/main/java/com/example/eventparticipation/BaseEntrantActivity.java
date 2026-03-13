@@ -38,7 +38,7 @@ public abstract class BaseEntrantActivity extends AppCompatActivity {
                 Toast.makeText(this, "Scan coming soon", Toast.LENGTH_SHORT).show();
                 return true;
             } else if (id == R.id.nav_notifications) {
-                Toast.makeText(this, "Notifications coming soon", Toast.LENGTH_SHORT).show();
+                openEntrantScreen(EntrantNotificationsActivity.class);
                 return true;
             }
 
