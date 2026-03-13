@@ -129,7 +129,7 @@ public class NotificationRepository {
         }
 
         DocumentReference eventRef = db.collection("events").document(item.getEventId());
-        DocumentReference waitRef = eventRef.collection("waitlist").document(entrantId);
+        DocumentReference waitRef = eventRef.collection("waitingList").document(entrantId);
         DocumentReference notificationRef = getNotificationCollection(entrantId).document(item.getId());
 
         return db.runTransaction((Transaction.Function<Void>) transaction -> {
@@ -184,7 +184,7 @@ public class NotificationRepository {
         }
 
         DocumentReference eventRef = db.collection("events").document(item.getEventId());
-        DocumentReference waitRef = eventRef.collection("waitlist").document(entrantId);
+        DocumentReference waitRef = eventRef.collection("waitingList").document(entrantId);
         DocumentReference notificationRef = getNotificationCollection(entrantId).document(item.getId());
 
         return db.runTransaction((Transaction.Function<Void>) transaction -> {

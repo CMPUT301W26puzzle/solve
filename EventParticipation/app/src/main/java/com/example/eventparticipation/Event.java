@@ -31,6 +31,12 @@ public class Event {
     /** The display name or title of the event. */
     private String name;
 
+    /** The date and time when the event is scheduled to start. */
+    private Date startTime;
+
+    /** The maximum number of attendees allowed to enroll in the event. */
+    private int capacity;
+
     /** The date and time when the waitlist registration period opens. */
     private Date registrationStart;
 
@@ -125,6 +131,20 @@ public class Event {
     public void setName(String name) { this.name = name; }
 
     /**
+     * Retrieves the scheduled start time of the event.
+     *
+     * @return The event's start time as a {@link Date} object.
+     */
+    public Date getStartTime() { return startTime; }
+
+    /**
+     * Sets the scheduled start time of the event.
+     *
+     * @param startTime The start time to set.
+     */
+    public void setStartTime(Date startTime) { this.startTime = startTime; }
+
+    /**
      * Retrieves the opening date and time for event registration.
      *
      * @return The registration start date.
@@ -193,6 +213,20 @@ public class Event {
      * @param posterUrl The poster URL to set.
      */
     public void setPosterUrl(String posterUrl) { this.posterUrl = posterUrl; }
+
+    /**
+     * Retrieves the maximum attendee capacity for the event.
+     *
+     * @return The event capacity.
+     */
+    public int getCapacity() { return capacity; }
+
+    /**
+     * Sets the maximum attendee capacity for the event.
+     *
+     * @param capacity The event capacity to set.
+     */
+    public void setCapacity(int capacity) { this.capacity = capacity; }
 
     /**
      * Retrieves the physical address or location name of the venue.

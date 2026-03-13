@@ -419,7 +419,9 @@ public class ManageEventActivity extends AppCompatActivity {
      * Loads waitlist entries and counts waiting, selected, and enrolled entrants.
      */
     private void loadWaitlistCounts() {
-        db.collection("events")
+        db.collection("organizers")
+                .document(organizerId)
+                .collection("events")
                 .document(eventId)
                 .collection("waitlist")
                 .get()
@@ -500,7 +502,9 @@ public class ManageEventActivity extends AppCompatActivity {
                     currentPosterUrl = downloadUri.toString();
                     hasPoster = true;
 
-                    db.collection("events")
+                    db.collection("organizers")
+                            .document(organizerId)
+                            .collection("events")
                             .document(eventId)
                             .update("posterUrl", currentPosterUrl)
                             .addOnSuccessListener(unused -> {
@@ -522,7 +526,9 @@ public class ManageEventActivity extends AppCompatActivity {
      * Removes the current poster URL from Firestore and resets poster UI state.
      */
     private void removePoster() {
-        db.collection("events")
+        db.collection("organizers")
+                .document(organizerId)
+                .collection("events")
                 .document(eventId)
                 .update("posterUrl", "")
                 .addOnSuccessListener(unused -> {

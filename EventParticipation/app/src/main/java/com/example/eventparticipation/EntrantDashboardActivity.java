@@ -107,7 +107,7 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
             intent.putExtra("ORGANIZER_ID", event.getOrganizerId());
             intent.putExtra("EVENT_NAME", event.getName());
             intent.putExtra("VENUE_ADDRESS", event.getVenueAddress());
-            intent.putExtra("CAPACITY", event.getWaitlistLimit());
+            intent.putExtra("CAPACITY", event.getCapacity());
             intent.putExtra("ENROLLED_COUNT", event.getEnrolledCount());
             intent.putExtra("WAITING_COUNT", event.getWaitingCount());
             startActivity(intent);
