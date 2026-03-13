@@ -20,6 +20,8 @@ public class DeviceIdProvider {
     /** Prevents creating an instance of this utility class. */
     private DeviceIdProvider() {}
 
+    private static String testIdOverride;
+
     /**
      * Returns the device ID for this app.
      *
