@@ -40,7 +40,6 @@ dependencies {
     implementation(libs.constraintlayout)
 
     implementation("androidx.recyclerview:recyclerview:1.3.2")
-    //implementation(files("C:/Users/sirin/AppData/Local/Android/Sdk/platforms/android-36/android.jar"))
     implementation(platform("com.google.firebase:firebase-bom:34.10.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-firestore")
@@ -64,4 +63,22 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation("androidx.test.espresso:espresso-intents:3.6.1")
+}
+
+tasks.register<Javadoc>("generateJavadoc") {
+    source = fileTree("src/main/java")
+    title = "Event Participation App Javadocs"
+    isFailOnError = false
+    destinationDir = project.rootProject.file("javadocs")
+    val androidExt = project.extensions.getByType(com.android.build.gradle.AppExtension::class.java)
+    classpath += project.files(androidExt.bootClasspath)
+    androidExt.applicationVariants.all {
+        if (name == "debug") { // Use the debug variant's classpath
+            classpath += javaCompileProvider.get().classpath
+        }
+    }
+    (options as StandardJavadocDocletOptions).apply {
+        addStringOption("Xdoclint:none", "-quiet")
+        locale = "en_US"
+    }
 }
