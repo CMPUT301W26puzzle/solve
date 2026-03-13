@@ -363,7 +363,7 @@ public class ManageEventActivity extends AppCompatActivity {
                         return;
                     }
 
-                    new WaitlistController().runLottery(organizerId, eventId, sampleSize)
+                    new WaitlistController().runLottery(eventId, sampleSize)
                             .addOnSuccessListener(unused -> {
                                 Toast.makeText(this, "Lottery complete. Notifications sent.", Toast.LENGTH_SHORT).show();
                                 loadWaitlistCounts();
@@ -379,7 +379,7 @@ public class ManageEventActivity extends AppCompatActivity {
      * Draws a single replacement using WaitlistController.
      */
     private void drawReplacementApplicant() {
-        new WaitlistController().drawReplacement(organizerId, eventId)
+        new WaitlistController().drawReplacement(eventId)
                 .addOnSuccessListener(entrantId -> {
                     if (entrantId != null) {
                         Toast.makeText(this, "Replacement drawn successfully!", Toast.LENGTH_SHORT).show();
@@ -396,9 +396,7 @@ public class ManageEventActivity extends AppCompatActivity {
      * Loads event details from Firestore and updates the event info UI.
      */
     private void loadEventData() {
-        db.collection("organizers")
-                .document(organizerId)
-                .collection("events")
+        db.collection("events")
                 .document(eventId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
@@ -408,9 +406,7 @@ public class ManageEventActivity extends AppCompatActivity {
                         return;
                     }
 
-                    // Safely parsed string matching the event's descriptive title
                     String name = safe(documentSnapshot.getString("name"));
-                    // Safely parsed string matching the cloud URL of the event poster
                     String posterUrl = safe(documentSnapshot.getString("posterUrl"));
 
                     Long limitLong = documentSnapshot.getLong("waitlistLimit");

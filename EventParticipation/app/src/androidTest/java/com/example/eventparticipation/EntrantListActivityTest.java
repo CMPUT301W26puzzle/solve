@@ -40,21 +40,21 @@ public class EntrantListActivityTest {
     public void setUp() throws Exception {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        // Create a test entrant: Tom Lee
         Map<String, Object> tom = new HashMap<>();
         tom.put("entrantName", "Tom Lee");
         tom.put("entrantEmail", "tom@test.com");
         tom.put("status", "waiting");
         tom.put("joinedAt", com.google.firebase.firestore.FieldValue.serverTimestamp());
 
-        // Synchronously write to the nested path expected by EntrantListActivity
-        Tasks.await(db.collection("organizers")
-                .document(TEST_ORG_ID)
-                .collection("events")
-                .document(TEST_EVENT_ID)
-                .collection("waitlist")
-                .document("tom_id")
-                .set(tom), 5, TimeUnit.SECONDS);
+        Tasks.await(
+                db.collection("events")
+                        .document(TEST_EVENT_ID)
+                        .collection("waitlist")
+                        .document("tom_id")
+                        .set(tom),
+                5,
+                TimeUnit.SECONDS
+        );
     }
 
     /**
