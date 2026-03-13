@@ -38,8 +38,8 @@ import java.util.Locale;
  */
 public class EntrantMyEventsActivity extends BaseEntrantActivity {
 
-    /** Hardcoded device ID until auth is implemented. */
-    private static final String DEVICE_ID = "device_demo_001";
+    /** Current entrant id for Firestore queries. */
+    private  String entrantId = "device_demo_001";;
 
     private TextView tabWaiting, tabSelected, tabEnrolled, tabPast;
     private TextView tvTotalRegistrations, tvEnrolledCount;
@@ -76,6 +76,7 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
         setContentView(R.layout.activity_entrant_my_events);
 
         db = FirebaseFirestore.getInstance();
+        entrantId = DeviceIdProvider.getId(this);
 
         initViews();
         setupTabs();
@@ -175,7 +176,7 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
 
                         // Check if this device is in the waitingList subcollection
                         db.collection("events").document(doc.getId())
-                                .collection("waitingList").document(DEVICE_ID)
+                                .collection("waitingList").document(entrantId)
                                 .get()
                                 .addOnSuccessListener(waitDoc -> {
                                     if (waitDoc.exists()) {
@@ -380,4 +381,10 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
             }
         }
     }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadMyEvents();
+    }
+
 }
