@@ -136,7 +136,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                 Toast.makeText(this, "Notifications coming soon", Toast.LENGTH_SHORT).show();
                 return true;
             } else if (id == R.id.nav_profile) {
-                Toast.makeText(this, "Profile coming soon", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(this, ProfileActivity.class));
                 return true;
             }
             return false;
