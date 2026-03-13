@@ -36,7 +36,7 @@ import java.util.Locale;
  *     <li>US 01.05.01 - Another chance if selected user declines (shows re-selected status)</li>
  * </ul>
  */
-public class EntrantMyEventsActivity extends AppCompatActivity {
+public class EntrantMyEventsActivity extends BaseEntrantActivity {
 
     /** Current entrant id for Firestore queries. */
     private  String entrantId = "device_demo_001";;
@@ -81,7 +81,7 @@ public class EntrantMyEventsActivity extends AppCompatActivity {
         initViews();
         setupTabs();
         setupRecyclerView();
-        setupBottomNav();
+        setupBottomNav(R.id.nav_my_events);
         loadMyEvents();
     }
 
@@ -255,32 +255,31 @@ public class EntrantMyEventsActivity extends AppCompatActivity {
         rvMyEvents.setVisibility(View.GONE);
     }
 
-    private void setupBottomNav() {
-        BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
-        bottomNav.setSelectedItemId(R.id.nav_my_events);
-
-        bottomNav.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_my_events) {
-                return true;
-            } else if (id == R.id.nav_home) {
-                startActivity(new Intent(this, EntrantDashboardActivity.class));
-                finish();
-                return true;
-            } else if (id == R.id.nav_scan) {
-                Toast.makeText(this, "Scan coming soon", Toast.LENGTH_SHORT).show();
-                return true;
-            } else if (id == R.id.nav_notifications) {
-                startActivity(new Intent(this, EntrantNotificationsActivity.class));
-                finish();
-                return true;
-            } else if (id == R.id.nav_profile) {
-                Toast.makeText(this, "Profile coming soon", Toast.LENGTH_SHORT).show();
-                return true;
-            }
-            return false;
-        });
-    }
+//    private void setupBottomNav() {
+//        BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
+//        bottomNav.setSelectedItemId(R.id.nav_my_events);
+//
+//        bottomNav.setOnItemSelectedListener(item -> {
+//            int id = item.getItemId();
+//            if (id == R.id.nav_my_events) {
+//                return true;
+//            } else if (id == R.id.nav_home) {
+//                startActivity(new Intent(this, EntrantDashboardActivity.class));
+//                finish();
+//                return true;
+//            } else if (id == R.id.nav_scan) {
+//                Toast.makeText(this, "Scan coming soon", Toast.LENGTH_SHORT).show();
+//                return true;
+//            } else if (id == R.id.nav_notifications) {
+//                Toast.makeText(this, "Notifications coming soon", Toast.LENGTH_SHORT).show();
+//                return true;
+//            } else if (id == R.id.nav_profile) {
+//                Toast.makeText(this, "Profile coming soon", Toast.LENGTH_SHORT).show();
+//                return true;
+//            }
+//            return false;
+//        });
+//    }
 
     /**
      * Inline adapter for the My Events RecyclerView.

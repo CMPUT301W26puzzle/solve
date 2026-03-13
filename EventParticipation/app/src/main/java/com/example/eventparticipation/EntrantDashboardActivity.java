@@ -37,7 +37,7 @@ import java.util.List;
  *     <li>US 01.05.04 - Waiting list count shown on each card</li>
  * </ul>
  */
-public class EntrantDashboardActivity extends AppCompatActivity {
+public class EntrantDashboardActivity extends BaseEntrantActivity {
 
     private RecyclerView rvEntrantEvents;
     private EntrantEventAdapter eventAdapter;
@@ -61,7 +61,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         initViews();
         setupRecyclerView();
         setupSearch();
-        setupBottomNav();
+        setupBottomNav(R.id.nav_home);
         loadEvents();
         setupOptOutToggle();
     }
@@ -120,30 +120,30 @@ public class EntrantDashboardActivity extends AppCompatActivity {
     /**
      * Wires the bottom navigation bar.
      */
-    private void setupBottomNav() {
-        BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
-        bottomNav.setSelectedItemId(R.id.nav_home);
-
-        bottomNav.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_home) {
-                return true;
-            } else if (id == R.id.nav_my_events) {
-                startActivity(new Intent(this, EntrantMyEventsActivity.class));
-                return true;
-            } else if (id == R.id.nav_scan) {
-                Toast.makeText(this, "Scan coming soon", Toast.LENGTH_SHORT).show();
-                return true;
-            } else if (id == R.id.nav_notifications) {
-                startActivity(new Intent(this, EntrantNotificationsActivity.class));
-                return true;
-            } else if (id == R.id.nav_profile) {
-                Toast.makeText(this, "Profile coming soon", Toast.LENGTH_SHORT).show();
-                return true;
-            }
-            return false;
-        });
-    }
+//    private void setupBottomNav() {
+//        BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
+//        bottomNav.setSelectedItemId(R.id.nav_home);
+//
+//        bottomNav.setOnItemSelectedListener(item -> {
+//            int id = item.getItemId();
+//            if (id == R.id.nav_home) {
+//                return true;
+//            } else if (id == R.id.nav_my_events) {
+//                startActivity(new Intent(this, EntrantMyEventsActivity.class));
+//                return true;
+//            } else if (id == R.id.nav_scan) {
+//                Toast.makeText(this, "Scan coming soon", Toast.LENGTH_SHORT).show();
+//                return true;
+//            } else if (id == R.id.nav_notifications) {
+//                Toast.makeText(this, "Notifications coming soon", Toast.LENGTH_SHORT).show();
+//                return true;
+//            } else if (id == R.id.nav_profile) {
+//                startActivity(new Intent(this, ProfileActivity.class));
+//                return true;
+//            }
+//            return false;
+//        });
+//    }
 
     /**
      * Loads all events from the top-level Firestore "events" collection.
