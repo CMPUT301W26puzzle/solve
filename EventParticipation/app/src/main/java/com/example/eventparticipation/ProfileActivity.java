@@ -135,6 +135,12 @@ public class ProfileActivity extends BaseEntrantActivity {
             return;
         }
 
+        if (!phone.isEmpty() && !isValidPhone(phone)) {
+            etPhone.setError("Enter a 10-digit phone number");
+            etPhone.requestFocus();
+            return;
+        }
+
         Map<String, Object> profile = new HashMap<>();
         profile.put("entrantId", entrantId);
         profile.put("role", "entrant");
@@ -148,11 +154,13 @@ public class ProfileActivity extends BaseEntrantActivity {
                 .addOnSuccessListener(unused -> {
                     hasExistingProfileData = true;
                     btnSaveChanges.setText("Update");
+                    android.util.Log.d("ProfileActivity", "save success");
                     Toast.makeText(this, "Profile saved", Toast.LENGTH_SHORT).show();
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to save profile", Toast.LENGTH_SHORT).show()
-                );
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("ProfileActivity", "save failed", e);
+                    Toast.makeText(this, "Failed to save profile", Toast.LENGTH_SHORT).show();
+                });
     }
 
     /**
@@ -175,5 +183,16 @@ public class ProfileActivity extends BaseEntrantActivity {
             return "";
         }
         return editText.getText().toString().trim();
+    }
+
+    /**
+     * Checks whether the phone number contains exactly 10 digits.
+     *
+     * @param phone the phone number entered by the user
+     * @return true if the phone number contains exactly 10 digits; false otherwise
+     */
+    private boolean isValidPhone(String phone) {
+        String digits = phone.replaceAll("\\D", "");
+        return digits.length() == 10;
     }
 }
