@@ -22,3 +22,4 @@ core = { group = "androidx.test", name = "core", version.ref = "core" }
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 
+

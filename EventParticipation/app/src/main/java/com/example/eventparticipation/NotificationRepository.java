@@ -169,6 +169,15 @@ public class NotificationRepository {
      * @param item The notification item containing the event details.
      * @return A Task representing the asynchronous transaction and subsequent redraw operation.
      */
+    /**
+     * Processes an entrant declining an event invitation using a Firestore transaction.
+     * Validates the status, updates it to declined, adjusts event counts, and subsequently
+     * triggers the WaitlistController to draw a replacement applicant.
+     *
+     * @param entrantId The unique identifier of the entrant declining the invite.
+     * @param item The notification item containing the event details.
+     * @return A Task representing the asynchronous transaction and subsequent redraw operation.
+     */
     public Task<Void> declineInvitation(String entrantId, NotificationItem item) {
         if (item == null || item.getEventId() == null || item.getId() == null) {
             return Tasks.forException(new IllegalArgumentException("Missing notification data"));
@@ -178,38 +187,31 @@ public class NotificationRepository {
         DocumentReference waitRef = eventRef.collection("waitingList").document(entrantId);
         DocumentReference notificationRef = getNotificationCollection(entrantId).document(item.getId());
 
-        // Run transaction expecting a String return type (the organizerId needed for the replacement)
-        return db.runTransaction((Transaction.Function<String>) transaction -> {
+        return db.runTransaction((Transaction.Function<Void>) transaction -> {
             DocumentSnapshot waitSnapshot = transaction.get(waitRef);
             if (!waitSnapshot.exists()) {
                 throw new IllegalStateException("Invitation no longer exists");
             }
 
-            // Ensure the entrant is currently in the selected state
             String status = waitSnapshot.getString("status");
             if (!"selected".equals(status)) {
                 throw new IllegalStateException("Invitation is no longer available");
             }
 
-            // Fetch the event document to grab the organizerId needed for the replacement draw
-            DocumentSnapshot eventSnapshot = transaction.get(eventRef);
-            String organizerId = eventSnapshot.getString("organizerId");
-
-            // Atomically update waitlist, event count, and the notification item
             transaction.update(waitRef,
                     "status", "declined",
                     "respondedAt", FieldValue.serverTimestamp());
+
             transaction.update(eventRef,
                     "selectedCount", FieldValue.increment(-1));
+
             transaction.update(notificationRef,
                     "unread", false,
                     "actionRequired", false,
                     "actionStatus", NotificationItem.ACTION_DECLINED,
                     "respondedAt", FieldValue.serverTimestamp());
 
-            // Return the organizerId so the continuation task can use it to draw a replacement
-            return organizerId;
-
+            return null;
         }).continueWithTask(task -> {
             if (!task.isSuccessful()) {
                 Exception exception = task.getException();
@@ -219,15 +221,9 @@ public class NotificationRepository {
                 throw new IllegalStateException("Failed to decline invitation");
             }
 
-            String organizerId = task.getResult();
-
-            // Fallback safety check if organizerId is missing in the database
-            if (organizerId == null || organizerId.trim().isEmpty()) {
-                return Tasks.forResult(null);
-            }
-
-            // Pass BOTH organizerId and eventId to the WaitlistController to fill the open spot
-            return new WaitlistController().drawReplacement(organizerId, item.getEventId()).continueWith(replacementTask -> null);
+            return new WaitlistController()
+                    .drawReplacement(item.getEventId())
+                    .continueWith(replacementTask -> null);
         });
     }
 

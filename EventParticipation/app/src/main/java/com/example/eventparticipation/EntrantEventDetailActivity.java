@@ -1,8 +1,6 @@
 package com.example.eventparticipation;
 
 import android.os.Bundle;
-import android.view.View;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -18,7 +16,9 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Event detail screen for entrants.
@@ -29,9 +29,9 @@ import java.util.Locale;
  *
  * <p>Relevant user stories:</p>
  * <ul>
- *     <li>US 01.01.01 - Join the waiting list</li>
- *     <li>US 01.01.02 - Leave the waiting list</li>
- *     <li>US 01.05.04 - Show waiting list count</li>
+ * <li>US 01.01.01 - Join the waiting list</li>
+ * <li>US 01.01.02 - Leave the waiting list</li>
+ * <li>US 01.05.04 - Show waiting list count</li>
  * </ul>
  */
 public class EntrantEventDetailActivity extends AppCompatActivity {
@@ -39,18 +39,21 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
     /** Firestore document ID of the event being viewed. */
     private String eventId;
 
-    /** Organizer ID that owns this event. */
-    private String organizerId;
-
     /** Current entrant id used for waitlist and notification actions. */
     private String entrantId;
 
     private ImageView ivEventPoster;
-    private TextView tvEventName, tvEventPrice;
-    private TextView tvTag1, tvTag2, tvTag3;
-    private TextView tvEventDate, tvEventTime;
-    private TextView tvVenueName, tvVenueAddress;
-    private TextView tvCapacity, tvEnrolledWaiting;
+    private TextView tvEventName;
+    private TextView tvEventPrice;
+    private TextView tvTag1;
+    private TextView tvTag2;
+    private TextView tvTag3;
+    private TextView tvEventDate;
+    private TextView tvEventTime;
+    private TextView tvVenueName;
+    private TextView tvVenueAddress;
+    private TextView tvCapacity;
+    private TextView tvEnrolledWaiting;
     private TextView tvRegistrationDeadline;
     private TextView tvAbout;
     private MaterialButton btnJoinLeave;
@@ -58,9 +61,12 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private boolean isOnWaitingList = false;
 
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault());
-    private SimpleDateFormat timeFormat = new SimpleDateFormat("h:mm a", Locale.getDefault());
-    private SimpleDateFormat deadlineFormat = new SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault());
+    private final SimpleDateFormat dateFormat =
+            new SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault());
+    private final SimpleDateFormat timeFormat =
+            new SimpleDateFormat("h:mm a", Locale.getDefault());
+    private final SimpleDateFormat deadlineFormat =
+            new SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,9 +75,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
         entrantId = DeviceIdProvider.getId(this);
-
-        eventId    = getIntent().getStringExtra("EVENT_ID");
-        organizerId = getIntent().getStringExtra("ORGANIZER_ID");
+        eventId = getIntent().getStringExtra("EVENT_ID");
 
         initViews();
         loadEventFromIntent();
@@ -82,21 +86,21 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
      * Binds layout views and sets up back button and join/leave button.
      */
     private void initViews() {
-        ivEventPoster        = findViewById(R.id.ivEventPoster);
-        tvEventName          = findViewById(R.id.tvEventName);
-        tvEventPrice         = findViewById(R.id.tvEventPrice);
-        tvTag1               = findViewById(R.id.tvTag1);
-        tvTag2               = findViewById(R.id.tvTag2);
-        tvTag3               = findViewById(R.id.tvTag3);
-        tvEventDate          = findViewById(R.id.tvEventDate);
-        tvEventTime          = findViewById(R.id.tvEventTime);
-        tvVenueName          = findViewById(R.id.tvVenueName);
-        tvVenueAddress       = findViewById(R.id.tvVenueAddress);
-        tvCapacity           = findViewById(R.id.tvCapacity);
-        tvEnrolledWaiting    = findViewById(R.id.tvEnrolledWaiting);
+        ivEventPoster = findViewById(R.id.ivEventPoster);
+        tvEventName = findViewById(R.id.tvEventName);
+        tvEventPrice = findViewById(R.id.tvEventPrice);
+        tvTag1 = findViewById(R.id.tvTag1);
+        tvTag2 = findViewById(R.id.tvTag2);
+        tvTag3 = findViewById(R.id.tvTag3);
+        tvEventDate = findViewById(R.id.tvEventDate);
+        tvEventTime = findViewById(R.id.tvEventTime);
+        tvVenueName = findViewById(R.id.tvVenueName);
+        tvVenueAddress = findViewById(R.id.tvVenueAddress);
+        tvCapacity = findViewById(R.id.tvCapacity);
+        tvEnrolledWaiting = findViewById(R.id.tvEnrolledWaiting);
         tvRegistrationDeadline = findViewById(R.id.tvRegistrationDeadline);
-        tvAbout              = findViewById(R.id.tvAbout);
-        btnJoinLeave         = findViewById(R.id.btnJoinLeave);
+        tvAbout = findViewById(R.id.tvAbout);
+        btnJoinLeave = findViewById(R.id.btnJoinLeave);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
@@ -114,76 +118,82 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
      * Falls back to Firestore fetch if no extras are present.
      */
     private void loadEventFromIntent() {
-        // For now populate with the hardcoded test data passed via intent
-        // When Firestore is wired, replace this with a db.get() call
         tvEventName.setText(getIntent().getStringExtra("EVENT_NAME") != null
-                ? getIntent().getStringExtra("EVENT_NAME") : "Event");
+                ? getIntent().getStringExtra("EVENT_NAME")
+                : "Event");
 
-        // Price badge — hardcoded Free for now
         tvEventPrice.setText("Free");
 
-        // Date / time
         tvEventDate.setText("See event details");
         tvEventTime.setText("");
 
-        // Venue
         String venue = getIntent().getStringExtra("VENUE_ADDRESS");
         tvVenueName.setText(venue != null && !venue.isEmpty() ? venue : "Venue TBD");
         tvVenueAddress.setText("");
 
-        // Capacity / counts
         int capacity = getIntent().getIntExtra("CAPACITY", 0);
         int enrolled = getIntent().getIntExtra("ENROLLED_COUNT", 0);
-        int waiting  = getIntent().getIntExtra("WAITING_COUNT", 0);
+        int waiting = getIntent().getIntExtra("WAITING_COUNT", 0);
+
         tvCapacity.setText("Capacity: " + capacity);
         tvEnrolledWaiting.setText(enrolled + " enrolled • " + waiting + " waiting");
 
-        // Deadline
         tvRegistrationDeadline.setText("N/A");
-
-        // About
         tvAbout.setText("N/A");
 
         if (eventId != null) {
-            loadEventFromFirestore(eventId, organizerId);
+            loadEventFromFirestore(eventId);
         }
     }
 
     /**
-     * Loads full event data from Firestore using the event and organizer IDs.
+     * Loads full event data from Firestore.
      *
-     * @param eventId     Firestore event document ID
-     * @param organizerId organizer document ID
+     * @param eventId Firestore event document ID
      */
-    private void loadEventFromFirestore(String eventId, String organizerId) {
-        db.collection("events").document(eventId)
+    private void loadEventFromFirestore(String eventId) {
+        db.collection("events")
+                .document(eventId)
                 .get()
                 .addOnSuccessListener(doc -> {
-                    if (!doc.exists()) return;
+                    if (!doc.exists()) {
+                        return;
+                    }
+
                     Event event = doc.toObject(Event.class);
-                    if (event == null) return;
+                    if (event == null) {
+                        return;
+                    }
 
                     tvEventName.setText(event.getName());
 
-                    if (event.getStartTime() != null) {
-                        tvEventDate.setText(dateFormat.format(event.getStartTime()));
-                        tvEventTime.setText(timeFormat.format(event.getStartTime()));
+                    if (event.getRegistrationStart() != null) {
+                        tvEventDate.setText(dateFormat.format(event.getRegistrationStart()));
+                        tvEventTime.setText(timeFormat.format(event.getRegistrationStart()));
                     }
 
                     if (event.getVenueAddress() != null) {
                         tvVenueName.setText(event.getVenueAddress());
                     }
 
-                    tvCapacity.setText("Capacity: " + event.getCapacity());
+                    Integer waitlistLimit = event.getWaitlistLimit();
+                    tvCapacity.setText("Capacity: " +
+                            (waitlistLimit == null ? "Unlimited" : waitlistLimit));
+
                     tvEnrolledWaiting.setText(event.getEnrolledCount() + " enrolled • "
                             + event.getWaitingCount() + " waiting");
 
                     if (event.getRegistrationEnd() != null) {
-                        tvRegistrationDeadline.setText(deadlineFormat.format(event.getRegistrationEnd()));
+                        tvRegistrationDeadline.setText(
+                                deadlineFormat.format(event.getRegistrationEnd())
+                        );
                     }
 
                     if (event.getPosterUrl() != null && !event.getPosterUrl().isEmpty()) {
-                        Glide.with(this).load(event.getPosterUrl()).centerCrop().into(ivEventPoster);
+                        Glide.with(this)
+                                .load(event.getPosterUrl())
+                                .centerCrop()
+                                .into(ivEventPoster);
                     }
                 });
     }
@@ -193,10 +203,14 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
      * then updates the button label accordingly.
      */
     private void checkWaitingListStatus() {
-        if (eventId == null) return;
+        if (eventId == null) {
+            return;
+        }
 
-        db.collection("events").document(eventId)
-                .collection("waitingList").document(entrantId)
+        db.collection("events")
+                .document(eventId)
+                .collection("waitlist")
+                .document(entrantId)
                 .get()
                 .addOnSuccessListener(doc -> {
                     String status = doc.getString("status");
@@ -209,7 +223,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * Adds this device to the event's waiting list in Firestore (US 01.01.01).
+     * Adds this device to the event's waiting list in Firestore.
      */
     private void joinWaitingList() {
         if (eventId == null) {
@@ -219,16 +233,16 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
 
         DocumentReference eventRef = db.collection("events").document(eventId);
 
-        // Add device to waitingList subcollection
-        eventRef.collection("waitingList").document(entrantId)
-                .set(new java.util.HashMap<String, Object>() {{
-                    put("deviceId", entrantId);
-                    put("entrantId", entrantId);
-                    put("joinedAt", new Date());
-                    put("status", "waiting");
-                }})
+        Map<String, Object> waitlistEntry = new HashMap<>();
+        waitlistEntry.put("deviceId", entrantId);
+        waitlistEntry.put("entrantId", entrantId);
+        waitlistEntry.put("joinedAt", new Date());
+        waitlistEntry.put("status", "waiting");
+
+        eventRef.collection("waitlist")
+                .document(entrantId)
+                .set(waitlistEntry)
                 .addOnSuccessListener(unused -> {
-                    // Increment waiting count atomically
                     eventRef.update("waitingCount", FieldValue.increment(1));
                     isOnWaitingList = true;
                     updateButton();
@@ -240,13 +254,15 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * Removes this device from the event's waiting list in Firestore (US 01.01.02).
+     * Removes this device from the event's waiting list in Firestore.
      */
     private void leaveWaitingList() {
-        if (eventId == null) return;
+        if (eventId == null) {
+            return;
+        }
 
         DocumentReference eventRef = db.collection("events").document(eventId);
-        DocumentReference waitRef = eventRef.collection("waitingList").document(entrantId);
+        DocumentReference waitRef = eventRef.collection("waitlist").document(entrantId);
 
         waitRef.get().addOnSuccessListener(doc -> {
             String status = doc.getString("status");
@@ -254,7 +270,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
             if ("selected".equals(status)) {
                 declineSelectedInvitation(eventRef, waitRef);
             } else {
-                // Leaving waiting list normally
                 waitRef.delete().addOnSuccessListener(unused -> {
                     eventRef.update("waitingCount", FieldValue.increment(-1));
                     isOnWaitingList = false;
@@ -265,23 +280,30 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         });
     }
 
-
+    /**
+     * Declines a selected invitation and triggers a replacement draw.
+     */
     private void declineSelectedInvitation(DocumentReference eventRef, DocumentReference waitRef) {
         waitRef.update(
                         "status", "declined",
-                        "respondedAt", FieldValue.serverTimestamp())
+                        "respondedAt", FieldValue.serverTimestamp()
+                )
                 .addOnSuccessListener(unused -> {
                     eventRef.update("selectedCount", FieldValue.increment(-1));
                     markInvitationNotificationsDeclined();
-                    triggerRedraw(eventRef);
+                    triggerRedraw();
                     isOnWaitingList = false;
                     updateButton();
                     Toast.makeText(this, "Invitation declined", Toast.LENGTH_SHORT).show();
                 })
                 .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to decline invitation", Toast.LENGTH_SHORT).show());
+                        Toast.makeText(this, "Failed to decline invitation", Toast.LENGTH_SHORT).show()
+                );
     }
 
+    /**
+     * Marks pending selected notifications as declined.
+     */
     private void markInvitationNotificationsDeclined() {
         db.collection("entrants")
                 .document(entrantId)
@@ -294,6 +316,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                     if (querySnapshot.isEmpty()) {
                         return;
                     }
+
                     com.google.firebase.firestore.WriteBatch batch = db.batch();
                     for (DocumentSnapshot notificationDoc : querySnapshot.getDocuments()) {
                         batch.update(notificationDoc.getReference(),
@@ -311,41 +334,54 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
      */
     private void updateButton() {
         if (isOnWaitingList) {
-            // Check what their status is
-            db.collection("events").document(eventId)
-                    .collection("waitingList").document(entrantId)
+            db.collection("events")
+                    .document(eventId)
+                    .collection("waitlist")
+                    .document(entrantId)
                     .get()
                     .addOnSuccessListener(doc -> {
                         String status = doc.getString("status");
                         if ("selected".equals(status)) {
                             btnJoinLeave.setText("Decline Invitation");
                             btnJoinLeave.setBackgroundTintList(
-                                    android.content.res.ColorStateList.valueOf(0xFFCC0000));
+                                    android.content.res.ColorStateList.valueOf(0xFFCC0000)
+                            );
                         } else {
                             btnJoinLeave.setText("Leave Waiting List");
                             btnJoinLeave.setBackgroundTintList(
-                                    android.content.res.ColorStateList.valueOf(0xFFCC0000));
+                                    android.content.res.ColorStateList.valueOf(0xFFCC0000)
+                            );
                         }
                     });
         } else {
             btnJoinLeave.setText("Join Waiting List");
             btnJoinLeave.setBackgroundTintList(
-                    android.content.res.ColorStateList.valueOf(0xFF000000));
+                    android.content.res.ColorStateList.valueOf(0xFF000000)
+            );
         }
     }
 
     /**
-     * Picks a random waiting entrant and promotes them to selected (US 01.05.01).
-     *
-     * @param eventRef reference to the event document
+     * Picks a random waiting entrant and promotes them to selected.
      */
-    private void triggerRedraw(DocumentReference eventRef) {
-        // passed both organizerId and eventId to match the updated WaitlistController signature
-        new WaitlistController().drawReplacement(organizerId, eventId)
+    private void triggerRedraw() {
+        new WaitlistController()
+                .drawReplacement(eventId)
                 .addOnSuccessListener(replacementId -> {
                     if (replacementId != null) {
-                        Toast.makeText(this, "A new entrant has been selected", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(
+                                this,
+                                "A new entrant has been selected",
+                                Toast.LENGTH_SHORT
+                        ).show();
                     }
-                });
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(
+                                this,
+                                "Failed to draw replacement",
+                                Toast.LENGTH_SHORT
+                        ).show()
+                );
     }
 }

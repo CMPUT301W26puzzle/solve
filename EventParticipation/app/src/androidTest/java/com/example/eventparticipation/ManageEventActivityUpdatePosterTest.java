@@ -15,6 +15,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -45,12 +46,16 @@ public class ManageEventActivityUpdatePosterTest {
     public void setUp() throws Exception {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         Map<String, Object> data = new HashMap<>();
-        data.put("name", "Poster Event");
-        data.put("posterUrl", "http://example.com/image.png"); // Crucial for Update button
+        data.put("name", "Tech Conference 2026");
+        data.put("posterUrl", "https://firebasestorage.googleapis.com/v0/b/eventparticipation-7522d.firebasestorage.app/o/posters%2Forganizer_demo_001%2Fevent_001%2Fposter.jpg?alt=media&token=fe4c54df-1a44-4e09-b7e7-c2e55f2a8c1b"); // Crucial for Update button
 
-        Tasks.await(db.collection("organizers").document(ORG_ID)
-                .collection("events").document(EVENT_ID)
-                .set(data), 5, TimeUnit.SECONDS);
+        Tasks.await(
+                db.collection("events")
+                        .document(EVENT_ID)
+                        .set(data, SetOptions.merge()),
+                5,
+                TimeUnit.SECONDS
+        );
     }
 
     @Test

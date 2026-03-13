@@ -51,21 +51,20 @@ public class WaitlistController {
     /**
      * Runs the lottery to randomly select a specified number of entrants from the waiting pool.
      *
-     * @param organizerId The ID of the organizer running the event.
      * @param eventId The ID of the event.
      * @param sampleSize The number of entrants to select.
      * @return A Task that resolves when the batch update completes.
      */
-    public Task<Void> runLottery(String organizerId, String eventId, int sampleSize) {
-        if (organizerId == null || organizerId.trim().isEmpty() || eventId == null || eventId.trim().isEmpty()) {
-            return Tasks.forException(new IllegalArgumentException("Missing organizer or event id"));
+    public Task<Void> runLottery(String eventId, int sampleSize) {
+        if (eventId == null || eventId.trim().isEmpty()) {
+            return Tasks.forException(new IllegalArgumentException("Missing event id"));
         }
         if (sampleSize <= 0) {
             return Tasks.forException(new IllegalArgumentException("Lottery size must be at least 1"));
         }
 
-        // Use the correct nested path for the event
-        DocumentReference eventRef = db.collection("organizers").document(organizerId).collection("events").document(eventId);
+        // Use the correct root path for the event
+        DocumentReference eventRef = db.collection("events").document(eventId);
         Task<DocumentSnapshot> eventTask = eventRef.get();
         // Use the correct "waitlist" collection name
         Task<QuerySnapshot> waitingTask = eventRef.collection("waitlist")
@@ -130,7 +129,6 @@ public class WaitlistController {
                     "selectedCount", FieldValue.increment(winnersCount),
                     "waitingCount", FieldValue.increment(-winnersCount));
 
-            // optionally update event document counts here
             return batch.commit();
         });
     }
@@ -138,16 +136,15 @@ public class WaitlistController {
     /**
      * Draws a single replacement applicant from the waiting pool if a spot opens up.
      *
-     * @param organizerId The ID of the organizer running the event.
      * @param eventId The ID of the event.
      * @return A Task that resolves to the ID of the newly selected entrant, or null if empty.
      */
-    public Task<String> drawReplacement(String organizerId, String eventId) {
-        if (organizerId == null || organizerId.trim().isEmpty() || eventId == null || eventId.trim().isEmpty()) {
-            return Tasks.forException(new IllegalArgumentException("Missing organizer or event id"));
+    public Task<String> drawReplacement(String eventId) {
+        if (eventId == null || eventId.trim().isEmpty()) {
+            return Tasks.forException(new IllegalArgumentException("Missing event id"));
         }
 
-        DocumentReference eventRef = db.collection("organizers").document(organizerId).collection("events").document(eventId);
+        DocumentReference eventRef = db.collection("events").document(eventId);
         Task<DocumentSnapshot> eventTask = eventRef.get();
         Task<QuerySnapshot> waitingTask = eventRef.collection("waitlist")
                 .whereEqualTo("status", "waiting")
@@ -196,7 +193,7 @@ public class WaitlistController {
 
     /**
      * Helper to safely extract an entrant ID from a waitlist document.
-     * * @param entrantSnapshot The document snapshot.
+     * @param entrantSnapshot The document snapshot.
      * @return The extracted entrant ID.
      */
     private String resolveEntrantId(DocumentSnapshot entrantSnapshot) {
