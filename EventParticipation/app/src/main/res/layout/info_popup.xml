@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/zxing_transparent"
+    android:padding="10sp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:strokeColor="@color/gray_700"
+            app:strokeWidth="2sp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/tab_bar_bg"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Lottery Info"
+                    android:textSize="24sp"
+                    android:layout_gravity="center"
+                    android:textStyle="bold"
+                    android:textColor="#000000"
+                    android:layout_marginTop="12sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="The lottery process involves two main features:"
+                    android:textSize="16sp"
+                    android:paddingHorizontal="16sp"
+                    android:paddingVertical="8sp"
+                    android:textColor="@color/gray_900"
+                    android:layout_marginTop="12sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="         • Waitlist\n         • Sign up"
+                    android:textSize="16sp"
+                    android:paddingHorizontal="16sp"
+                    android:paddingVertical="8sp"
+                    android:textColor="@color/gray_900" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Before the event is held, you must join the waitlist. At any time up until the date of the event, you may be\
+randomly chosen from a lottery system, and will receive a notification if they are enabled informing you that you have been chosen."
+                    android:textSize="16sp"
+                    android:paddingVertical="8sp"
+                    android:paddingHorizontal="16sp"
+                    android:textColor="@color/gray_900" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="You may view the event in the 'My Events' tab and sign up, confirming you are attending the event. If you do not confirm via this sign up, your spot\
+may be offered to someone else instead."
+                    android:textSize="16sp"
+                    android:paddingVertical="8sp"
+                    android:paddingHorizontal="16sp"
+                    android:textColor="@color/gray_900" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Once you have signed up for the event, your spot is confirmed and you can view further details about the event date, number of members, etc in the event details screen\
+to keep up to date in case any changes occur."
+                    android:textSize="16sp"
+                    android:paddingHorizontal="16sp"
+                    android:paddingVertical="8sp"
+                    android:textColor="@color/gray_900" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
