@@ -1,8 +1,6 @@
 package com.example.eventparticipation;
 
 import android.os.Bundle;
-import android.view.View;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -39,9 +37,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
     /** Firestore document ID of the event being viewed. */
     private String eventId;
 
-    /** Organizer ID that owns this event. */
-    private String organizerId;
-
     /** Current entrant id used for waitlist and notification actions. */
     private String entrantId;
 
@@ -70,8 +65,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
         entrantId = DeviceIdProvider.getId(this);
 
-        eventId    = getIntent().getStringExtra("EVENT_ID");
-        organizerId = getIntent().getStringExtra("ORGANIZER_ID");
+        eventId = getIntent().getStringExtra("EVENT_ID");
 
         initViews();
         loadEventFromIntent();
@@ -82,21 +76,21 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
      * Binds layout views and sets up back button and join/leave button.
      */
     private void initViews() {
-        ivEventPoster        = findViewById(R.id.ivEventPoster);
-        tvEventName          = findViewById(R.id.tvEventName);
-        tvEventPrice         = findViewById(R.id.tvEventPrice);
-        tvTag1               = findViewById(R.id.tvTag1);
-        tvTag2               = findViewById(R.id.tvTag2);
-        tvTag3               = findViewById(R.id.tvTag3);
-        tvEventDate          = findViewById(R.id.tvEventDate);
-        tvEventTime          = findViewById(R.id.tvEventTime);
-        tvVenueName          = findViewById(R.id.tvVenueName);
-        tvVenueAddress       = findViewById(R.id.tvVenueAddress);
-        tvCapacity           = findViewById(R.id.tvCapacity);
-        tvEnrolledWaiting    = findViewById(R.id.tvEnrolledWaiting);
+        ivEventPoster = findViewById(R.id.ivEventPoster);
+        tvEventName = findViewById(R.id.tvEventName);
+        tvEventPrice = findViewById(R.id.tvEventPrice);
+        tvTag1 = findViewById(R.id.tvTag1);
+        tvTag2 = findViewById(R.id.tvTag2);
+        tvTag3 = findViewById(R.id.tvTag3);
+        tvEventDate = findViewById(R.id.tvEventDate);
+        tvEventTime = findViewById(R.id.tvEventTime);
+        tvVenueName = findViewById(R.id.tvVenueName);
+        tvVenueAddress = findViewById(R.id.tvVenueAddress);
+        tvCapacity = findViewById(R.id.tvCapacity);
+        tvEnrolledWaiting = findViewById(R.id.tvEnrolledWaiting);
         tvRegistrationDeadline = findViewById(R.id.tvRegistrationDeadline);
-        tvAbout              = findViewById(R.id.tvAbout);
-        btnJoinLeave         = findViewById(R.id.btnJoinLeave);
+        tvAbout = findViewById(R.id.tvAbout);
+        btnJoinLeave = findViewById(R.id.btnJoinLeave);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
@@ -134,7 +128,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         // Capacity / counts
         int capacity = getIntent().getIntExtra("CAPACITY", 0);
         int enrolled = getIntent().getIntExtra("ENROLLED_COUNT", 0);
-        int waiting  = getIntent().getIntExtra("WAITING_COUNT", 0);
+        int waiting = getIntent().getIntExtra("WAITING_COUNT", 0);
         tvCapacity.setText("Capacity: " + capacity);
         tvEnrolledWaiting.setText(enrolled + " enrolled • " + waiting + " waiting");
 
@@ -145,17 +139,16 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         tvAbout.setText("N/A");
 
         if (eventId != null) {
-            loadEventFromFirestore(eventId, organizerId);
+            loadEventFromFirestore(eventId);
         }
     }
 
     /**
      * Loads full event data from Firestore using the event and organizer IDs.
      *
-     * @param eventId     Firestore event document ID
-     * @param organizerId organizer document ID
+     * @param eventId Firestore event document ID
      */
-    private void loadEventFromFirestore(String eventId, String organizerId) {
+    private void loadEventFromFirestore(String eventId) {
         db.collection("events").document(eventId)
                 .get()
                 .addOnSuccessListener(doc -> {
@@ -165,16 +158,16 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
 
                     tvEventName.setText(event.getName());
 
-                    if (event.getStartTime() != null) {
-                        tvEventDate.setText(dateFormat.format(event.getStartTime()));
-                        tvEventTime.setText(timeFormat.format(event.getStartTime()));
+                    if (event.getRegistrationStart() != null) {
+                        tvEventDate.setText(dateFormat.format(event.getRegistrationStart()));
+                        tvEventTime.setText(timeFormat.format(event.getRegistrationStart()));
                     }
 
                     if (event.getVenueAddress() != null) {
                         tvVenueName.setText(event.getVenueAddress());
                     }
 
-                    tvCapacity.setText("Capacity: " + event.getCapacity());
+                    tvCapacity.setText("Capacity: " + event.getWaitlistLimit());
                     tvEnrolledWaiting.setText(event.getEnrolledCount() + " enrolled • "
                             + event.getWaitingCount() + " waiting");
 
@@ -196,7 +189,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         if (eventId == null) return;
 
         db.collection("events").document(eventId)
-                .collection("waitingList").document(entrantId)
+                .collection("waitlist").document(entrantId)
                 .get()
                 .addOnSuccessListener(doc -> {
                     String status = doc.getString("status");
@@ -220,7 +213,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         DocumentReference eventRef = db.collection("events").document(eventId);
 
         // Add device to waitingList subcollection
-        eventRef.collection("waitingList").document(entrantId)
+        eventRef.collection("waitlist").document(entrantId)
                 .set(new java.util.HashMap<String, Object>() {{
                     put("deviceId", entrantId);
                     put("entrantId", entrantId);
@@ -246,7 +239,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         if (eventId == null) return;
 
         DocumentReference eventRef = db.collection("events").document(eventId);
-        DocumentReference waitRef = eventRef.collection("waitingList").document(entrantId);
+        DocumentReference waitRef = eventRef.collection("waitlist").document(entrantId);
 
         waitRef.get().addOnSuccessListener(doc -> {
             String status = doc.getString("status");
@@ -264,7 +257,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
             }
         });
     }
-
 
     private void declineSelectedInvitation(DocumentReference eventRef, DocumentReference waitRef) {
         waitRef.update(
@@ -313,7 +305,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         if (isOnWaitingList) {
             // Check what their status is
             db.collection("events").document(eventId)
-                    .collection("waitingList").document(entrantId)
+                    .collection("waitlist").document(entrantId)
                     .get()
                     .addOnSuccessListener(doc -> {
                         String status = doc.getString("status");

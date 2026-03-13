@@ -29,8 +29,8 @@ public class EventModelTest {
     @Test
     public void setAndGetCapacity_returnsSameValue() {
         Event event = new Event();
-        event.setCapacity(100);
-        assertEquals(100, event.getCapacity());
+        event.setWaitlistLimit(100);
+        assertEquals(Integer.valueOf(100), event.getWaitlistLimit());
     }
 
     @Test
@@ -44,8 +44,8 @@ public class EventModelTest {
     public void setAndGetStartTime_returnsSameValue() {
         Event event = new Event();
         Date date = new Date();
-        event.setStartTime(date);
-        assertEquals(date, event.getStartTime());
+        event.setRegistrationStart(date);
+        assertEquals(date, event.getRegistrationStart());
     }
 
     @Test

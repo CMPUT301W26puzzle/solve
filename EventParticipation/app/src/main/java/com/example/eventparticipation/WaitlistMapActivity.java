@@ -1,16 +1,11 @@
 package com.example.eventparticipation;
 
 import android.os.Bundle;
-import android.util.TypedValue;
-import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -21,51 +16,37 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 /**
- * Organizer screen that displays a map of where entrants joined an event waitlist.
+ * Organizer map screen that displays entrant join locations for a specific event.
  *
- * <p>This activity loads entrant locations from the waitlist subcollection
- * and displays them as markers on Google Maps.</p>
+ * <p>This activity loads entrant geolocation data from Firestore and places markers
+ * on a Google Map for each entrant who joined the waitlist with location enabled.</p>
  *
  * <p>Relevant user story:</p>
  * <ul>
- *     <li>US 02.02.02 - View entrant join locations on a map</li>
+ *     <li>US 02.02.02 - View entrant locations on a map</li>
  * </ul>
  */
 public class WaitlistMapActivity extends AppCompatActivity implements OnMapReadyCallback {
 
-    /** Google Map instance after initialization. */
-    private GoogleMap mMap;
-
-    /** Firestore database instance. */
-    private FirebaseFirestore db;
+    /** Firestore event id passed into this activity. */
+    private String eventId;
 
     /** Organizer id passed into this activity. */
     private String organizerId;
 
-    /** Event id passed into this activity. */
-    private String eventId;
+    /** Firestore database instance. */
+    private FirebaseFirestore db;
 
-    /**
-     * Initializes the activity, validates extras, and requests the map asynchronously.
-     *
-     * @param savedInstanceState previously saved state bundle, or null
-     */
+    /** Google Map instance once ready. */
+    private GoogleMap mMap;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_waitlist_map);
 
-        applyWindowInsets();
-        setupToolbar();
-
-        organizerId = getIntent().getStringExtra("ORGANIZER_ID");
         eventId = getIntent().getStringExtra("EVENT_ID");
-
-        if (organizerId == null || organizerId.trim().isEmpty()) {
-            Toast.makeText(this, "Missing ORGANIZER_ID", Toast.LENGTH_LONG).show();
-            finish();
-            return;
-        }
+        organizerId = getIntent().getStringExtra("ORGANIZER_ID");
 
         if (eventId == null || eventId.trim().isEmpty()) {
             Toast.makeText(this, "Missing EVENT_ID", Toast.LENGTH_LONG).show();
@@ -73,61 +54,24 @@ public class WaitlistMapActivity extends AppCompatActivity implements OnMapReady
             return;
         }
 
+        if (organizerId == null || organizerId.trim().isEmpty()) {
+            Toast.makeText(this, "Missing ORGANIZER_ID", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+
         db = FirebaseFirestore.getInstance();
+
+        setupToolbar();
 
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-
         if (mapFragment != null) {
             mapFragment.getMapAsync(this);
+        } else {
+            Toast.makeText(this, "Map failed to load", Toast.LENGTH_LONG).show();
+            finish();
         }
-    }
-
-    /**
-     * Applies status bar insets to the toolbar so that the toolbar content
-     * stays below the system status bar on edge-to-edge devices.
-     */
-    private void applyWindowInsets() {
-        Toolbar toolbar = findViewById(R.id.toolbar);
-
-        final int originalPaddingLeft = toolbar.getPaddingLeft();
-        final int originalPaddingTop = toolbar.getPaddingTop();
-        final int originalPaddingRight = toolbar.getPaddingRight();
-        final int originalPaddingBottom = toolbar.getPaddingBottom();
-        final int originalToolbarHeight = getToolbarHeight();
-
-        ViewCompat.setOnApplyWindowInsetsListener(toolbar, (view, windowInsets) -> {
-            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars());
-
-            view.setPadding(
-                    originalPaddingLeft,
-                    originalPaddingTop + insets.top,
-                    originalPaddingRight,
-                    originalPaddingBottom
-            );
-
-            ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
-            layoutParams.height = originalToolbarHeight + insets.top;
-            view.setLayoutParams(layoutParams);
-
-            return windowInsets;
-        });
-    }
-
-    /**
-     * Returns the default toolbar height from the current theme.
-     *
-     * @return toolbar height in pixels
-     */
-    private int getToolbarHeight() {
-        TypedValue typedValue = new TypedValue();
-        if (getTheme().resolveAttribute(android.R.attr.actionBarSize, typedValue, true)) {
-            return TypedValue.complexToDimensionPixelSize(
-                    typedValue.data,
-                    getResources().getDisplayMetrics()
-            );
-        }
-        return (int) (56 * getResources().getDisplayMetrics().density);
     }
 
     /**
@@ -145,11 +89,6 @@ public class WaitlistMapActivity extends AppCompatActivity implements OnMapReady
         toolbar.setNavigationOnClickListener(v -> finish());
     }
 
-    /**
-     * Handles the toolbar up button.
-     *
-     * @return always returns {@code true}
-     */
     @Override
     public boolean onSupportNavigateUp() {
         finish();
@@ -157,9 +96,9 @@ public class WaitlistMapActivity extends AppCompatActivity implements OnMapReady
     }
 
     /**
-     * Called when the map is ready for use.
+     * Called when the Google Map is ready to be used.
      *
-     * @param googleMap initialized Google Map instance
+     * @param googleMap ready map instance
      */
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
@@ -168,12 +107,10 @@ public class WaitlistMapActivity extends AppCompatActivity implements OnMapReady
     }
 
     /**
-     * Loads waitlist entrant locations from Firestore and places markers on the map.
+     * Loads waitlist entrant locations from Firestore and adds map markers.
      */
     private void loadMarkers() {
-        db.collection("organizers")
-                .document(organizerId)
-                .collection("events")
+        db.collection("events")
                 .document(eventId)
                 .collection("waitlist")
                 .get()

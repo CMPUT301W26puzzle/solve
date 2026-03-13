@@ -269,7 +269,7 @@ public class ManageEventActivity extends AppCompatActivity {
     private void setInitialPlaceholderValues() {
         tvEventName.setText("Event Name");
         tvEventDate.setText("Date not available");
-        tvEventCapacity.setText("Capacity: 0");
+        tvEventCapacity.setText("Waitlist Limit: Unlimited");
 
         tvWaitingCount.setText("0");
         tvSelectedCount.setText("0");
@@ -357,22 +357,23 @@ public class ManageEventActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (!documentSnapshot.exists()) {
-                        loadEventDataFromOrganizerFallback();
+                        Toast.makeText(this, "Event not found", Toast.LENGTH_LONG).show();
+                        finish();
                         return;
                     }
 
                     String name = safe(documentSnapshot.getString("name"));
                     String posterUrl = safe(documentSnapshot.getString("posterUrl"));
 
-                    Long capacityLong = documentSnapshot.getLong("capacity");
-                    int capacity = capacityLong == null ? 0 : capacityLong.intValue();
+                    Long limitLong = documentSnapshot.getLong("waitlistLimit");
+                    String limitText = limitLong == null ? "Unlimited" : String.valueOf(limitLong);
 
-                    Object eventDateObject = documentSnapshot.get("eventDate");
+                    Object eventDateObject = documentSnapshot.get("registrationStart");
                     String formattedDate = formatEventDate(eventDateObject);
 
                     tvEventName.setText(name.isEmpty() ? "Event Name" : name);
                     tvEventDate.setText(formattedDate);
-                    tvEventCapacity.setText("Capacity: " + capacity);
+                    tvEventCapacity.setText("Waitlist Limit: " + limitText);
 
                     currentPosterUrl = posterUrl;
                     hasPoster = !currentPosterUrl.isEmpty();
@@ -387,7 +388,8 @@ public class ManageEventActivity extends AppCompatActivity {
 
                     updatePosterUI();
                 })
-                .addOnFailureListener(e -> loadEventDataFromOrganizerFallback());
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to load event: " + e.getMessage(), Toast.LENGTH_LONG).show());
     }
 
     /**
@@ -395,38 +397,6 @@ public class ManageEventActivity extends AppCompatActivity {
      */
     private void loadWaitlistCounts() {
         db.collection("events")
-                .document(eventId)
-                .collection("waitingList")
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    int waiting = 0;
-                    int selected = 0;
-                    int enrolled = 0;
-
-                    for (QueryDocumentSnapshot doc : querySnapshot) {
-                        String status = doc.getString("status");
-
-                        if ("waiting".equals(status)) {
-                            waiting++;
-                        } else if ("selected".equals(status)) {
-                            selected++;
-                        } else if ("enrolled".equals(status)) {
-                            enrolled++;
-                        }
-                    }
-
-                    tvWaitingCount.setText(String.valueOf(waiting));
-                    tvSelectedCount.setText(String.valueOf(selected));
-                    tvEnrolledCount.setText(String.valueOf(enrolled));
-                })
-                .addOnFailureListener(e -> loadWaitlistCountsFromOrganizerFallback());
-    }
-
-
-    private void loadWaitlistCountsFromOrganizerFallback() {
-        db.collection("organizers")
-                .document(organizerId)
-                .collection("events")
                 .document(eventId)
                 .collection("waitlist")
                 .get()
@@ -506,9 +476,7 @@ public class ManageEventActivity extends AppCompatActivity {
                     currentPosterUrl = downloadUri.toString();
                     hasPoster = true;
 
-                    db.collection("organizers")
-                            .document(organizerId)
-                            .collection("events")
+                    db.collection("events")
                             .document(eventId)
                             .update("posterUrl", currentPosterUrl)
                             .addOnSuccessListener(unused -> {
@@ -530,9 +498,7 @@ public class ManageEventActivity extends AppCompatActivity {
      * Removes the current poster URL from Firestore and resets poster UI state.
      */
     private void removePoster() {
-        db.collection("organizers")
-                .document(organizerId)
-                .collection("events")
+        db.collection("events")
                 .document(eventId)
                 .update("posterUrl", "")
                 .addOnSuccessListener(unused -> {
@@ -570,50 +536,6 @@ public class ManageEventActivity extends AppCompatActivity {
         }
 
         return "Date not available";
-    }
-
-
-    private void loadEventDataFromOrganizerFallback() {
-        db.collection("organizers")
-                .document(organizerId)
-                .collection("events")
-                .document(eventId)
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (!documentSnapshot.exists()) {
-                        Toast.makeText(this, "Event not found", Toast.LENGTH_LONG).show();
-                        finish();
-                        return;
-                    }
-
-                    String name = safe(documentSnapshot.getString("name"));
-                    String posterUrl = safe(documentSnapshot.getString("posterUrl"));
-
-                    Long capacityLong = documentSnapshot.getLong("capacity");
-                    int capacity = capacityLong == null ? 0 : capacityLong.intValue();
-
-                    Object eventDateObject = documentSnapshot.get("eventDate");
-                    String formattedDate = formatEventDate(eventDateObject);
-
-                    tvEventName.setText(name.isEmpty() ? "Event Name" : name);
-                    tvEventDate.setText(formattedDate);
-                    tvEventCapacity.setText("Capacity: " + capacity);
-
-                    currentPosterUrl = posterUrl;
-                    hasPoster = !currentPosterUrl.isEmpty();
-
-                    if (hasPoster) {
-                        Glide.with(this)
-                                .load(currentPosterUrl)
-                                .into(imgEventPoster);
-                    } else {
-                        imgEventPoster.setImageDrawable(null);
-                    }
-
-                    updatePosterUI();
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to load event: " + e.getMessage(), Toast.LENGTH_LONG).show());
     }
 
     /**

@@ -50,7 +50,7 @@ public class WaitlistController {
 
         DocumentReference eventRef = db.collection("events").document(eventId);
         Task<DocumentSnapshot> eventTask = eventRef.get();
-        Task<QuerySnapshot> waitingTask = eventRef.collection("waitingList")
+        Task<QuerySnapshot> waitingTask = eventRef.collection("waitlist")
                 .whereEqualTo("status", "waiting")
                 .get();
 
@@ -73,12 +73,12 @@ public class WaitlistController {
             if (waitingEntrants.isEmpty()) {
                 return Tasks.forResult(null);
             }
-// shuffle the list for randomness
+            // shuffle the list for randomness
             Collections.shuffle(waitingEntrants);
             // pick the winners up to the sample size (or max available)
             int winnersCount = Math.min(sampleSize, waitingEntrants.size());
             String eventName = eventSnapshot != null ? eventSnapshot.getString("name") : "";
-// batch update their status to "selected"
+            // batch update their status to "selected"
             WriteBatch batch = db.batch();
             for (int i = 0; i < waitingEntrants.size(); i++) {
                 DocumentSnapshot entrantSnapshot = waitingEntrants.get(i);
@@ -100,7 +100,7 @@ public class WaitlistController {
             batch.update(eventRef,
                     "selectedCount", FieldValue.increment(winnersCount),
                     "waitingCount", FieldValue.increment(-winnersCount));
-// optionally update event document counts here
+            // optionally update event document counts here
             return batch.commit();
         });
     }
@@ -118,7 +118,7 @@ public class WaitlistController {
 
         DocumentReference eventRef = db.collection("events").document(eventId);
         Task<DocumentSnapshot> eventTask = eventRef.get();
-        Task<QuerySnapshot> waitingTask = eventRef.collection("waitingList")
+        Task<QuerySnapshot> waitingTask = eventRef.collection("waitlist")
                 .whereEqualTo("status", "waiting")
                 .get();
 
