@@ -48,10 +48,10 @@ public class OrganizerDashboardIntentTest {
                 Event event = new Event();
                 event.setId("event_001");
                 event.setName("Sample Event");
-                event.setRegistrationStart(new java.util.Date());
+                event.setStartTime(new java.util.Date());
                 event.setRegistrationStart(new java.util.Date());
                 event.setRegistrationEnd(new java.util.Date());
-                event.setWaitlistLimit(100);
+                event.setCapacity(100);
 
                 eventList.add(event);
 

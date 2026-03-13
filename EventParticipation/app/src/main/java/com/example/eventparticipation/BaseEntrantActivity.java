@@ -8,8 +8,16 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+/**
+ * Base activity for entrant screens with shared bottom navigation behavior.
+ */
 public abstract class BaseEntrantActivity extends AppCompatActivity {
 
+    /**
+     * Sets up the bottom navigation and highlights the currently selected item.
+     *
+     * @param selectedItemId the menu item ID of the current screen
+     */
     protected void setupBottomNav(@IdRes int selectedItemId) {
         BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
         if (bottomNav == null) {
@@ -46,6 +54,11 @@ public abstract class BaseEntrantActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Opens the selected entrant screen and closes the current one.
+     *
+     * @param targetActivity the activity class to open
+     */
     private void openEntrantScreen(Class<?> targetActivity) {
         if (this.getClass().equals(targetActivity)) {
             return;

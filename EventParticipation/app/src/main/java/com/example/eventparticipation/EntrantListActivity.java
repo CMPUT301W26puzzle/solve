@@ -274,7 +274,9 @@ public class EntrantListActivity extends AppCompatActivity {
      * to the in-memory list before filtering is applied.
      */
     private void loadEntrants() {
-        db.collection("events")
+        db.collection("organizers")
+                .document(organizerId)
+                .collection("events")
                 .document(eventId)
                 .collection("waitlist")
                 .orderBy("joinedAt", com.google.firebase.firestore.Query.Direction.ASCENDING)
