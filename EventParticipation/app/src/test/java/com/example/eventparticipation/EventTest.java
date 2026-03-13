@@ -21,8 +21,8 @@ public class EventTest {
         event.setId("test_id");
         event.setOrganizerId("organizer_001");
         event.setName("Spring Music Festival");
-        event.setStartTime(new Date(1740000000000L));
-        event.setCapacity(500);
+        event.setRegistrationStart(new Date(1740000000000L));
+        event.setWaitlistLimit(500);
         event.setRegistrationEnd(new Date(1740100000000L));
         event.setPosterUrl("https://example.com/poster.jpg");
         event.setWaitingCount(234);
@@ -46,7 +46,7 @@ public class EventTest {
     /** Capacity is stored and retrieved correctly. */
     @Test
     public void testCapacity() {
-        assertEquals(500, event.getCapacity());
+        assertEquals(Integer.valueOf(500), event.getWaitlistLimit());
     }
 
     /** Event name is stored and retrieved correctly. */
@@ -122,14 +122,13 @@ public class EventTest {
         Event empty = new Event();
         assertNull(empty.getId());
         assertNull(empty.getName());
-        assertEquals(0, empty.getCapacity());
+        assertNull(empty.getWaitlistLimit());
         assertEquals(0, empty.getWaitingCount());
     }
 
     /** Waiting count cannot exceed capacity (business logic check). */
     @Test
     public void testWaitingDoesNotExceedCapacity() {
-        // waitingCount is separate from enrolled — both can exist simultaneously
         assertTrue(event.getWaitingCount() + event.getEnrolledCount() >= 0);
     }
 }

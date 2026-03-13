@@ -82,8 +82,8 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
         holder.tvEventDescription.setVisibility(View.GONE);
 
         // Date
-        if (event.getStartTime() != null) {
-            holder.tvEventDate.setText(dateFormat.format(event.getStartTime()));
+        if (event.getRegistrationStart() != null) {
+            holder.tvEventDate.setText(dateFormat.format(event.getRegistrationStart()));
         } else {
             holder.tvEventDate.setText("Date TBD");
         }
@@ -93,7 +93,7 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
         holder.tvEventLocation.setText(location != null && !location.isEmpty() ? location : "Location TBD");
 
         // Enrolled / Waiting count (US 01.05.04)
-        String counts = event.getEnrolledCount() + "/" + event.getCapacity()
+        String counts = event.getEnrolledCount() + "/" + event.getWaitlistLimit()
                 + " enrolled • " + event.getWaitingCount() + " waiting";
         holder.tvEventCounts.setText(counts);
 

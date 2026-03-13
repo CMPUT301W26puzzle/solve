@@ -10,13 +10,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.button.MaterialButton;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Organizer dashboard screen that displays summary statistics and event cards.
@@ -56,8 +58,11 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
     /** Firestore database reference. */
     private FirebaseFirestore db;
 
+    /** Prevents duplicate concurrent loads. */
+    private boolean isLoading = false;
+
     /**
-     * Initializes the dashboard and loads organizer events.
+     * Initializes the dashboard.
      *
      * @param savedInstanceState previously saved state bundle
      */
@@ -70,9 +75,12 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
 
         initViews();
         setupRecyclerView();
-        loadEvents();
         setupListeners();
     }
+
+    /**
+     * Reload events whenever returning to this screen.
+     */
     @Override
     protected void onResume() {
         super.onResume();
@@ -90,7 +98,6 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
         layoutLoading = findViewById(R.id.layoutLoading);
         layoutEmptyState = findViewById(R.id.layoutEmptyState);
 
-        //return to entrant (currently just goes back to role select screen)
         findViewById(R.id.btnBackToEntrant).setOnClickListener(v -> {
             Intent intent = new Intent(this, SelectRoleActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -162,8 +169,18 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
 
     /**
      * Loads organizer events from Firestore.
+     *
+     * <p>Reads organizer event references from:
+     * organizers/{organizerId}/events
+     * then fetches the full event documents from:
+     * events/{eventId}</p>
      */
     private void loadEvents() {
+        if (isLoading) {
+            return;
+        }
+        isLoading = true;
+
         layoutLoading.setVisibility(View.VISIBLE);
         layoutEmptyState.setVisibility(View.GONE);
         rvEvents.setVisibility(View.GONE);
@@ -173,33 +190,100 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
                 .collection("events")
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
+
                     eventList.clear();
-
-                    for (QueryDocumentSnapshot doc : querySnapshot) {
-                        Event event = doc.toObject(Event.class);
-                        event.setId(doc.getId());
-                        eventList.add(event);
-                    }
-
-                    updateStatistics();
                     eventAdapter.notifyDataSetChanged();
 
-                    layoutLoading.setVisibility(View.GONE);
-
-                    if (eventList.isEmpty()) {
+                    if (querySnapshot.isEmpty()) {
+                        isLoading = false;
+                        layoutLoading.setVisibility(View.GONE);
                         layoutEmptyState.setVisibility(View.VISIBLE);
                         rvEvents.setVisibility(View.GONE);
-                    } else {
-                        layoutEmptyState.setVisibility(View.GONE);
-                        rvEvents.setVisibility(View.VISIBLE);
+                        return;
+                    }
+
+                    Set<String> loadedEventIds = new HashSet<>();
+                    final int[] remaining = {querySnapshot.size()};
+
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        String eventId = doc.getString("eventId");
+
+                        // Skip invalid references
+                        if (eventId == null || eventId.trim().isEmpty()) {
+                            remaining[0]--;
+                            if (remaining[0] == 0) {
+                                isLoading = false;
+                                finishLoading();
+                            }
+                            continue;
+                        }
+
+                        // Skip duplicate references to the same event
+                        if (loadedEventIds.contains(eventId)) {
+                            remaining[0]--;
+                            if (remaining[0] == 0) {
+                                isLoading = false;
+                                finishLoading();
+                            }
+                            continue;
+                        }
+
+                        loadedEventIds.add(eventId);
+
+                        db.collection("events")
+                                .document(eventId)
+                                .get()
+                                .addOnSuccessListener(eventDoc -> {
+                                    if (eventDoc.exists()) {
+                                        Event event = eventDoc.toObject(Event.class);
+
+                                        if (event != null) {
+                                            event.setId(eventDoc.getId());
+                                            eventList.add(event);
+                                        }
+                                    }
+
+                                    remaining[0]--;
+                                    if (remaining[0] == 0) {
+                                        isLoading = false;
+                                        finishLoading();
+                                    }
+                                })
+                                .addOnFailureListener(e -> {
+                                    remaining[0]--;
+                                    if (remaining[0] == 0) {
+                                        isLoading = false;
+                                        finishLoading();
+                                    }
+                                });
                     }
                 })
                 .addOnFailureListener(e -> {
+                    isLoading = false;
                     layoutLoading.setVisibility(View.GONE);
                     layoutEmptyState.setVisibility(View.VISIBLE);
                     rvEvents.setVisibility(View.GONE);
+
                     Toast.makeText(this, "Failed to load events", Toast.LENGTH_LONG).show();
                 });
+    }
+
+    /**
+     * Finishes loading events and updates UI.
+     */
+    private void finishLoading() {
+        updateStatistics();
+        eventAdapter.notifyDataSetChanged();
+
+        layoutLoading.setVisibility(View.GONE);
+
+        if (eventList.isEmpty()) {
+            layoutEmptyState.setVisibility(View.VISIBLE);
+            rvEvents.setVisibility(View.GONE);
+        } else {
+            layoutEmptyState.setVisibility(View.GONE);
+            rvEvents.setVisibility(View.VISIBLE);
+        }
     }
 
     /**
@@ -217,7 +301,11 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
                 activeEvents++;
             }
 
-            totalCapacity += event.getCapacity();
+            // If your Event model uses capacity, replace this with event.getCapacity()
+            Integer waitlistLimit = event.getWaitlistLimit();
+            if (waitlistLimit != null) {
+                totalCapacity += waitlistLimit;
+            }
         }
 
         tvTotalEvents.setText(String.valueOf(totalEvents));
@@ -225,21 +313,26 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
         tvTotalCapacity.setText(String.valueOf(totalCapacity));
     }
 
+    /**
+     * Sets click listeners for buttons.
+     */
     private void setupListeners() {
-        // setup the main "Create New Event" button
-        com.google.android.material.button.MaterialButton btnCreateEvent = findViewById(R.id.btnCreateEvent);
+        MaterialButton btnCreateEvent = findViewById(R.id.btnCreateEvent);
         btnCreateEvent.setOnClickListener(v -> {
-            // navigate to the creation activity
-            Intent intent = new Intent(OrganizerDashboardActivity.this, CreateEventActivity.class);
+            Intent intent = new Intent(
+                    OrganizerDashboardActivity.this,
+                    CreateEventActivity.class
+            );
             startActivity(intent);
         });
 
-        // setup the "Create Event" button that shows when the list is empty
-        com.google.android.material.button.MaterialButton btnCreateEventEmpty = findViewById(R.id.btnCreateEventEmpty);
+        MaterialButton btnCreateEventEmpty = findViewById(R.id.btnCreateEventEmpty);
         if (btnCreateEventEmpty != null) {
             btnCreateEventEmpty.setOnClickListener(v -> {
-                // navigate to the creation activity
-                Intent intent = new Intent(OrganizerDashboardActivity.this, CreateEventActivity.class);
+                Intent intent = new Intent(
+                        OrganizerDashboardActivity.this,
+                        CreateEventActivity.class
+                );
                 startActivity(intent);
             });
         }

@@ -5,7 +5,10 @@
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="Tests in 'com.example.eventparticipation'">
+      <SelectionState runConfigName="EntrantListActivityTest">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="EntrantListActivity">
         <option name="selectionMode" value="DROPDOWN" />
         <DropdownSelection timestamp="2026-03-13T04:02:12.823788Z">
           <Target type="DEFAULT_BOOT">
@@ -17,6 +20,9 @@
         <DialogSelection />
       </SelectionState>
       <SelectionState runConfigName="ManageEventActivityLotteryTest">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="Tests in 'com.example.eventparticipation'">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>
