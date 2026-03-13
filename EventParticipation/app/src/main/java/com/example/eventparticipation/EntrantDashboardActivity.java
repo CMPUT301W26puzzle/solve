@@ -1,11 +1,13 @@
 package com.example.eventparticipation;
 
 import android.content.Intent;
+import android.media.Image;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -21,6 +23,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -45,6 +48,8 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
 
     private EditText etSearch;
     private CardView btnFilter;
+
+    private ImageButton infoBtn;
     private LinearLayout layoutEmptyState;
     private ProgressBar progressBar;
 
@@ -72,12 +77,21 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
         rvEntrantEvents  = findViewById(R.id.rvEntrantEvents);
         etSearch         = findViewById(R.id.etSearch);
         btnFilter        = findViewById(R.id.btnFilter);
+        infoBtn          = findViewById(R.id.infoBtn);
         layoutEmptyState = findViewById(R.id.layoutEmptyState);
         progressBar      = findViewById(R.id.progressBar);
 
         btnFilter.setOnClickListener(v ->
-                Toast.makeText(this, "Filter coming soon", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Filter coming soon", Toast.LENGTH_SHORT).show()
         );
+
+        infoBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getApplicationContext(), InfoPopup.class);
+                startActivity(intent);
+            }
+        });
     }
 
     /**
@@ -90,6 +104,7 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
         eventAdapter = new EntrantEventAdapter(filteredEvents, event -> {
             Intent intent = new Intent(this, EntrantEventDetailActivity.class);
             intent.putExtra("EVENT_ID", event.getId());
+            intent.putExtra("ORGANIZER_ID", event.getOrganizerId());
             intent.putExtra("EVENT_NAME", event.getName());
             intent.putExtra("VENUE_ADDRESS", event.getVenueAddress());
             intent.putExtra("CAPACITY", event.getWaitlistLimit());
