@@ -34,6 +34,7 @@ import java.util.Locale;
  * <p>Relevant user stories:</p>
  * <ul>
  *     <li>US 01.05.01 - Another chance if selected user declines (shows re-selected status)</li>
+ *     <li>US 01.02.03 - As an entrant, I want to have a history of events I have registered for, whether I was selected or not.</li>
  * </ul>
  */
 public class EntrantMyEventsActivity extends BaseEntrantActivity {
@@ -227,9 +228,29 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
      */
     private void filterAndDisplay() {
         List<MyEventItem> filtered = new ArrayList<>();
+
         for (MyEventItem item : allItems) {
-            if (item.status.equals(currentTab)) {
-                filtered.add(item);
+            String status = item.status;
+
+            if ("waiting".equals(currentTab)) {
+                if ("waiting".equals(status) || "waitlist".equals(status)) {
+                    filtered.add(item);
+                }
+            } else if ("selected".equals(currentTab)) {
+                if ("selected".equals(status)) {
+                    filtered.add(item);
+                }
+            } else if ("enrolled".equals(currentTab)) {
+                if ("enrolled".equals(status)) {
+                    filtered.add(item);
+                }
+            } else if ("past".equals(currentTab)) {
+                if ("declined".equals(status)
+                        || "cancelled".equals(status)
+                        || "not_selected".equals(status)
+                        || "not selected".equals(status)) {
+                    filtered.add(item);
+                }
             }
         }
 
@@ -238,10 +259,18 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
         if (filtered.isEmpty()) {
             rvMyEvents.setVisibility(View.GONE);
             switch (currentTab) {
-                case "waiting":  showEmpty("You're not on any waiting lists"); break;
-                case "selected": showEmpty("You haven't been selected yet"); break;
-                case "enrolled": showEmpty("You're not enrolled in any events"); break;
-                case "past":     showEmpty("No past events"); break;
+                case "waiting":
+                    showEmpty("You're not on any waiting lists");
+                    break;
+                case "selected":
+                    showEmpty("You haven't been selected yet");
+                    break;
+                case "enrolled":
+                    showEmpty("You're not enrolled in any events");
+                    break;
+                case "past":
+                    showEmpty("No past events");
+                    break;
             }
         } else {
             layoutEmptyState.setVisibility(View.GONE);
@@ -316,23 +345,38 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
 
             // Status badge
             holder.tvStatus.setText(capitalize(item.status));
-            switch (item.status) {
-                case "waiting":
-                    holder.tvStatus.setTextColor(0xFFCC0000);
-                    holder.tvStatus.setBackgroundResource(R.drawable.badge_status);
-                    break;
-                case "selected":
-                    holder.tvStatus.setTextColor(0xFF1565C0);
-                    holder.tvStatus.setBackgroundResource(R.drawable.badge_status);
-                    break;
-                case "enrolled":
-                    holder.tvStatus.setTextColor(0xFF2E7D32);
-                    holder.tvStatus.setBackgroundResource(R.drawable.badge_status);
-                    break;
-                default:
-                    holder.tvStatus.setTextColor(0xFF888888);
-                    holder.tvStatus.setBackgroundResource(R.drawable.badge_status);
-                    break;
+            String status = item.status;
+
+            if ("waiting".equals(status) || "waitlist".equals(status)) {
+                holder.tvStatus.setText("Waitlist");
+                holder.tvStatus.setTextColor(0xFFCC0000);
+                holder.tvStatus.setBackgroundResource(R.drawable.badge_status);
+
+            } else if ("selected".equals(status)) {
+                holder.tvStatus.setText("Selected");
+                holder.tvStatus.setTextColor(0xFF1565C0);
+                holder.tvStatus.setBackgroundResource(R.drawable.badge_status);
+
+            } else if ("enrolled".equals(status)) {
+                holder.tvStatus.setText("Enrolled");
+                holder.tvStatus.setTextColor(0xFF2E7D32);
+                holder.tvStatus.setBackgroundResource(R.drawable.badge_status);
+
+            } else if ("declined".equals(status)
+                    || "cancelled".equals(status)) {
+                holder.tvStatus.setText("Cancelled");
+                holder.tvStatus.setTextColor(0xFF8E24AA);
+                holder.tvStatus.setBackgroundResource(R.drawable.badge_status);
+
+            } else if ("not_selected".equals(status) || "not selected".equals(status)) {
+                holder.tvStatus.setText("Not Selected");
+                holder.tvStatus.setTextColor(0xFF616161);
+                holder.tvStatus.setBackgroundResource(R.drawable.badge_status);
+
+            } else {
+                holder.tvStatus.setText(status != null ? status : "Unknown");
+                holder.tvStatus.setTextColor(0xFF888888);
+                holder.tvStatus.setBackgroundResource(R.drawable.badge_status);
             }
 
             // Poster
