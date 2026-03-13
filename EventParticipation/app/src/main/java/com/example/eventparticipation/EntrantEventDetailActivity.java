@@ -147,7 +147,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         tvAbout.setText("N/A");
 
         if (eventId != null) {
-            loadEventFromFirestore(eventId, organizerId);
+            loadEventFromFirestore(eventId);
         }
     }
 
@@ -155,7 +155,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
      * Loads full event data from Firestore.
      *
      * @param eventId     Firestore event document ID
-     * @param organizerId organizer document ID
+
      */
     private void loadEventFromFirestore(String eventId) {
         db.collection("events")
