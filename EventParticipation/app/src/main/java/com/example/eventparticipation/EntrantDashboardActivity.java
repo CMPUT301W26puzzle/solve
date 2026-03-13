@@ -21,6 +21,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -76,7 +77,7 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
         progressBar      = findViewById(R.id.progressBar);
 
         btnFilter.setOnClickListener(v ->
-                Toast.makeText(this, "Filter coming soon", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Filter coming soon", Toast.LENGTH_SHORT).show()
         );
     }
 
@@ -90,9 +91,10 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
         eventAdapter = new EntrantEventAdapter(filteredEvents, event -> {
             Intent intent = new Intent(this, EntrantEventDetailActivity.class);
             intent.putExtra("EVENT_ID", event.getId());
+            intent.putExtra("ORGANIZER_ID", event.getOrganizerId());
             intent.putExtra("EVENT_NAME", event.getName());
             intent.putExtra("VENUE_ADDRESS", event.getVenueAddress());
-            intent.putExtra("CAPACITY", event.getWaitlistLimit());
+            intent.putExtra("CAPACITY", event.getCapacity());
             intent.putExtra("ENROLLED_COUNT", event.getEnrolledCount());
             intent.putExtra("WAITING_COUNT", event.getWaitingCount());
             startActivity(intent);
