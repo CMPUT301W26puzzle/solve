@@ -29,9 +29,9 @@ import java.util.Map;
  *
  * <p>Relevant user stories:</p>
  * <ul>
- *     <li>US 01.01.01 - Join the waiting list</li>
- *     <li>US 01.01.02 - Leave the waiting list</li>
- *     <li>US 01.05.04 - Show waiting list count</li>
+ * <li>US 01.01.01 - Join the waiting list</li>
+ * <li>US 01.01.02 - Leave the waiting list</li>
+ * <li>US 01.05.04 - Show waiting list count</li>
  * </ul>
  */
 public class EntrantEventDetailActivity extends AppCompatActivity {

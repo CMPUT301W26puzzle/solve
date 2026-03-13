@@ -22,9 +22,9 @@ import java.util.Map;
  *
  * <p>Relevant user stories:</p>
  * <ul>
- *     <li>US 01.02.01 - As an entrant, I want to provide my personal information such as name, email and optional phone number in the app</li>
- *     <li>US 01.02.02 - As an entrant I want to update information such as name, email and contact information on my profile</li>
- *     <li>US 01.02.04 - As an entrant, I want to delete my profile if I no longer wish to use the app</li>
+ * <li>US 01.02.01 - As an entrant, I want to provide my personal information such as name, email and optional phone number in the app</li>
+ * <li>US 01.02.02 - As an entrant I want to update information such as name, email and contact information on my profile</li>
+ * <li>US 01.02.04 - As an entrant, I want to delete my profile if I no longer wish to use the app</li>
  * </ul>
  */
 public class ProfileActivity extends BaseEntrantActivity {
@@ -248,7 +248,7 @@ public class ProfileActivity extends BaseEntrantActivity {
                     for (com.google.firebase.firestore.QueryDocumentSnapshot eventDoc : eventsSnapshot) {
                         batch.delete(
                                 eventDoc.getReference()
-                                        .collection("waitList")
+                                        .collection("waitlist")
                                         .document(entrantId)
                         );
                     }

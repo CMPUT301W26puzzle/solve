@@ -280,14 +280,14 @@ public class ProfileActivityTest {
 
         Tasks.await(
                 db.collection("events").document(TEST_EVENT_1)
-                        .collection("waitList").document(TEST_ENTRANT_ID)
+                        .collection("waitlist").document(TEST_ENTRANT_ID)
                         .set(waitingEntry),
                 10, TimeUnit.SECONDS
         );
 
         Tasks.await(
                 db.collection("events").document(TEST_EVENT_2)
-                        .collection("waitList").document(TEST_ENTRANT_ID)
+                        .collection("waitlist").document(TEST_ENTRANT_ID)
                         .set(waitingEntry),
                 10, TimeUnit.SECONDS
         );
@@ -304,13 +304,13 @@ public class ProfileActivityTest {
 
             DocumentSnapshot waiting1 = waitForDocumentState(
                     db.collection("events").document(TEST_EVENT_1)
-                            .collection("waitList").document(TEST_ENTRANT_ID),
+                            .collection("waitlist").document(TEST_ENTRANT_ID),
                     false
             );
 
             DocumentSnapshot waiting2 = waitForDocumentState(
                     db.collection("events").document(TEST_EVENT_2)
-                            .collection("waitList").document(TEST_ENTRANT_ID),
+                            .collection("waitlist").document(TEST_ENTRANT_ID),
                     false
             );
 
