@@ -43,6 +43,9 @@ public class Entrant {
     /** Timestamp indicating when the entrant joined the waitlist. */
     private Date joinedAt;
 
+    /** Flag indicating if the entrant has opted out of notifications. */
+    private boolean optOutNotifications;
+
     /**
      * Required empty constructor for Firestore deserialization.
      */
@@ -241,5 +244,21 @@ public class Entrant {
                 ", entrantName='" + entrantName + '\'' +
                 ", status='" + status + '\'' +
                 '}';
+    }
+
+    /**
+     * Checks if the entrant opted out of notifications.
+     * @return true if opted out, false otherwise.
+     */
+    public boolean isOptOutNotifications() {
+        return optOutNotifications;
+    }
+
+    /**
+     * Sets the entrant's notification preference.
+     * @param optOutNotifications true to opt out, false to receive.
+     */
+    public void setOptOutNotifications(boolean optOutNotifications) {
+        this.optOutNotifications = optOutNotifications;
     }
 }
