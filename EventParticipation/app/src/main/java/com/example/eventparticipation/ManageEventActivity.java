@@ -284,7 +284,7 @@ public class ManageEventActivity extends AppCompatActivity {
     private void setInitialPlaceholderValues() {
         tvEventName.setText("Event Name");
         tvEventDate.setText("Date not available");
-        tvEventCapacity.setText("Waitlist Limit: Unlimited");
+        tvEventCapacity.setText("Capacity: 0");
 
         tvWaitingCount.setText("0");
         tvSelectedCount.setText("0");
@@ -409,15 +409,19 @@ public class ManageEventActivity extends AppCompatActivity {
                     String name = safe(documentSnapshot.getString("name"));
                     String posterUrl = safe(documentSnapshot.getString("posterUrl"));
 
-                    Long limitLong = documentSnapshot.getLong("waitlistLimit");
-                    String limitText = limitLong == null ? "Unlimited" : String.valueOf(limitLong);
+                    // Raw Long object parsed from the capacity document field
+                    Long capacityLong = documentSnapshot.getLong("capacity");
+                    // Base integer value denoting maximum possible enrolled participants
+                    int capacity = capacityLong == null ? 0 : capacityLong.intValue();
 
-                    Object eventDateObject = documentSnapshot.get("registrationStart");
+                    // Weakly typed object containing the raw Firestore date entry
+                    Object eventDateObject = documentSnapshot.get("eventDate");
+                    // Human readable date string converted dynamically from the date object
                     String formattedDate = formatEventDate(eventDateObject);
 
                     tvEventName.setText(name.isEmpty() ? "Event Name" : name);
                     tvEventDate.setText(formattedDate);
-                    tvEventCapacity.setText("Waitlist Limit: " + limitText);
+                    tvEventCapacity.setText("Capacity: " + capacity);
 
                     currentPosterUrl = posterUrl;
                     hasPoster = !currentPosterUrl.isEmpty();
@@ -440,7 +444,9 @@ public class ManageEventActivity extends AppCompatActivity {
      * Loads waitlist entries and counts waiting, selected, and enrolled entrants.
      */
     private void loadWaitlistCounts() {
-        db.collection("events")
+        db.collection("organizers")
+                .document(organizerId)
+                .collection("events")
                 .document(eventId)
                 .collection("waitlist")
                 .get()
@@ -526,7 +532,9 @@ public class ManageEventActivity extends AppCompatActivity {
                     currentPosterUrl = downloadUri.toString();
                     hasPoster = true;
 
-                    db.collection("events")
+                    db.collection("organizers")
+                            .document(organizerId)
+                            .collection("events")
                             .document(eventId)
                             .update("posterUrl", currentPosterUrl)
                             .addOnSuccessListener(unused -> {
@@ -548,7 +556,9 @@ public class ManageEventActivity extends AppCompatActivity {
      * Removes the current poster URL from Firestore and resets poster UI state.
      */
     private void removePoster() {
-        db.collection("events")
+        db.collection("organizers")
+                .document(organizerId)
+                .collection("events")
                 .document(eventId)
                 .update("posterUrl", "")
                 .addOnSuccessListener(unused -> {
