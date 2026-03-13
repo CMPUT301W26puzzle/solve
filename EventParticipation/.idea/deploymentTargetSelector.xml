@@ -8,10 +8,7 @@
       <SelectionState runConfigName="Tests in 'com.example.eventparticipation'">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="SelectRoleActivityTest">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
-      <SelectionState runConfigName="WaitlistMapActivityTest">
+      <SelectionState runConfigName="ManageEventActivityUpdatePosterTest">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>

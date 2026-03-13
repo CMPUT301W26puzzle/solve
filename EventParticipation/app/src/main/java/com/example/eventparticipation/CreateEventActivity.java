@@ -12,7 +12,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.datepicker.MaterialDatePicker;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
@@ -75,8 +74,7 @@ public class CreateEventActivity extends AppCompatActivity {
     /** Entry point for Firebase Storage operations. */
     private FirebaseStorage storage;
 
-    /**
-     * Launcher for the GET_CONTENT intent to pick images from the device gallery.
+    /** Launcher for the GET_CONTENT intent to pick images from the device gallery.
      */
     private final ActivityResultLauncher<String> picker = registerForActivityResult(
             new ActivityResultContracts.GetContent(), uri -> {
@@ -140,7 +138,7 @@ public class CreateEventActivity extends AppCompatActivity {
      * Validates required inputs and initiates the save process.
      */
     private void startSave() {
-        if (etName.getText().toString().trim().isEmpty()) {
+        if (etName.getText().toString().isEmpty()) {
             Toast.makeText(this, "Event name is required", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -151,11 +149,9 @@ public class CreateEventActivity extends AppCompatActivity {
             Integer parsedLimit = null;
             String limitText = etWaitlistLimit.getText().toString().trim();
             if (!limitText.isEmpty()) {
-                try {
-                    parsedLimit = Integer.parseInt(limitText);
-                } catch (NumberFormatException ignored) {}
+                try { parsedLimit = Integer.parseInt(limitText); }
+                catch (NumberFormatException ignored) {}
             }
-
             saveToFirestore(
                     etName.getText().toString().trim(), // name
                     organizerId,                        // organizerId
@@ -184,10 +180,12 @@ public class CreateEventActivity extends AppCompatActivity {
         String path = "posters/" + System.currentTimeMillis() + ".jpg";
         StorageReference ref = storage.getReference().child(path);
 
+        // TODO: unhardcode these
         String address = "";
         Double lat = 53.5232;
         Double lng = -113.5263;
 
+        // safely parse the waitlist limit before the upload starts
         Integer parsedLimit = null;
         String limitText = etWaitlistLimit.getText().toString().trim();
         if (!limitText.isEmpty()) {
@@ -195,16 +193,10 @@ public class CreateEventActivity extends AppCompatActivity {
                 parsedLimit = Integer.parseInt(limitText);
             } catch (NumberFormatException ignored) {}
         }
-
         final Integer finalWaitlistLimit = parsedLimit;
 
         ref.putFile(selectedImageUri)
-                .continueWithTask(task -> {
-                    if (!task.isSuccessful() && task.getException() != null) {
-                        throw task.getException();
-                    }
-                    return ref.getDownloadUrl();
-                })
+                .continueWithTask(task -> ref.getDownloadUrl())
                 .addOnSuccessListener(uri -> saveToFirestore(
                         etName.getText().toString().trim(), // name
                         organizerId,                        // organizerId
@@ -222,16 +214,12 @@ public class CreateEventActivity extends AppCompatActivity {
                         regEnd,                             // registrationEnd
                         finalWaitlistLimit                  // waitlistLimit
                 ))
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> Toast.makeText(this, "Upload failed", Toast.LENGTH_SHORT).show());
     }
 
     /**
      * Packages the event details into a map and saves it as a new document in Firestore.
      * Every possible field from the Event model is accepted as an input parameter.
-     * If any parameter is passed as null, the method applies a safe default to ensure
-     * the resulting document strictly matches the Event.java model, preventing
-     * NullPointerExceptions in the UI adapters.
      *
      * @param name                The display name or title of the event.
      * @param organizerId         The ID of the currently logged-in organizer.
@@ -268,6 +256,7 @@ public class CreateEventActivity extends AppCompatActivity {
 
         Map<String, Object> map = new HashMap<>();
 
+        // strings
         map.put("name", name != null ? name : "");
         map.put("organizerId", organizerId != null ? organizerId : "");
         map.put("facilityId", facilityId != null ? facilityId : "");
@@ -275,47 +264,44 @@ public class CreateEventActivity extends AppCompatActivity {
         map.put("qrCodeUrl", qrCodeUrl != null ? qrCodeUrl : "");
         map.put("venueAddress", venueAddress != null ? venueAddress : "");
 
+        // booleans
         map.put("geolocationRequired", geolocationRequired != null ? geolocationRequired : false);
 
+        // numbers
         map.put("enrolledCount", enrolledCount != null ? enrolledCount : 0);
         map.put("waitingCount", waitingCount != null ? waitingCount : 0);
         map.put("selectedCount", selectedCount != null ? selectedCount : 0);
         map.put("venueLat", venueLat != null ? venueLat : 0.0);
         map.put("venueLng", venueLng != null ? venueLng : 0.0);
 
+        // dates
         Date fallbackDate = new Date();
         map.put("registrationStart", registrationStart != null ? registrationStart : fallbackDate);
         map.put("registrationEnd", registrationEnd != null ? registrationEnd : fallbackDate);
 
         map.put("waitlistLimit", waitlistLimit);
 
-        String safeOrganizerId = organizerId != null && !organizerId.isEmpty()
-                ? organizerId
-                : "unknown_organizer";
+        String safeOrganizerId = organizerId != null && !organizerId.isEmpty() ? organizerId : "unknown_organizer";
 
-        String newEventId = db.collection("events").document().getId();
-        map.put("id", newEventId);
+        // save to the new root structure: /events/
+        db.collection("events")
+                .add(map)
+                .addOnSuccessListener(docRef -> {
+                    String newEventId = docRef.getId();
 
-        DocumentReference eventRef = db.collection("events").document(newEventId);
-
-        eventRef.set(map)
-                .addOnSuccessListener(unused -> {
-                    Map<String, Object> organizerEventMap = new HashMap<>();
-                    organizerEventMap.put("eventId", newEventId);
-                    organizerEventMap.put("name", name != null ? name : "");
-                    organizerEventMap.put("createdAt", FieldValue.serverTimestamp());
+                    // Maintain reference structure in organizers collection
+                    Map<String, Object> orgRefMap = new HashMap<>();
+                    orgRefMap.put("createdAt", FieldValue.serverTimestamp());
 
                     db.collection("organizers")
                             .document(safeOrganizerId)
                             .collection("events")
                             .document(newEventId)
-                            .set(organizerEventMap)
-                            .addOnSuccessListener(unusedIndex -> {
-                                uploadQRCode(newEventId, safeOrganizerId, eventRef);
-                            })
-                            .addOnFailureListener(e ->
-                                    Toast.makeText(this, "Event created, but organizer index failed to save: " + e.getMessage(), Toast.LENGTH_SHORT).show()
-                            );
+                            .set(orgRefMap)
+                            .addOnSuccessListener(aVoid -> {
+                                // Generate and upload the QR Code
+                                uploadQRCode(newEventId, safeOrganizerId, docRef);
+                            });
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Failed to create event: " + e.getMessage(), Toast.LENGTH_SHORT).show()
@@ -326,17 +312,21 @@ public class CreateEventActivity extends AppCompatActivity {
      * Generates a QR Code Bitmap for the new Event ID, uploads it to Firebase Storage,
      * and links the resulting URL back to the Firestore document.
      */
-    private void uploadQRCode(String eventId, String orgId, DocumentReference docRef) {
+    private void uploadQRCode(String eventId, String orgId, com.google.firebase.firestore.DocumentReference docRef) {
         try {
+            // generate the QR Code bitmap
             Bitmap qrCode = QRCodeGenerator.generateQRCode(eventId, 500);
 
+            // convert to byte array
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             qrCode.compress(Bitmap.CompressFormat.PNG, 100, baos);
             byte[] data = baos.toByteArray();
 
+            // set storage path (e.g., qrcodes/organizer123/eventABC.png)
             String qrPath = "qrcodes/" + orgId + "/" + eventId + ".png";
             StorageReference qrRef = storage.getReference().child(qrPath);
 
+            // upload and retrieve URL
             qrRef.putBytes(data)
                     .continueWithTask(task -> {
                         if (!task.isSuccessful() && task.getException() != null) {
@@ -345,13 +335,10 @@ public class CreateEventActivity extends AppCompatActivity {
                         return qrRef.getDownloadUrl();
                     })
                     .addOnSuccessListener(uri -> {
+                        // update the Firestore document with the qrCodeUrl
                         docRef.update("qrCodeUrl", uri.toString())
                                 .addOnSuccessListener(aVoid -> {
                                     Toast.makeText(this, "Event successfully created!", Toast.LENGTH_SHORT).show();
-                                    finish();
-                                })
-                                .addOnFailureListener(e -> {
-                                    Toast.makeText(this, "Event created, but failed to save QR URL.", Toast.LENGTH_SHORT).show();
                                     finish();
                                 });
                     })
