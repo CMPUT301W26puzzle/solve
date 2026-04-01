@@ -38,7 +38,7 @@ import java.util.Locale;
 public class EntrantMyEventsActivity extends BaseEntrantActivity {
 
     /** Current entrant id for Firestore queries. */
-    private  String entrantId = "device_demo_001";;
+    private  String entrantId = "device_demo_001";
 
     private TextView tabWaiting, tabSelected, tabEnrolled, tabPast;
     private TextView tvTotalRegistrations, tvEnrolledCount;
@@ -280,32 +280,6 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
         layoutEmptyState.setVisibility(View.VISIBLE);
         rvMyEvents.setVisibility(View.GONE);
     }
-
-//    private void setupBottomNav() {
-//        BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
-//        bottomNav.setSelectedItemId(R.id.nav_my_events);
-//
-//        bottomNav.setOnItemSelectedListener(item -> {
-//            int id = item.getItemId();
-//            if (id == R.id.nav_my_events) {
-//                return true;
-//            } else if (id == R.id.nav_home) {
-//                startActivity(new Intent(this, EntrantDashboardActivity.class));
-//                finish();
-//                return true;
-//            } else if (id == R.id.nav_scan) {
-//                Toast.makeText(this, "Scan coming soon", Toast.LENGTH_SHORT).show();
-//                return true;
-//            } else if (id == R.id.nav_notifications) {
-//                Toast.makeText(this, "Notifications coming soon", Toast.LENGTH_SHORT).show();
-//                return true;
-//            } else if (id == R.id.nav_profile) {
-//                Toast.makeText(this, "Profile coming soon", Toast.LENGTH_SHORT).show();
-//                return true;
-//            }
-//            return false;
-//        });
-//    }
 
     /**
      * Inline adapter for the My Events RecyclerView.
