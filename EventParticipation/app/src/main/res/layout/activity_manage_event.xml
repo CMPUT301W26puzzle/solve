@@ -109,7 +109,6 @@
                             android:layout_marginStart="8dp" />
 
                     </LinearLayout>
-
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
@@ -395,8 +394,15 @@
                         android:text="Run Lottery"
                         app:icon="@drawable/ic_trophy"
                         app:cornerRadius="8dp"
-                        android:backgroundTint="@color/yellow_600"
-                        android:layout_marginBottom="8dp" />
+                        android:backgroundTint="@color/yellow_600" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDrawReplacement"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Draw Replacement Applicant"
+                        app:icon="@drawable/ic_refresh" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnShowQRCode"

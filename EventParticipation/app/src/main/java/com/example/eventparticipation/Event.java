@@ -6,9 +6,8 @@ import java.util.Date;
  * Model class representing an event with lottery and requirement settings.
  *
  * <p>Acts as the primary Data Transfer Object (DTO) for Firebase Firestore,
- * encapsulating all details of an event including its waitlist restrictions, capacity,
+ * encapsulating all details of an event including its waitlist restrictions,
  * promotional materials, and schedule.</p>
- *
  *
  * <p>Relevant user stories:</p>
  * <ul>
@@ -131,25 +130,7 @@ public class Event {
      */
     public void setName(String name) { this.name = name; }
 
-    /**
-     * Retrieves the scheduled start time of the event.
-     *
-     * @return The event's start time as a {@link Date} object.
-     */
-    public Date getStartTime() { return startTime; }
 
-    /**
-     * Sets the scheduled start time of the event.
-     *
-     * @param startTime The start time to set.
-     */
-    public void setStartTime(Date startTime) { this.startTime = startTime; }
-
-    /**
-     * Retrieves the opening date and time for event registration.
-     *
-     * @return The registration start date.
-     */
     public Date getRegistrationStart() { return registrationStart; }
 
     /**
@@ -272,7 +253,7 @@ public class Event {
     public void setWaitingCount(int waitingCount) { this.waitingCount = waitingCount; }
 
     /**
-     * Retrieves the number of entrants currently waiting on the waitlist.
+     * Retrieves the number of entrants currently selected from the waitlist.
      *
      * @return The count of selected entrants.
      */

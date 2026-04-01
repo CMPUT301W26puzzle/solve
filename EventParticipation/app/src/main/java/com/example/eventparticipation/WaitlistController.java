@@ -22,15 +22,30 @@ import java.util.List;
  *
  * <p>Relevant user stories:</p>
  * <ul>
+ * <li>US 01.04.03 Opt out of receiving notifications</li>
  * <li>US 02.05.02 Sample a specified number of attendees (Lottery)</li>
  * <li>US 02.05.03 Draw a replacement applicant</li>
  * </ul>
  */
 public class WaitlistController {
+    /** Firestore database instance. */
     private final FirebaseFirestore db;
 
+    /**
+     * Initializes the controller with the default Firestore instance.
+     */
     public WaitlistController() {
         this.db = FirebaseFirestore.getInstance();
+    }
+
+    /**
+     * Initializes the controller with a provided Firestore instance.
+     * Useful for dependency injection during unit testing.
+     *
+     * @param injectedDb The Firestore instance to use.
+     */
+    public WaitlistController(FirebaseFirestore injectedDb) {
+        this.db = injectedDb;
     }
 
     /**
@@ -48,9 +63,11 @@ public class WaitlistController {
             return Tasks.forException(new IllegalArgumentException("Lottery size must be at least 1"));
         }
 
+        // Use the correct root path for the event
         DocumentReference eventRef = db.collection("events").document(eventId);
         Task<DocumentSnapshot> eventTask = eventRef.get();
-        Task<QuerySnapshot> waitingTask = eventRef.collection("waitingList")
+        // Use the correct "waitlist" collection name
+        Task<QuerySnapshot> waitingTask = eventRef.collection("waitlist")
                 .whereEqualTo("status", "waiting")
                 .get();
 
@@ -73,12 +90,14 @@ public class WaitlistController {
             if (waitingEntrants.isEmpty()) {
                 return Tasks.forResult(null);
             }
-// shuffle the list for randomness
+
+            // shuffle the list for randomness
             Collections.shuffle(waitingEntrants);
             // pick the winners up to the sample size (or max available)
             int winnersCount = Math.min(sampleSize, waitingEntrants.size());
             String eventName = eventSnapshot != null ? eventSnapshot.getString("name") : "";
-// batch update their status to "selected"
+
+            // batch update their status to "selected"
             WriteBatch batch = db.batch();
             for (int i = 0; i < waitingEntrants.size(); i++) {
                 DocumentSnapshot entrantSnapshot = waitingEntrants.get(i);
@@ -87,20 +106,29 @@ public class WaitlistController {
                     continue;
                 }
 
+                // Check if the entrant opted out of notifications
+                Boolean optOut = entrantSnapshot.getBoolean("optOutNotifications");
+                boolean isOptedOut = optOut != null && optOut;
+
                 if (i < winnersCount) {
                     batch.update(entrantSnapshot.getReference(),
                             "status", "selected",
                             "selectedAt", FieldValue.serverTimestamp());
-                    NotificationRepository.addSelectedNotificationToBatch(batch, db, entrantId, eventId, eventName);
+
+                    if (!isOptedOut) {
+                        NotificationRepository.addSelectedNotificationToBatch(batch, db, entrantId, eventId, eventName);
+                    }
                 } else {
-                    NotificationRepository.addNotSelectedNotificationToBatch(batch, db, entrantId, eventId, eventName);
+                    if (!isOptedOut) {
+                        NotificationRepository.addNotSelectedNotificationToBatch(batch, db, entrantId, eventId, eventName);
+                    }
                 }
             }
 
             batch.update(eventRef,
                     "selectedCount", FieldValue.increment(winnersCount),
                     "waitingCount", FieldValue.increment(-winnersCount));
-// optionally update event document counts here
+
             return batch.commit();
         });
     }
@@ -118,7 +146,7 @@ public class WaitlistController {
 
         DocumentReference eventRef = db.collection("events").document(eventId);
         Task<DocumentSnapshot> eventTask = eventRef.get();
-        Task<QuerySnapshot> waitingTask = eventRef.collection("waitingList")
+        Task<QuerySnapshot> waitingTask = eventRef.collection("waitlist")
                 .whereEqualTo("status", "waiting")
                 .get();
 
@@ -143,6 +171,10 @@ public class WaitlistController {
             String entrantId = resolveEntrantId(replacement);
             String eventName = eventTask.getResult() != null ? eventTask.getResult().getString("name") : "";
 
+            // Check if the replacement opted out of notifications
+            Boolean optOut = replacement.getBoolean("optOutNotifications");
+            boolean isOptedOut = optOut != null && optOut;
+
             WriteBatch batch = db.batch();
             batch.update(replacement.getReference(),
                     "status", "selected",
@@ -150,11 +182,20 @@ public class WaitlistController {
             batch.update(eventRef,
                     "selectedCount", FieldValue.increment(1),
                     "waitingCount", FieldValue.increment(-1));
-            NotificationRepository.addSelectedNotificationToBatch(batch, db, entrantId, eventId, eventName);
+
+            if (!isOptedOut) {
+                NotificationRepository.addSelectedNotificationToBatch(batch, db, entrantId, eventId, eventName);
+            }
+
             return batch.commit().continueWith(task -> replacement.getId());
         });
     }
 
+    /**
+     * Helper to safely extract an entrant ID from a waitlist document.
+     * @param entrantSnapshot The document snapshot.
+     * @return The extracted entrant ID.
+     */
     private String resolveEntrantId(DocumentSnapshot entrantSnapshot) {
         String entrantId = entrantSnapshot.getString("entrantId");
         if (entrantId == null || entrantId.trim().isEmpty()) {

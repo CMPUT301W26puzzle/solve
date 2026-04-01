@@ -48,7 +48,7 @@ public class OrganizerDashboardIntentTest {
                 Event event = new Event();
                 event.setId("event_001");
                 event.setName("Sample Event");
-                event.setStartTime(new java.util.Date());
+                event.setRegistrationStart(new java.util.Date());
                 event.setRegistrationStart(new java.util.Date());
                 event.setRegistrationEnd(new java.util.Date());
                 event.setCapacity(100);

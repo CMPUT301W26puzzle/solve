@@ -1,16 +1,19 @@
 package com.example.eventparticipation;
 
 import android.content.Intent;
+import android.media.Image;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -45,6 +48,8 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
 
     private EditText etSearch;
     private CardView btnFilter;
+
+    private ImageButton infoBtn;
     private LinearLayout layoutEmptyState;
     private ProgressBar progressBar;
 
@@ -62,6 +67,7 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
         setupSearch();
         setupBottomNav(R.id.nav_home);
         loadEvents();
+        setupOptOutToggle();
     }
 
     /**
@@ -71,12 +77,21 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
         rvEntrantEvents  = findViewById(R.id.rvEntrantEvents);
         etSearch         = findViewById(R.id.etSearch);
         btnFilter        = findViewById(R.id.btnFilter);
+        infoBtn          = findViewById(R.id.infoBtn);
         layoutEmptyState = findViewById(R.id.layoutEmptyState);
         progressBar      = findViewById(R.id.progressBar);
 
         btnFilter.setOnClickListener(v ->
             Toast.makeText(this, "Filter coming soon", Toast.LENGTH_SHORT).show()
         );
+
+        infoBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getApplicationContext(), InfoPopup.class);
+                startActivity(intent);
+            }
+        });
     }
 
     /**
@@ -210,5 +225,41 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
             layoutEmptyState.setVisibility(View.GONE);
             rvEntrantEvents.setVisibility(View.VISIBLE);
         }
+    }
+
+    /**
+     * Sets up the notification opt-out switch.
+     * Fetches the current preference from Firestore and updates it when toggled.
+     * US 01.04.03 As an entrant I want to opt out of receiving notifications from organizers and admins
+     */
+    private void setupOptOutToggle() {
+        com.google.android.material.materialswitch.MaterialSwitch switchOptOut = findViewById(R.id.switchOptOut);
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        String entrantId = DeviceIdProvider.getId(this);
+
+        // fetch the user's current preference from Firestore so the switch shows the correct state
+        db.collection("entrants").document(entrantId).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists() && documentSnapshot.contains("optOutNotifications")) {
+                        Boolean isOptedOut = documentSnapshot.getBoolean("optOutNotifications");
+                        switchOptOut.setChecked(isOptedOut != null && isOptedOut);
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to load notification settings", Toast.LENGTH_SHORT).show()
+                );
+
+        // listen for the user toggling the switch and save it to the database
+        switchOptOut.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            db.collection("entrants").document(entrantId)
+                    .update("optOutNotifications", isChecked)
+                    .addOnSuccessListener(aVoid -> {
+                        String msg = isChecked ? "Notifications disabled" : "Notifications enabled";
+                        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this, "Failed to update settings", Toast.LENGTH_SHORT).show()
+                    );
+        });
     }
 }

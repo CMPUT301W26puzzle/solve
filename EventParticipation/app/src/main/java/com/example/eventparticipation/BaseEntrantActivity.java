@@ -1,7 +1,6 @@
 package com.example.eventparticipation;
 
 import android.content.Intent;
-import android.widget.Toast;
 
 import androidx.annotation.IdRes;
 import androidx.appcompat.app.AppCompatActivity;
@@ -43,7 +42,7 @@ public abstract class BaseEntrantActivity extends AppCompatActivity {
                 openEntrantScreen(ProfileActivity.class);
                 return true;
             } else if (id == R.id.nav_scan) {
-                Toast.makeText(this, "Scan coming soon", Toast.LENGTH_SHORT).show();
+                openEntrantScreen(EntrantQRCodeActivity.class);
                 return true;
             } else if (id == R.id.nav_notifications) {
                 openEntrantScreen(EntrantNotificationsActivity.class);
