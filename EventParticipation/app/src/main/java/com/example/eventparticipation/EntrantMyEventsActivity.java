@@ -12,12 +12,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -53,10 +51,10 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
     private String currentTab = "waiting";
 
     /** All events the user has joined, mapped with their status. */
-    private List<MyEventItem> allItems = new ArrayList<>();
+    private final List<MyEventItem> allItems = new ArrayList<>();
     private MyEventAdapter adapter;
 
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault());
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault());
 
     /**
      * Simple data class pairing an Event with the entrant's status for it.
@@ -83,7 +81,6 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
         setupTabs();
         setupRecyclerView();
         setupBottomNav(R.id.nav_my_events);
-        loadMyEvents();
     }
 
     private void initViews() {
@@ -177,7 +174,7 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
 
                         // Check if this device is in the waitingList subcollection
                         db.collection("events").document(doc.getId())
-                                .collection("waitList").document(entrantId)
+                                .collection("waitlist").document(entrantId)
                                 .get()
                                 .addOnSuccessListener(waitDoc -> {
                                     if (waitDoc.exists()) {
