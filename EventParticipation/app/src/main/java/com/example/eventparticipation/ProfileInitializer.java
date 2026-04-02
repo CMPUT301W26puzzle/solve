@@ -20,6 +20,14 @@ public class ProfileInitializer {
     private final FirebaseFirestore db;
 
     /**
+     * Callback used when checking whether a profile already exists.
+     */
+    public interface ExistsCallback {
+        void onResult(boolean exists);
+        void onError(Exception e);
+    }
+
+    /**
      * Callback used after checking or creating a profile.
      */
     public interface Callback {
@@ -73,6 +81,36 @@ public class ProfileInitializer {
     }
 
     /**
+     * Checks whether an entrant profile already exists in Firestore.
+     *
+     * @param entrantId the entrant device ID
+     * @param callback callback receiving the existence result
+     */
+    public void checkEntrantProfileExists(String entrantId, ExistsCallback callback) {
+        checkProfileExists("entrants", entrantId, callback);
+    }
+
+    /**
+     * Checks whether an organizer profile already exists in Firestore.
+     *
+     * @param organizerId the organizer device ID
+     * @param callback callback receiving the existence result
+     */
+    public void checkOrganizerProfileExists(String organizerId, ExistsCallback callback) {
+        checkProfileExists("organizers", organizerId, callback);
+    }
+
+    /**
+     * Checks whether an admin profile already exists in Firestore.
+     *
+     * @param adminId the admin device ID
+     * @param callback callback receiving the existence result
+     */
+    public void checkAdminProfileExists(String adminId, ExistsCallback callback) {
+        checkProfileExists("admins", adminId, callback);
+    }
+
+    /**
      * Checks whether a profile exists in the given collection.
      * If it does not exist, a new blank profile is created.
      *
@@ -97,6 +135,21 @@ public class ProfileInitializer {
                             .addOnSuccessListener(unused -> callback.onSuccess())
                             .addOnFailureListener(callback::onError);
                 })
+                .addOnFailureListener(callback::onError);
+    }
+
+    /**
+     * Checks whether a profile document exists without creating it.
+     *
+     * @param collection the Firestore collection name
+     * @param id the profile ID
+     * @param callback callback receiving the existence result
+     */
+    private void checkProfileExists(String collection, String id, ExistsCallback callback) {
+        db.collection(collection)
+                .document(id)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> callback.onResult(documentSnapshot.exists()))
                 .addOnFailureListener(callback::onError);
     }
 
