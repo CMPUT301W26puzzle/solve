@@ -26,7 +26,7 @@ import java.util.Set;
  * <p>This screen serves as the main entry point to organizer actions such as managing
  * an event, viewing entrants, and opening related event tools.</p>
  */
-public class OrganizerDashboardActivity extends AppCompatActivity {
+public class OrganizerDashboardActivity extends BaseOrganizerActivity {
 
     /** Organizer id for querying event data. */
     private String organizerId;
@@ -84,6 +84,7 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
         initViews();
         setupRecyclerView();
         setupListeners();
+        setupOrganizerBottomNav(R.id.nav_dashboard);
     }
 
     /**
