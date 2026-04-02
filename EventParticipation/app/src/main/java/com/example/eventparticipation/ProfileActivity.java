@@ -3,10 +3,12 @@ package com.example.eventparticipation;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Patterns;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
-
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
@@ -27,15 +29,24 @@ import java.util.Map;
  * <li>US 01.02.04 - As an entrant, I want to delete my profile if I no longer wish to use the app</li>
  * </ul>
  */
-public class ProfileActivity extends BaseEntrantActivity {
+public class ProfileActivity extends BaseOrganizerActivity {
+
+    public static final String EXTRA_ROLE = "extra_role";
+    public static final String EXTRA_PROFILE_ID = "extra_profile_id";
 
     private TextInputEditText etName;
     private TextInputEditText etEmail;
     private TextInputEditText etPhone;
     private MaterialButton btnSaveChanges;
+    private MaterialCardView cardDeleteAccount;
+    private BottomNavigationView bottomNavigation;
+    private TextView tvProfileTitle;
+    private TextView tvProfileSubtitle;
+    private TextView tvDeleteAccountSubtitle;
 
     private FirebaseFirestore db;
-    private String entrantId;
+    private String profileId;
+    private String role;
     private boolean hasExistingProfileData = false;
     private MaterialButton btnDeleteAccount;
     public static final String EXTRA_TEST_ENTRANT_ID = "extra_test_entrant_id";
@@ -47,40 +58,76 @@ public class ProfileActivity extends BaseEntrantActivity {
 
         db = FirebaseFirestore.getInstance();
         String testEntrantId = getIntent().getStringExtra(EXTRA_TEST_ENTRANT_ID);
-        entrantId = testEntrantId != null ? testEntrantId : DeviceIdProvider.getId(this);
+        role = resolveRole();
+        profileId = resolveProfileId(testEntrantId);
 
         initViews();
-        setupBottomNav(R.id.nav_profile);
 
-        if (!DeviceIdProvider.isValidId(entrantId)) {
+        if (!DeviceIdProvider.isValidId(profileId)) {
             Toast.makeText(this, "Failed to get device ID", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
+        configureUiForRole();
         loadProfile();
 
         btnSaveChanges.setOnClickListener(v -> saveProfile());
-        btnDeleteAccount.setOnClickListener(v -> showDeleteAccountDialog());
+        btnDeleteAccount.setOnClickListener(v -> {
+            if (isEntrantRole()) {
+                showDeleteAccountDialog();
+            }
+        });
     }
 
     /**
      * Binds the layout views.
      */
     private void initViews() {
+        tvProfileTitle = findViewById(R.id.tvProfileTitle);
+        tvProfileSubtitle = findViewById(R.id.tvProfileSubtitle);
         etName = findViewById(R.id.etName);
         etEmail = findViewById(R.id.etEmail);
         etPhone = findViewById(R.id.etPhone);
         btnSaveChanges = findViewById(R.id.btnSaveChanges);
+        cardDeleteAccount = findViewById(R.id.cardDeleteAccount);
         btnDeleteAccount = findViewById(R.id.btnDeleteAccount);
+        tvDeleteAccountSubtitle = findViewById(R.id.tvDeleteAccountSubtitle);
+        bottomNavigation = findViewById(R.id.bottomNavigation);
+    }
+
+    private void configureUiForRole() {
+        String titleRole = Character.toUpperCase(role.charAt(0)) + role.substring(1);
+        tvProfileTitle.setText(titleRole + " Profile");
+        tvProfileSubtitle.setText("Manage your account settings");
+
+        if (isEntrantRole()) {
+            if (bottomNavigation != null) {
+                bottomNavigation.setVisibility(View.VISIBLE);
+            }
+            setupBottomNav(R.id.nav_profile);
+            cardDeleteAccount.setVisibility(View.VISIBLE);
+            tvDeleteAccountSubtitle.setText("Remove your profile and registrations.");
+        } else if ("organizer".equals(role)) {
+            if (bottomNavigation != null) {
+                bottomNavigation.setVisibility(View.VISIBLE);
+            }
+            setupOrganizerBottomNav(R.id.nav_profile);
+            cardDeleteAccount.setVisibility(View.GONE);
+        } else {
+            if (bottomNavigation != null) {
+                bottomNavigation.setVisibility(View.GONE);
+            }
+            cardDeleteAccount.setVisibility(View.GONE);
+        }
     }
 
     /**
      * Loads the current entrant profile from Firestore.
      */
     private void loadProfile() {
-        db.collection("entrants")
-                .document(entrantId)
+        db.collection(getCollectionName())
+                .document(profileId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (!documentSnapshot.exists()) {
@@ -151,14 +198,14 @@ public class ProfileActivity extends BaseEntrantActivity {
         }
 
         Map<String, Object> profile = new HashMap<>();
-        profile.put("entrantId", entrantId);
-        profile.put("role", "entrant");
+        profile.put(getIdFieldName(), profileId);
+        profile.put("role", role);
         profile.put("name", name);
         profile.put("email", email);
         profile.put("phone", phone);
 
-        db.collection("entrants")
-                .document(entrantId)
+        db.collection(getCollectionName())
+                .document(profileId)
                 .set(profile, SetOptions.merge())
                 .addOnSuccessListener(unused -> {
                     hasExistingProfileData = true;
@@ -219,6 +266,10 @@ public class ProfileActivity extends BaseEntrantActivity {
      * Deletes the current entrant profile and returns the app to the initial state.
      */
     private void deleteAccount() {
+        if (!isEntrantRole()) {
+            return;
+        }
+
         btnDeleteAccount.setEnabled(false);
         btnDeleteAccount.setText("Deleting...");
 
@@ -226,7 +277,7 @@ public class ProfileActivity extends BaseEntrantActivity {
             btnSaveChanges.setEnabled(false);
         }
 
-        if (!DeviceIdProvider.isValidId(entrantId)) {
+        if (!DeviceIdProvider.isValidId(profileId)) {
             btnDeleteAccount.setEnabled(true);
             btnDeleteAccount.setText("Delete account");
 
@@ -243,13 +294,13 @@ public class ProfileActivity extends BaseEntrantActivity {
                 .addOnSuccessListener(eventsSnapshot -> {
                     WriteBatch batch = db.batch();
 
-                    batch.delete(db.collection("entrants").document(entrantId));
+                    batch.delete(db.collection("entrants").document(profileId));
 
                     for (com.google.firebase.firestore.QueryDocumentSnapshot eventDoc : eventsSnapshot) {
                         batch.delete(
                                 eventDoc.getReference()
                                         .collection("waitlist")
-                                        .document(entrantId)
+                                        .document(profileId)
                         );
                     }
 
@@ -291,5 +342,54 @@ public class ProfileActivity extends BaseEntrantActivity {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
+    }
+
+    private String resolveRole() {
+        String requestedRole = getIntent().getStringExtra(EXTRA_ROLE);
+        if ("organizer".equals(requestedRole) || "admin".equals(requestedRole) || "entrant".equals(requestedRole)) {
+            return requestedRole;
+        }
+        return "entrant";
+    }
+
+    private String resolveProfileId(String testEntrantId) {
+        if (testEntrantId != null) {
+            return testEntrantId;
+        }
+
+        String requestedProfileId = getIntent().getStringExtra(EXTRA_PROFILE_ID);
+        if (requestedProfileId != null && !requestedProfileId.trim().isEmpty()) {
+            return requestedProfileId;
+        }
+
+        return DeviceIdProvider.getId(this);
+    }
+
+    private boolean isEntrantRole() {
+        return "entrant".equals(role);
+    }
+
+    private String getCollectionName() {
+        switch (role) {
+            case "organizer":
+                return "organizers";
+            case "admin":
+                return "admins";
+            case "entrant":
+            default:
+                return "entrants";
+        }
+    }
+
+    private String getIdFieldName() {
+        switch (role) {
+            case "organizer":
+                return "organizerId";
+            case "admin":
+                return "adminId";
+            case "entrant":
+            default:
+                return "entrantId";
+        }
     }
 }

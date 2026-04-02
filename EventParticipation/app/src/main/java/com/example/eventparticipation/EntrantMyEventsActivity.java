@@ -12,12 +12,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -40,7 +38,7 @@ import java.util.Locale;
 public class EntrantMyEventsActivity extends BaseEntrantActivity {
 
     /** Current entrant id for Firestore queries. */
-    private  String entrantId = "device_demo_001";;
+    private  String entrantId;
 
     private TextView tabWaiting, tabSelected, tabEnrolled, tabPast;
     private TextView tvTotalRegistrations, tvEnrolledCount;
@@ -53,10 +51,10 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
     private String currentTab = "waiting";
 
     /** All events the user has joined, mapped with their status. */
-    private List<MyEventItem> allItems = new ArrayList<>();
+    private final List<MyEventItem> allItems = new ArrayList<>();
     private MyEventAdapter adapter;
 
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault());
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault());
 
     /**
      * Simple data class pairing an Event with the entrant's status for it.
@@ -83,7 +81,6 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
         setupTabs();
         setupRecyclerView();
         setupBottomNav(R.id.nav_my_events);
-        loadMyEvents();
     }
 
     private void initViews() {
@@ -177,7 +174,7 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
 
                         // Check if this device is in the waitingList subcollection
                         db.collection("events").document(doc.getId())
-                                .collection("waitList").document(entrantId)
+                                .collection("waitlist").document(entrantId)
                                 .get()
                                 .addOnSuccessListener(waitDoc -> {
                                     if (waitDoc.exists()) {
@@ -283,32 +280,6 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
         layoutEmptyState.setVisibility(View.VISIBLE);
         rvMyEvents.setVisibility(View.GONE);
     }
-
-//    private void setupBottomNav() {
-//        BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
-//        bottomNav.setSelectedItemId(R.id.nav_my_events);
-//
-//        bottomNav.setOnItemSelectedListener(item -> {
-//            int id = item.getItemId();
-//            if (id == R.id.nav_my_events) {
-//                return true;
-//            } else if (id == R.id.nav_home) {
-//                startActivity(new Intent(this, EntrantDashboardActivity.class));
-//                finish();
-//                return true;
-//            } else if (id == R.id.nav_scan) {
-//                Toast.makeText(this, "Scan coming soon", Toast.LENGTH_SHORT).show();
-//                return true;
-//            } else if (id == R.id.nav_notifications) {
-//                Toast.makeText(this, "Notifications coming soon", Toast.LENGTH_SHORT).show();
-//                return true;
-//            } else if (id == R.id.nav_profile) {
-//                Toast.makeText(this, "Profile coming soon", Toast.LENGTH_SHORT).show();
-//                return true;
-//            }
-//            return false;
-//        });
-//    }
 
     /**
      * Inline adapter for the My Events RecyclerView.

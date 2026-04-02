@@ -26,10 +26,10 @@ import java.util.Set;
  * <p>This screen serves as the main entry point to organizer actions such as managing
  * an event, viewing entrants, and opening related event tools.</p>
  */
-public class OrganizerDashboardActivity extends AppCompatActivity {
+public class OrganizerDashboardActivity extends BaseOrganizerActivity {
 
-    /** Demo organizer id currently used to query event data. */
-    private static final String ORGANIZER_ID = "organizer_demo_001";
+    /** Organizer id for querying event data. */
+    private String organizerId;
 
     /** RecyclerView showing organizer events. */
     private RecyclerView rvEvents;
@@ -71,11 +71,20 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_organizer_dashboard);
 
+        organizerId = DeviceIdProvider.getId(this);
+
+        if (!DeviceIdProvider.isValidId(organizerId)) {
+            Toast.makeText(this, "Failed to get device ID", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
         db = FirebaseFirestore.getInstance();
 
         initViews();
         setupRecyclerView();
         setupListeners();
+        setupOrganizerBottomNav(R.id.nav_dashboard);
     }
 
     /**
@@ -120,7 +129,7 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
                         ManageEventActivity.class
                 );
                 intent.putExtra("EVENT_ID", event.getId());
-                intent.putExtra("ORGANIZER_ID", ORGANIZER_ID);
+                intent.putExtra("organizerId", organizerId);
                 startActivity(intent);
             }
 
@@ -131,7 +140,7 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
                         EntrantListActivity.class
                 );
                 intent.putExtra("EVENT_ID", event.getId());
-                intent.putExtra("ORGANIZER_ID", ORGANIZER_ID);
+                intent.putExtra("organizerId", organizerId);
                 startActivity(intent);
             }
 
@@ -186,7 +195,7 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
         rvEvents.setVisibility(View.GONE);
 
         db.collection("organizers")
-                .document(ORGANIZER_ID)
+                .document(organizerId)
                 .collection("events")
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
