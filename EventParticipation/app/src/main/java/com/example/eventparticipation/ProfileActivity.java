@@ -11,6 +11,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
@@ -39,7 +40,9 @@ public class ProfileActivity extends BaseOrganizerActivity {
     private TextInputEditText etPhone;
     private MaterialButton btnSaveChanges;
     private MaterialCardView cardDeleteAccount;
+    private MaterialCardView cardNotificationSettings;
     private BottomNavigationView bottomNavigation;
+    private MaterialSwitch switchOptOut;
     private TextView tvProfileTitle;
     private TextView tvProfileSubtitle;
     private TextView tvDeleteAccountSubtitle;
@@ -48,6 +51,7 @@ public class ProfileActivity extends BaseOrganizerActivity {
     private String profileId;
     private String role;
     private boolean hasExistingProfileData = false;
+    private boolean isBindingOptOutPreference = false;
     private MaterialButton btnDeleteAccount;
     public static final String EXTRA_TEST_ENTRANT_ID = "extra_test_entrant_id";
 
@@ -70,6 +74,7 @@ public class ProfileActivity extends BaseOrganizerActivity {
         }
 
         configureUiForRole();
+        setupOptOutToggle();
         loadProfile();
 
         btnSaveChanges.setOnClickListener(v -> saveProfile());
@@ -91,6 +96,8 @@ public class ProfileActivity extends BaseOrganizerActivity {
         etPhone = findViewById(R.id.etPhone);
         btnSaveChanges = findViewById(R.id.btnSaveChanges);
         cardDeleteAccount = findViewById(R.id.cardDeleteAccount);
+        cardNotificationSettings = findViewById(R.id.cardNotificationSettings);
+        switchOptOut = findViewById(R.id.switchOptOut);
         btnDeleteAccount = findViewById(R.id.btnDeleteAccount);
         tvDeleteAccountSubtitle = findViewById(R.id.tvDeleteAccountSubtitle);
         bottomNavigation = findViewById(R.id.bottomNavigation);
@@ -106,6 +113,7 @@ public class ProfileActivity extends BaseOrganizerActivity {
                 bottomNavigation.setVisibility(View.VISIBLE);
             }
             setupBottomNav(R.id.nav_profile);
+            cardNotificationSettings.setVisibility(View.VISIBLE);
             cardDeleteAccount.setVisibility(View.VISIBLE);
             tvDeleteAccountSubtitle.setText("Remove your profile and registrations.");
         } else if ("organizer".equals(role)) {
@@ -113,11 +121,13 @@ public class ProfileActivity extends BaseOrganizerActivity {
                 bottomNavigation.setVisibility(View.VISIBLE);
             }
             setupOrganizerBottomNav(R.id.nav_profile);
+            cardNotificationSettings.setVisibility(View.GONE);
             cardDeleteAccount.setVisibility(View.GONE);
         } else {
             if (bottomNavigation != null) {
                 bottomNavigation.setVisibility(View.GONE);
             }
+            cardNotificationSettings.setVisibility(View.GONE);
             cardDeleteAccount.setVisibility(View.GONE);
         }
     }
@@ -138,6 +148,7 @@ public class ProfileActivity extends BaseOrganizerActivity {
                     String name = documentSnapshot.getString("name");
                     String email = documentSnapshot.getString("email");
                     String phone = documentSnapshot.getString("phone");
+                    Boolean isOptedOut = documentSnapshot.getBoolean("optOutNotifications");
 
                     if (name != null) {
                         etName.setText(name);
@@ -149,6 +160,12 @@ public class ProfileActivity extends BaseOrganizerActivity {
 
                     if (phone != null) {
                         etPhone.setText(phone);
+                    }
+
+                    if (isEntrantRole()) {
+                        isBindingOptOutPreference = true;
+                        switchOptOut.setChecked(isOptedOut != null && isOptedOut);
+                        isBindingOptOutPreference = false;
                     }
 
                     hasExistingProfileData =
@@ -203,6 +220,9 @@ public class ProfileActivity extends BaseOrganizerActivity {
         profile.put("name", name);
         profile.put("email", email);
         profile.put("phone", phone);
+        if (isEntrantRole()) {
+            profile.put("optOutNotifications", switchOptOut.isChecked());
+        }
 
         db.collection(getCollectionName())
                 .document(profileId)
@@ -248,6 +268,34 @@ public class ProfileActivity extends BaseOrganizerActivity {
     private boolean isValidPhone(String phone) {
         String digits = phone.replaceAll("\\D", "");
         return digits.length() == 10;
+    }
+
+    /**
+     * Saves entrant notification preferences when the switch is toggled by the user.
+     */
+    private void setupOptOutToggle() {
+        if (!isEntrantRole()) {
+            return;
+        }
+
+        switchOptOut.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isBindingOptOutPreference) {
+                return;
+            }
+
+            db.collection("entrants")
+                    .document(profileId)
+                    .update("optOutNotifications", isChecked)
+                    .addOnSuccessListener(unused -> {
+                        String message = isChecked
+                                ? "Notifications disabled"
+                                : "Notifications enabled";
+                        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this, "Failed to update settings", Toast.LENGTH_SHORT).show()
+                    );
+        });
     }
 
     /**
