@@ -1,0 +1,730 @@
+@startuml
+top to bottom direction
+scale max 1100 width
+
+skinparam dpi 180
+skinparam defaultFontSize 16
+skinparam classFontSize 16
+skinparam ArrowFontSize 14
+skinparam nodesep 70
+skinparam ranksep 90
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+skinparam wrapWidth 260
+skinparam maxMessageSize 200
+
+hide empty members
+
+package "Base / Common" {
+  abstract class "BaseEntrantActivity" as BaseEntrantActivity {
+    # void setupBottomNav(int)
+    - void openEntrantScreen(Class<?>)
+  }
+
+  class "DeviceIdProvider" as DeviceIdProvider {
+    - {static} String testIdOverride
+    + {static} String getId(Context)
+    + {static} boolean isValidId(String)
+  }
+
+  class "InfoPopup" as InfoPopup {
+    # void onCreate(Bundle)
+  }
+
+  class "QRCodeGenerator" as QRCodeGenerator {
+    + {static} Bitmap generateQRCode(String,int)
+  }
+
+  class "NotificationActionHelper" as NotificationActionHelper {
+    + {static} String buildSelectedMessage(String)
+    + {static} String buildNotSelectedMessage(String)
+    + {static} boolean shouldShowAcceptAction(NotificationItem)
+    + {static} boolean shouldShowDeclineAction(NotificationItem)
+    + {static} String getPrimaryActionLabel(NotificationItem)
+    + {static} String getActionStateLabel(NotificationItem)
+    + {static} void applyAccepted(NotificationItem)
+    + {static} void applyDeclined(NotificationItem)
+    + {static} String formatRelativeTime(Date,long)
+  }
+
+  class "ProfileInitializer" as ProfileInitializer {
+    - FirebaseFirestore db
+    + void ensureEntrantProfileExists(String,Callback)
+    + void ensureOrganizerProfileExists(String,Callback)
+    + void ensureAdminProfileExists(String,Callback)
+    - void ensureProfileExists(String,String,String,String,Callback)
+    - Map<String,Object> createProfile(String,String,String)
+  }
+
+  interface "ProfileInitializer.Callback" as ProfileInitializerCallback {
+    ~ void onSuccess()
+    ~ void onError(Exception)
+  }
+}
+
+package "Models" {
+  class "Event" as Event {
+    - String id
+    - String facilityId
+    - String organizerId
+    - String name
+    - Date startTime
+    - int capacity
+    - Date registrationStart
+    - Date registrationEnd
+    - String posterUrl
+    - boolean geolocationRequired
+    - Integer waitlistLimit
+    - String venueAddress
+    - int enrolledCount
+    - int waitingCount
+    - int selectedCount
+    - Double venueLat
+    - Double venueLng
+    + String getId()
+    + void setId(String)
+    + String getFacilityId()
+    + void setFacilityId(String)
+    + String getOrganizerId()
+    + void setOrganizerId(String)
+    + String getName()
+    + void setName(String)
+    + Date getRegistrationStart()
+    + void setRegistrationStart(Date)
+    + Date getRegistrationEnd()
+    + void setRegistrationEnd(Date)
+    + boolean isGeolocationRequired()
+    + void setGeolocationRequired(boolean)
+    + Integer getWaitlistLimit()
+    + void setWaitlistLimit(Integer)
+    + String getPosterUrl()
+    + void setPosterUrl(String)
+    + int getCapacity()
+    + void setCapacity(int)
+    + String getVenueAddress()
+    + void setVenueAddress(String)
+    + int getEnrolledCount()
+    + void setEnrolledCount(int)
+    + int getWaitingCount()
+    + void setWaitingCount(int)
+    + int getSelectedCount()
+    + void setSelectedCount(int)
+    + Double getVenueLat()
+    + void setVenueLat(Double)
+    + Double getVenueLng()
+    + void setVenueLng(Double)
+  }
+
+  class "Entrant" as Entrant {
+    - String id
+    - String entrantId
+    - String entrantName
+    - String entrantEmail
+    - String status
+    - String joinedAddress
+    - GeoPoint joinedLocation
+    - Date joinedAt
+    - boolean optOutNotifications
+    + String getId()
+    + void setId(String)
+    + String getEntrantId()
+    + void setEntrantId(String)
+    + String getEntrantName()
+    + void setEntrantName(String)
+    + String getEntrantEmail()
+    + void setEntrantEmail(String)
+    + String getStatus()
+    + void setStatus(String)
+    + String getJoinedAddress()
+    + void setJoinedAddress(String)
+    + GeoPoint getJoinedLocation()
+    + void setJoinedLocation(GeoPoint)
+    + Date getJoinedAt()
+    + void setJoinedAt(Date)
+    + boolean hasLocation()
+    + String toString()
+    + boolean isOptOutNotifications()
+    + void setOptOutNotifications(boolean)
+  }
+
+  class "NotificationItem" as NotificationItem {
+    + {static} String TYPE_SELECTED
+    + {static} String TYPE_NOT_SELECTED
+    + {static} String ACTION_PENDING
+    + {static} String ACTION_ACCEPTED
+    + {static} String ACTION_DECLINED
+    + {static} String ACTION_NONE
+    - String id
+    - String entrantId
+    - String eventId
+    - String eventName
+    - String type
+    - String message
+    - boolean unread
+    - boolean actionRequired
+    - String actionStatus
+    - Date createdAt
+    + String getId()
+    + void setId(String)
+    + String getEntrantId()
+    + void setEntrantId(String)
+    + String getEventId()
+    + void setEventId(String)
+    + String getEventName()
+    + void setEventName(String)
+    + String getType()
+    + void setType(String)
+    + String getMessage()
+    + void setMessage(String)
+    + boolean isUnread()
+    + void setUnread(boolean)
+    + boolean isActionRequired()
+    + void setActionRequired(boolean)
+    + String getActionStatus()
+    + void setActionStatus(String)
+    + Date getCreatedAt()
+    + void setCreatedAt(Date)
+  }
+}
+
+package "Notification / Waitlist Services" {
+  class "NotificationRepository" as NotificationRepository {
+    - FirebaseFirestore db
+    + ListenerRegistration listenForNotifications(String,NotificationListener)
+    + Task<Void> markAsRead(String,String)
+    + Task<Void> acceptInvitation(String,NotificationItem)
+    + Task<Void> declineInvitation(String,NotificationItem)
+    + CollectionReference getNotificationCollection(String)
+    + NotificationItem fromDocument(DocumentSnapshot)
+    + {static} Map<String,Object> buildSelectedNotificationData(String,String,String)
+    + {static} Map<String,Object> buildNotSelectedNotificationData(String,String,String)
+    + {static} void addSelectedNotificationToBatch(WriteBatch,FirebaseFirestore,String,String,String)
+    + {static} void addNotSelectedNotificationToBatch(WriteBatch,FirebaseFirestore,String,String,String)
+  }
+
+  interface "NotificationRepository.NotificationListener" as NotificationListener {
+    ~ void onNotificationsChanged(List<NotificationItem>)
+    ~ void onError(Exception)
+  }
+
+  class "WaitlistController" as WaitlistController {
+    - FirebaseFirestore db
+    + Task<Void> runLottery(String,int)
+    + Task<String> drawReplacement(String)
+    - String resolveEntrantId(DocumentSnapshot)
+  }
+}
+
+package "Organizer Flow" {
+  class "OrganizerDashboardActivity" as OrganizerDashboardActivity {
+    - {static} String ORGANIZER_ID
+    - RecyclerView rvEvents
+    - EventAdapter eventAdapter
+    - List<Event> eventList
+    - TextView tvTotalEvents
+    - TextView tvActiveEvents
+    - TextView tvTotalCapacity
+    - View layoutLoading
+    - View layoutEmptyState
+    - FirebaseFirestore db
+    - boolean isLoading
+    # void onCreate(Bundle)
+    # void onResume()
+    - void initViews()
+    - void setupRecyclerView()
+    - void loadEvents()
+    - void finishLoading()
+    - void updateStatistics()
+    - void setupListeners()
+  }
+
+  class "CreateEventActivity" as CreateEventActivity {
+    - EditText etName
+    - EditText etWaitlistLimit
+    - SwitchCompat swGeo
+    - ImageView imgPoster
+    - MaterialButton btnDates
+    - MaterialButton btnSave
+    - String organizerId
+    - Uri selectedImageUri
+    - Date regStart
+    - Date regEnd
+    - FirebaseFirestore db
+    - FirebaseStorage storage
+    - ActivityResultLauncher<String> picker
+    # void onCreate(Bundle)
+    - void initViews()
+    - void setupListeners()
+    - void startSave()
+    - void uploadAndSave()
+    - void saveToFirestore(String,String,String,String,String,String,Boolean,Integer,Integer,Integer,Double,Double,Date,Date,Integer)
+    - void uploadQRCode(String,String,com.google.firebase.firestore.DocumentReference)
+  }
+
+  class "ManageEventActivity" as ManageEventActivity {
+    - TextView tvEventName
+    - TextView tvEventDate
+    - TextView tvEventCapacity
+    - TextView tvWaitingCount
+    - TextView tvSelectedCount
+    - TextView tvEnrolledCount
+    - ImageView imgEventPoster
+    - LinearLayout layoutPosterPlaceholder
+    - FloatingActionButton fabRemovePoster
+    - MaterialButton btnUploadPoster
+    - MaterialButton btnUpdatePoster
+    - MaterialButton btnViewEntrants
+    - MaterialButton btnViewMap
+    - MaterialButton btnRunLottery
+    - MaterialButton btnDrawReplacement
+    - MaterialButton btnShowQRCode
+    - MaterialButton btnEditEvent
+    - String eventId
+    - String organizerId
+    - boolean hasPoster
+    - String currentPosterUrl
+    - FirebaseFirestore db
+    - FirebaseStorage storage
+    - ActivityResultLauncher<String> imagePickerLauncher
+    # void onCreate(Bundle)
+    - void applyWindowInsets()
+    - int getToolbarHeight()
+    - void setupToolbar()
+    + boolean onSupportNavigateUp()
+    - void initViews()
+    - void setInitialPlaceholderValues()
+    - void setupClickListeners()
+    - void showRunLotteryDialog()
+    - void drawReplacementApplicant()
+    - void loadEventData()
+    - void loadWaitlistCounts()
+    - void updatePosterUI()
+    - void openImagePicker()
+    - void uploadPosterToFirebase(Uri)
+    - void removePoster()
+    - String formatEventDate(Object)
+    - String safe(String)
+  }
+
+  class "EntrantListActivity" as EntrantListActivity {
+    - RecyclerView rvEntrants
+    - EntrantAdapter entrantAdapter
+    - List<Entrant> entrantList
+    - List<Entrant> displayedList
+    - TabLayout tabLayout
+    - EditText etSearch
+    - LinearLayout layoutEmptyState
+    - FloatingActionButton fabExport
+    - String eventId
+    - String organizerId
+    - String currentFilter
+    - FirebaseFirestore db
+    # void onCreate(Bundle)
+    - void applyWindowInsets()
+    - int getToolbarHeight()
+    - void setupToolbar()
+    + boolean onSupportNavigateUp()
+    - void initViews()
+    - void setupRecyclerView()
+    - void setupListeners()
+    - void loadEntrants()
+    - void applyFilterAndSearch()
+    - boolean matchesStatusFilter(Entrant,String)
+    - void updateUI()
+    - void updateTabCounts()
+    - void setTabText(int,String)
+    - String safe(String)
+  }
+
+  class "WaitlistMapActivity" as WaitlistMapActivity {
+    - String eventId
+    - FirebaseFirestore db
+    - GoogleMap mMap
+    # void onCreate(Bundle)
+    - void setupToolbar()
+    + boolean onSupportNavigateUp()
+    + void onMapReady(GoogleMap)
+    - void loadMarkers()
+  }
+
+  interface "OnEventClickListener" as OnEventClickListener {
+    ~ void onManageClick(Event)
+    ~ void onEntrantsClick(Event)
+    ~ void onLotteryClick(Event)
+    ~ void onQRCodeClick(Event)
+    ~ void onViewClick(Event)
+  }
+
+  class "EventAdapter" as EventAdapter {
+    - List<Event> events
+    - OnEventClickListener listener
+    - SimpleDateFormat dateFormat
+    + EventViewHolder onCreateViewHolder(ViewGroup,int)
+    + void onBindViewHolder(EventViewHolder,int)
+    + int getItemCount()
+  }
+
+  class "EventAdapter.EventViewHolder" as EventViewHolder {
+    ~ TextView tvEventName
+    ~ TextView tvEventDate
+    ~ TextView tvEventCapacity
+    ~ MaterialButton btnManageEvent
+    ~ LinearLayout btnViewEntrants
+    ~ LinearLayout btnRunLottery
+    ~ LinearLayout btnShowQR
+    ~ LinearLayout btnViewEvent
+  }
+}
+
+package "Entrant Flow" {
+  class "SelectRoleActivity" as SelectRoleActivity {
+    - CardView cardEntrant
+    - RadioButton rbEntrant
+    - Button btnContinue
+    - String selectedRole
+    # void onCreate(Bundle)
+    - void selectRole(String)
+    - void openEntrantFlow()
+    - void openOrganizerFlow()
+    - void openAdminFlow()
+  }
+
+  class "EntrantDashboardActivity" as EntrantDashboardActivity {
+    - RecyclerView rvEntrantEvents
+    - EntrantEventAdapter eventAdapter
+    - List<Event> allEvents
+    - List<Event> filteredEvents
+    - EditText etSearch
+    - CardView btnFilter
+    - ImageButton infoBtn
+    - LinearLayout layoutEmptyState
+    - ProgressBar progressBar
+    - FirebaseFirestore db
+    # void onCreate(Bundle)
+    - void initViews()
+    - void setupRecyclerView()
+    - void setupSearch()
+    - void loadEvents()
+    - void filterEvents(String)
+    - void setupOptOutToggle()
+  }
+
+  class "EntrantEventDetailActivity" as EntrantEventDetailActivity {
+    - String eventId
+    - String entrantId
+    - ImageView ivEventPoster
+    - TextView tvEventName
+    - TextView tvEventPrice
+    - TextView tvTag1
+    - TextView tvTag2
+    - TextView tvTag3
+    - TextView tvEventDate
+    - TextView tvEventTime
+    - TextView tvVenueName
+    - TextView tvVenueAddress
+    - TextView tvCapacity
+    - TextView tvEnrolledWaiting
+    - TextView tvRegistrationDeadline
+    - TextView tvAbout
+    - MaterialButton btnJoinLeave
+    - FirebaseFirestore db
+    - boolean isOnWaitingList
+    - SimpleDateFormat dateFormat
+    - SimpleDateFormat timeFormat
+    - SimpleDateFormat deadlineFormat
+    # void onCreate(Bundle)
+    - void initViews()
+    - void loadEventFromIntent()
+    - void loadEventFromFirestore(String)
+    - void checkWaitingListStatus()
+    - void joinWaitingList()
+    - void leaveWaitingList()
+    - void declineSelectedInvitation(DocumentReference,DocumentReference)
+    - void markInvitationNotificationsDeclined()
+    - void updateButton()
+    - void triggerRedraw()
+  }
+
+  class "EntrantMyEventsActivity" as EntrantMyEventsActivity {
+    - String entrantId
+    - TextView tabWaiting
+    - TextView tvTotalRegistrations
+    - TextView tvEmptyMessage
+    - LinearLayout layoutEmptyState
+    - ProgressBar progressBar
+    - RecyclerView rvMyEvents
+    - FirebaseFirestore db
+    - String currentTab
+    - List<MyEventItem> allItems
+    - MyEventAdapter adapter
+    - SimpleDateFormat dateFormat
+    # void onCreate(Bundle)
+    - void initViews()
+    - void setupTabs()
+    - void setupRecyclerView()
+    - void switchTab(String)
+    - void loadMyEvents()
+    - void onAllLoaded()
+    - void updateStats()
+    - void filterAndDisplay()
+    - void showEmpty(String)
+    # void onResume()
+  }
+
+  class "EntrantMyEventsActivity.MyEventItem" as MyEventItem {
+    ~ Event event
+    ~ String status
+  }
+
+  class "EntrantMyEventsActivity.MyEventAdapter" as MyEventAdapter {
+    - List<MyEventItem> items
+    ~ void updateItems(List<MyEventItem>)
+    + MyEventViewHolder onCreateViewHolder(ViewGroup,int)
+    + void onBindViewHolder(MyEventViewHolder,int)
+    + int getItemCount()
+    - String capitalize(String)
+  }
+
+  class "EntrantMyEventsActivity.MyEventViewHolder" as MyEventViewHolder {
+    ~ ImageView ivEventPoster
+    ~ TextView tvEventName
+  }
+
+  class "EntrantNotificationsActivity" as EntrantNotificationsActivity {
+    + {static} String EXTRA_TEST_MODE
+    + {static} String EXTRA_TEST_NOTIFICATIONS
+    - RecyclerView rvNotifications
+    - ProgressBar progressBar
+    - LinearLayout layoutEmptyState
+    - TextView tvEmptyMessage
+    - NotificationAdapter adapter
+    - NotificationRepository notificationRepository
+    - ListenerRegistration listenerRegistration
+    - List<NotificationItem> notificationItems
+    - boolean isTestMode
+    - String entrantId
+    # void onCreate(Bundle)
+    # void onStart()
+    # void onStop()
+    - void initViews()
+    - void setupRecyclerView()
+    - void loadTestNotifications()
+    - void startListening()
+    - void updateUI()
+    - void showEmptyState(String)
+    + void onNotificationClicked(NotificationItem)
+    + void onAcceptClicked(NotificationItem)
+    + void onDeclineClicked(NotificationItem)
+  }
+
+  class "EntrantQRCodeActivity" as EntrantQRCodeActivity {
+    - MaterialButton scanBtn
+    # void onCreate(Bundle)
+    - void initViews()
+    - void openCamera()
+  }
+
+  class "CameraQRActivity" as CameraQRActivity {
+    - ActivityResultLauncher<ScanOptions> scanner
+    # void onCreate(Bundle)
+    - void openEvent(String)
+  }
+
+  class "ProfileActivity" as ProfileActivity {
+    - TextInputEditText etName
+    - TextInputEditText etEmail
+    - TextInputEditText etPhone
+    - MaterialButton btnSaveChanges
+    - FirebaseFirestore db
+    - String entrantId
+    - boolean hasExistingProfileData
+    - MaterialButton btnDeleteAccount
+    + {static} String EXTRA_TEST_ENTRANT_ID
+    # void onCreate(Bundle)
+    - void initViews()
+    - void loadProfile()
+    - void saveProfile()
+    - void clearErrors()
+    - String getInputText(TextInputEditText)
+    - boolean isValidPhone(String)
+    - void showDeleteAccountDialog()
+    - void deleteAccount()
+    - void resetAppState()
+  }
+
+  class "EntrantEventAdapter" as EntrantEventAdapter {
+    - List<Event> events
+    - OnEntrantEventClickListener listener
+    - SimpleDateFormat dateFormat
+    + EntrantEventViewHolder onCreateViewHolder(ViewGroup,int)
+    + void onBindViewHolder(EntrantEventViewHolder,int)
+    + int getItemCount()
+    + void updateEvents(List<Event>)
+  }
+
+  interface "EntrantEventAdapter.OnEntrantEventClickListener" as OnEntrantEventClickListener {
+    ~ void onEventClick(Event)
+  }
+
+  class "EntrantEventAdapter.EntrantEventViewHolder" as EntrantEventViewHolder {
+    ~ ImageView ivEventPoster
+    ~ TextView tvEventName
+    ~ TextView tvEventPrice
+    ~ TextView tvEventDescription
+    ~ TextView tvEventDate
+    ~ TextView tvEventLocation
+    ~ TextView tvEventCounts
+    ~ TextView tvTag1
+    ~ TextView tvTag2
+    ~ TextView tvCountdown
+  }
+}
+
+package "Entrant / Notification Adapters" {
+  class "EntrantAdapter" as EntrantAdapter {
+    - List<Entrant> entrants
+    - SimpleDateFormat dateFormat
+    + EntrantViewHolder onCreateViewHolder(ViewGroup,int)
+    + void onBindViewHolder(EntrantViewHolder,int)
+    + int getItemCount()
+    - String safe(String)
+    - String getStatusText(String)
+    - int getStatusColor(String)
+  }
+
+  class "EntrantAdapter.EntrantViewHolder" as EntrantViewHolder {
+    ~ TextView tvEntrantName
+    ~ TextView tvEntrantEmail
+    ~ TextView tvRegisteredDate
+    ~ TextView tvStatus
+  }
+
+  class "NotificationAdapter" as NotificationAdapter {
+    - Listener listener
+    - List<NotificationItem> items
+    + void updateItems(List<NotificationItem>)
+    + NotificationViewHolder onCreateViewHolder(ViewGroup,int)
+    + void onBindViewHolder(NotificationViewHolder,int)
+    + int getItemCount()
+  }
+
+  interface "NotificationAdapter.Listener" as NotificationAdapterListener {
+    ~ void onNotificationClicked(NotificationItem)
+    ~ void onAcceptClicked(NotificationItem)
+    ~ void onDeclineClicked(NotificationItem)
+  }
+
+  class "NotificationAdapter.NotificationViewHolder" as NotificationViewHolder {
+    ~ MaterialCardView card
+    ~ ImageView icon
+    ~ View unreadDot
+    ~ TextView tvMessage
+    ~ TextView tvTime
+    ~ TextView tvActionState
+    ~ MaterialButton btnAccept
+    ~ MaterialButton btnDecline
+  }
+}
+
+' ========== inheritance / implementation ==========
+AppCompatActivity <|-- BaseEntrantActivity
+Activity <|-- InfoPopup
+
+BaseEntrantActivity <|-- EntrantDashboardActivity
+BaseEntrantActivity <|-- EntrantMyEventsActivity
+BaseEntrantActivity <|-- EntrantNotificationsActivity
+BaseEntrantActivity <|-- EntrantQRCodeActivity
+BaseEntrantActivity <|-- ProfileActivity
+
+AppCompatActivity <|-- SelectRoleActivity
+AppCompatActivity <|-- CameraQRActivity
+AppCompatActivity <|-- WaitlistMapActivity
+AppCompatActivity <|-- EntrantEventDetailActivity
+AppCompatActivity <|-- OrganizerDashboardActivity
+AppCompatActivity <|-- CreateEventActivity
+AppCompatActivity <|-- EntrantListActivity
+AppCompatActivity <|-- ManageEventActivity
+
+OnMapReadyCallback <|.. WaitlistMapActivity
+java.io.Serializable <|.. NotificationItem
+NotificationAdapterListener <|.. EntrantNotificationsActivity
+
+RecyclerView.Adapter <|-- EventAdapter
+RecyclerView.ViewHolder <|-- EventViewHolder
+
+RecyclerView.Adapter <|-- EntrantAdapter
+RecyclerView.ViewHolder <|-- EntrantViewHolder
+
+RecyclerView.Adapter <|-- EntrantEventAdapter
+RecyclerView.ViewHolder <|-- EntrantEventViewHolder
+
+RecyclerView.Adapter <|-- NotificationAdapter
+RecyclerView.ViewHolder <|-- NotificationViewHolder
+
+RecyclerView.Adapter <|-- MyEventAdapter
+RecyclerView.ViewHolder <|-- MyEventViewHolder
+
+' ========== nested / ownership ==========
+EntrantMyEventsActivity +-- MyEventItem
+EntrantMyEventsActivity +-- MyEventAdapter
+MyEventAdapter +-- MyEventViewHolder
+
+EntrantEventAdapter +-- OnEntrantEventClickListener
+EntrantEventAdapter +-- EntrantEventViewHolder
+
+NotificationAdapter +-- NotificationAdapterListener
+NotificationAdapter +-- NotificationViewHolder
+
+EventAdapter +-- EventViewHolder
+EntrantAdapter +-- EntrantViewHolder
+NotificationRepository +-- NotificationListener
+ProfileInitializer +-- ProfileInitializerCallback
+
+' ========== usage / association ==========
+OrganizerDashboardActivity --> EventAdapter
+OrganizerDashboardActivity --> Event
+
+CreateEventActivity --> Event
+CreateEventActivity --> QRCodeGenerator
+
+ManageEventActivity --> Event
+ManageEventActivity --> WaitlistController
+ManageEventActivity --> EntrantListActivity
+ManageEventActivity --> WaitlistMapActivity
+
+EntrantListActivity --> EntrantAdapter
+EntrantListActivity --> Entrant
+
+EntrantDashboardActivity --> EntrantEventAdapter
+EntrantDashboardActivity --> Event
+
+EntrantEventDetailActivity --> Event
+EntrantEventDetailActivity --> NotificationRepository
+
+EntrantMyEventsActivity --> MyEventAdapter
+EntrantMyEventsActivity --> MyEventItem
+MyEventItem --> Event
+
+EntrantNotificationsActivity --> NotificationAdapter
+EntrantNotificationsActivity --> NotificationRepository
+EntrantNotificationsActivity --> NotificationItem
+
+EntrantQRCodeActivity --> CameraQRActivity
+ProfileActivity --> ProfileInitializer
+
+EntrantAdapter --> Entrant
+EntrantEventAdapter --> Event
+NotificationAdapter --> NotificationItem
+
+NotificationRepository --> NotificationItem
+NotificationActionHelper --> NotificationItem
+WaitlistController --> Entrant
+WaitlistController --> Event
+
+EventAdapter --> Event
+OnEventClickListener --> Event
+OnEntrantEventClickListener --> Event
+
+@enduml
