@@ -28,8 +28,8 @@ import java.util.Set;
  */
 public class OrganizerDashboardActivity extends AppCompatActivity {
 
-    /** Demo organizer id currently used to query event data. */
-    private static final String ORGANIZER_ID = "organizer_demo_001";
+    /** Organizer id for querying event data. */
+    private String organizerId;
 
     /** RecyclerView showing organizer events. */
     private RecyclerView rvEvents;
@@ -70,6 +70,14 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_organizer_dashboard);
+
+        organizerId = DeviceIdProvider.getId(this);
+
+        if (!DeviceIdProvider.isValidId(organizerId)) {
+            Toast.makeText(this, "Failed to get device ID", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
 
         db = FirebaseFirestore.getInstance();
 
@@ -120,7 +128,7 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
                         ManageEventActivity.class
                 );
                 intent.putExtra("EVENT_ID", event.getId());
-                intent.putExtra("ORGANIZER_ID", ORGANIZER_ID);
+                intent.putExtra("organizerId", organizerId);
                 startActivity(intent);
             }
 
@@ -131,7 +139,7 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
                         EntrantListActivity.class
                 );
                 intent.putExtra("EVENT_ID", event.getId());
-                intent.putExtra("ORGANIZER_ID", ORGANIZER_ID);
+                intent.putExtra("organizerId", organizerId);
                 startActivity(intent);
             }
 
@@ -186,7 +194,7 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
         rvEvents.setVisibility(View.GONE);
 
         db.collection("organizers")
-                .document(ORGANIZER_ID)
+                .document(organizerId)
                 .collection("events")
                 .get()
                 .addOnSuccessListener(querySnapshot -> {

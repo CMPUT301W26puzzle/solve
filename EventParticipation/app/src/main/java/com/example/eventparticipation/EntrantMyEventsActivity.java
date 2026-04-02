@@ -38,7 +38,7 @@ import java.util.Locale;
 public class EntrantMyEventsActivity extends BaseEntrantActivity {
 
     /** Current entrant id for Firestore queries. */
-    private  String entrantId = "device_demo_001";
+    private  String entrantId;
 
     private TextView tabWaiting, tabSelected, tabEnrolled, tabPast;
     private TextView tvTotalRegistrations, tvEnrolledCount;

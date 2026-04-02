@@ -57,8 +57,8 @@ public class CreateEventActivity extends AppCompatActivity {
     /** Button to validate input and commit the event to the cloud. */
     private MaterialButton btnSave;
 
-    /** Hardcoded organizer ID for demo purposes. */
-    private final String organizerId = "organizer_demo_001";
+    /** Organizer ID.  */
+    private String organizerId;
 
     /** Local URI of the poster image selected by the user. */
     private Uri selectedImageUri;
@@ -94,6 +94,14 @@ public class CreateEventActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_event);
+
+        organizerId = DeviceIdProvider.getId(this);
+
+        if (!DeviceIdProvider.isValidId(organizerId)) {
+            Toast.makeText(this, "Failed to get device ID", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
 
         db = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
@@ -158,7 +166,6 @@ public class CreateEventActivity extends AppCompatActivity {
 
             saveToFirestore(
                     etName.getText().toString().trim(), // name
-                    organizerId,                        // organizerId
                     null,                               // facilityId (default "")
                     null,                               // posterUrl
                     null,                               // qrCodeUrl (default "")
@@ -207,7 +214,6 @@ public class CreateEventActivity extends AppCompatActivity {
                 })
                 .addOnSuccessListener(uri -> saveToFirestore(
                         etName.getText().toString().trim(), // name
-                        organizerId,                        // organizerId
                         null,                               // facilityId
                         uri.toString(),                     // posterUrl
                         null,                               // qrCodeUrl
@@ -234,7 +240,6 @@ public class CreateEventActivity extends AppCompatActivity {
      * NullPointerExceptions in the UI adapters.
      *
      * @param name                The display name or title of the event.
-     * @param organizerId         The ID of the currently logged-in organizer.
      * @param facilityId          The ID of the facility where this event is being hosted.
      * @param posterUrl           The cloud storage download URL for the event's promotional poster.
      * @param qrCodeUrl           The cloud storage download URL for the generated QR code.
@@ -251,7 +256,6 @@ public class CreateEventActivity extends AppCompatActivity {
      */
     private void saveToFirestore(
             String name,
-            String organizerId,
             String facilityId,
             String posterUrl,
             String qrCodeUrl,
@@ -269,7 +273,7 @@ public class CreateEventActivity extends AppCompatActivity {
         Map<String, Object> map = new HashMap<>();
 
         map.put("name", name != null ? name : "");
-        map.put("organizerId", organizerId != null ? organizerId : "");
+        map.put("organizerId", this.organizerId != null ? this.organizerId : "");
         map.put("facilityId", facilityId != null ? facilityId : "");
         map.put("posterUrl", posterUrl != null ? posterUrl : "");
         map.put("qrCodeUrl", qrCodeUrl != null ? qrCodeUrl : "");
@@ -289,10 +293,6 @@ public class CreateEventActivity extends AppCompatActivity {
 
         map.put("waitlistLimit", waitlistLimit);
 
-        String safeOrganizerId = organizerId != null && !organizerId.isEmpty()
-                ? organizerId
-                : "unknown_organizer";
-
         String newEventId = db.collection("events").document().getId();
         map.put("id", newEventId);
 
@@ -306,12 +306,12 @@ public class CreateEventActivity extends AppCompatActivity {
                     organizerEventMap.put("createdAt", FieldValue.serverTimestamp());
 
                     db.collection("organizers")
-                            .document(safeOrganizerId)
+                            .document(this.organizerId)
                             .collection("events")
                             .document(newEventId)
                             .set(organizerEventMap)
                             .addOnSuccessListener(unusedIndex -> {
-                                uploadQRCode(newEventId, safeOrganizerId, eventRef);
+                                uploadQRCode(newEventId, this.organizerId, eventRef);
                             })
                             .addOnFailureListener(e ->
                                     Toast.makeText(this, "Event created, but organizer index failed to save: " + e.getMessage(), Toast.LENGTH_SHORT).show()
