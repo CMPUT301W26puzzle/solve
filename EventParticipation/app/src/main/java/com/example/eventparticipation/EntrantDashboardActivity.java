@@ -21,6 +21,7 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -218,6 +219,7 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
                     final int[] remaining = {querySnapshot.size()};
 
                     for (QueryDocumentSnapshot doc : querySnapshot) {
+                        final String eventId = doc.getId();
                         Event event = doc.toObject(Event.class);
                         if (event == null) {
                             remaining[0]--;
@@ -227,21 +229,19 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
                             continue;
                         }
 
-                        event.setId(doc.getId());
+                        event.setId(eventId);
                         allEvents.add(event);
 
                         db.collection("events")
-                                .document(doc.getId())
+                                .document(eventId)
                                 .collection("waitlist")
                                 .document(entrantId)
                                 .get()
                                 .addOnSuccessListener(waitDoc -> {
-                                    if (waitDoc.exists()) {
-                                        participationStatusByEventId.put(
-                                                doc.getId(),
-                                                waitDoc.getString("status")
-                                        );
-                                    }
+                                    participationStatusByEventId.put(
+                                            eventId,
+                                            resolveParticipationStatus(waitDoc)
+                                    );
 
                                     remaining[0]--;
                                     if (remaining[0] == 0) {
@@ -350,19 +350,45 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
 
         switch (participationFilter) {
             case PARTICIPATION_FILTER_NOT_JOINED:
-                return status == null
-                        || "declined".equals(status)
-                        || "not_selected".equals(status);
+                return PARTICIPATION_FILTER_NOT_JOINED.equals(status);
             case PARTICIPATION_FILTER_WAITING:
-                return "waiting".equals(status) || "waitlist".equals(status);
+                return PARTICIPATION_FILTER_WAITING.equals(status);
             case PARTICIPATION_FILTER_SELECTED:
-                return "selected".equals(status);
+                return PARTICIPATION_FILTER_SELECTED.equals(status);
             case PARTICIPATION_FILTER_ENROLLED:
-                return "enrolled".equals(status);
+                return PARTICIPATION_FILTER_ENROLLED.equals(status);
             case PARTICIPATION_FILTER_ALL:
             default:
                 return true;
         }
+    }
+
+    private String resolveParticipationStatus(DocumentSnapshot waitDoc) {
+        if (!waitDoc.exists()) {
+            return PARTICIPATION_FILTER_NOT_JOINED;
+        }
+
+        String selectionStatus = waitDoc.getString("selectionStatus");
+        String responseStatus = waitDoc.getString("responseStatus");
+        String finalStatus = waitDoc.getString("finalStatus");
+
+        if ("enrolled".equals(finalStatus)) {
+            return PARTICIPATION_FILTER_ENROLLED;
+        }
+
+        if ("waiting".equals(selectionStatus)) {
+            return PARTICIPATION_FILTER_WAITING;
+        }
+
+        if ("selected".equals(selectionStatus) && "pending".equals(responseStatus)) {
+            return PARTICIPATION_FILTER_SELECTED;
+        }
+
+        if ("cancelled".equals(selectionStatus) || "declined".equals(responseStatus)) {
+            return PARTICIPATION_FILTER_NOT_JOINED;
+        }
+
+        return PARTICIPATION_FILTER_NOT_JOINED;
     }
 
     private void showFilterDialog() {

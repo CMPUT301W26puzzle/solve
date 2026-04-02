@@ -178,9 +178,10 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
                                 .get()
                                 .addOnSuccessListener(waitDoc -> {
                                     if (waitDoc.exists()) {
-                                        String status = waitDoc.getString("status");
-                                        if (status == null) status = "waiting";
-                                        allItems.add(new MyEventItem(event, status));
+                                        allItems.add(new MyEventItem(
+                                                event,
+                                                resolveMyEventStatus(waitDoc)
+                                        ));
                                     }
                                     remaining[0]--;
                                     if (remaining[0] == 0) onAllLoaded();
@@ -279,6 +280,34 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
         tvEmptyMessage.setText(message);
         layoutEmptyState.setVisibility(View.VISIBLE);
         rvMyEvents.setVisibility(View.GONE);
+    }
+
+    private String resolveMyEventStatus(DocumentSnapshot waitDoc) {
+        String selectionStatus = waitDoc.getString("selectionStatus");
+        String responseStatus = waitDoc.getString("responseStatus");
+        String finalStatus = waitDoc.getString("finalStatus");
+
+        if ("enrolled".equals(finalStatus)) {
+            return "enrolled";
+        }
+
+        if ("waiting".equals(selectionStatus)) {
+            return "waiting";
+        }
+
+        if ("selected".equals(selectionStatus) && "pending".equals(responseStatus)) {
+            return "selected";
+        }
+
+        if ("declined".equals(responseStatus)) {
+            return "declined";
+        }
+
+        if ("cancelled".equals(selectionStatus)) {
+            return "cancelled";
+        }
+
+        return "not_selected";
     }
 
     /**
