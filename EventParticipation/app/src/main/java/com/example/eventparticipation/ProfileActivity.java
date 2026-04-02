@@ -8,8 +8,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -20,25 +20,29 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Activity for viewing and updating entrant profile information.
+ * Activity for viewing and updating profile information.
  *
- * <p>Relevant user stories:</p>
- * <ul>
- * <li>US 01.02.01 - As an entrant, I want to provide my personal information such as name, email and optional phone number in the app</li>
- * <li>US 01.02.02 - As an entrant I want to update information such as name, email and contact information on my profile</li>
- * <li>US 01.02.04 - As an entrant, I want to delete my profile if I no longer wish to use the app</li>
- * </ul>
+ * Supports:
+ * - save/update profile
+ * - delete entrant account
+ * - test shortcut into co-organizer-accessible Manage Event
  */
 public class ProfileActivity extends BaseOrganizerActivity {
 
     public static final String EXTRA_ROLE = "extra_role";
     public static final String EXTRA_PROFILE_ID = "extra_profile_id";
+    public static final String EXTRA_TEST_ENTRANT_ID = "extra_test_entrant_id";
 
     private TextInputEditText etName;
     private TextInputEditText etEmail;
     private TextInputEditText etPhone;
     private MaterialButton btnSaveChanges;
+    private MaterialButton btnDeleteAccount;
+    private MaterialButton btnCoOrganizerDashboard;
+
     private MaterialCardView cardDeleteAccount;
+    private MaterialCardView cardCoOrganizerAccess;
+
     private BottomNavigationView bottomNavigation;
     private TextView tvProfileTitle;
     private TextView tvProfileSubtitle;
@@ -48,8 +52,6 @@ public class ProfileActivity extends BaseOrganizerActivity {
     private String profileId;
     private String role;
     private boolean hasExistingProfileData = false;
-    private MaterialButton btnDeleteAccount;
-    public static final String EXTRA_TEST_ENTRANT_ID = "extra_test_entrant_id";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,25 +75,38 @@ public class ProfileActivity extends BaseOrganizerActivity {
         loadProfile();
 
         btnSaveChanges.setOnClickListener(v -> saveProfile());
+
         btnDeleteAccount.setOnClickListener(v -> {
             if (isEntrantRole()) {
                 showDeleteAccountDialog();
             }
         });
+
+
+        btnCoOrganizerDashboard.setOnClickListener(v -> {
+            Intent intent = new Intent(this, CoOrganizerDashboardActivity.class);
+            startActivity(intent);
+        });
     }
 
     /**
-     * Binds the layout views.
+     * Binds layout views.
      */
     private void initViews() {
         tvProfileTitle = findViewById(R.id.tvProfileTitle);
         tvProfileSubtitle = findViewById(R.id.tvProfileSubtitle);
+
         etName = findViewById(R.id.etName);
         etEmail = findViewById(R.id.etEmail);
         etPhone = findViewById(R.id.etPhone);
+
         btnSaveChanges = findViewById(R.id.btnSaveChanges);
-        cardDeleteAccount = findViewById(R.id.cardDeleteAccount);
         btnDeleteAccount = findViewById(R.id.btnDeleteAccount);
+        btnCoOrganizerDashboard = findViewById(R.id.btnCoOrganizerDashboard);
+
+        cardDeleteAccount = findViewById(R.id.cardDeleteAccount);
+        cardCoOrganizerAccess = findViewById(R.id.cardCoOrganizerAccess);
+
         tvDeleteAccountSubtitle = findViewById(R.id.tvDeleteAccountSubtitle);
         bottomNavigation = findViewById(R.id.bottomNavigation);
     }
@@ -101,11 +116,15 @@ public class ProfileActivity extends BaseOrganizerActivity {
         tvProfileTitle.setText(titleRole + " Profile");
         tvProfileSubtitle.setText("Manage your account settings");
 
+        // For testing, show co-organizer access card for entrant role
+        cardCoOrganizerAccess.setVisibility(isEntrantRole() ? View.VISIBLE : View.GONE);
+
         if (isEntrantRole()) {
             if (bottomNavigation != null) {
                 bottomNavigation.setVisibility(View.VISIBLE);
             }
             setupBottomNav(R.id.nav_profile);
+
             cardDeleteAccount.setVisibility(View.VISIBLE);
             tvDeleteAccountSubtitle.setText("Remove your profile and registrations.");
         } else if ("organizer".equals(role)) {
@@ -113,17 +132,20 @@ public class ProfileActivity extends BaseOrganizerActivity {
                 bottomNavigation.setVisibility(View.VISIBLE);
             }
             setupOrganizerBottomNav(R.id.nav_profile);
+
             cardDeleteAccount.setVisibility(View.GONE);
+            cardCoOrganizerAccess.setVisibility(View.GONE);
         } else {
             if (bottomNavigation != null) {
                 bottomNavigation.setVisibility(View.GONE);
             }
             cardDeleteAccount.setVisibility(View.GONE);
+            cardCoOrganizerAccess.setVisibility(View.GONE);
         }
     }
 
     /**
-     * Loads the current entrant profile from Firestore.
+     * Loads current profile data from Firestore.
      */
     private void loadProfile() {
         db.collection(getCollectionName())
@@ -152,9 +174,9 @@ public class ProfileActivity extends BaseOrganizerActivity {
                     }
 
                     hasExistingProfileData =
-                            (name != null && !name.trim().isEmpty()) ||
-                                    (email != null && !email.trim().isEmpty()) ||
-                                    (phone != null && !phone.trim().isEmpty());
+                            (name != null && !name.trim().isEmpty())
+                                    || (email != null && !email.trim().isEmpty())
+                                    || (phone != null && !phone.trim().isEmpty());
 
                     btnSaveChanges.setText(hasExistingProfileData ? "Update" : "Save Changes");
                 })
@@ -164,7 +186,7 @@ public class ProfileActivity extends BaseOrganizerActivity {
     }
 
     /**
-     * Validates and saves the profile data to Firestore.
+     * Validates and saves profile data.
      */
     private void saveProfile() {
         String name = getInputText(etName);
@@ -212,26 +234,16 @@ public class ProfileActivity extends BaseOrganizerActivity {
                     btnSaveChanges.setText("Update");
                     Toast.makeText(this, "Profile saved", Toast.LENGTH_SHORT).show();
                 })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Failed to save profile", Toast.LENGTH_SHORT).show();
-                });
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to save profile", Toast.LENGTH_SHORT).show());
     }
 
-    /**
-     * Clears existing field errors.
-     */
     private void clearErrors() {
         etName.setError(null);
         etEmail.setError(null);
         etPhone.setError(null);
     }
 
-    /**
-     * Returns trimmed text from an input field.
-     *
-     * @param editText input field
-     * @return trimmed text, or an empty string if null
-     */
     private String getInputText(TextInputEditText editText) {
         if (editText.getText() == null) {
             return "";
@@ -239,20 +251,11 @@ public class ProfileActivity extends BaseOrganizerActivity {
         return editText.getText().toString().trim();
     }
 
-    /**
-     * Checks whether the phone number contains exactly 10 digits.
-     *
-     * @param phone the phone number entered by the user
-     * @return true if the phone number contains exactly 10 digits; false otherwise
-     */
     private boolean isValidPhone(String phone) {
         String digits = phone.replaceAll("\\D", "");
         return digits.length() == 10;
     }
 
-    /**
-     * Shows a confirmation dialog before deleting the current account.
-     */
     private void showDeleteAccountDialog() {
         new MaterialAlertDialogBuilder(this)
                 .setTitle("Are you sure you want to delete this account?")
@@ -262,9 +265,6 @@ public class ProfileActivity extends BaseOrganizerActivity {
                 .show();
     }
 
-    /**
-     * Deletes the current entrant profile and returns the app to the initial state.
-     */
     private void deleteAccount() {
         if (!isEntrantRole()) {
             return;
@@ -304,8 +304,6 @@ public class ProfileActivity extends BaseOrganizerActivity {
                         );
                     }
 
-                    // TODO: update waitingCount if needed?? update some other lists maybe?
-
                     batch.commit()
                             .addOnSuccessListener(unused -> {
                                 Toast.makeText(this, "Account deleted", Toast.LENGTH_SHORT).show();
@@ -334,9 +332,6 @@ public class ProfileActivity extends BaseOrganizerActivity {
                 });
     }
 
-    /**
-     * Resets the app flow to the initial screen after account deletion.
-     */
     private void resetAppState() {
         Intent intent = new Intent(this, SelectRoleActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
