@@ -8,9 +8,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
@@ -26,6 +28,13 @@ import java.util.Map;
  * - save/update profile
  * - delete entrant account
  * - test shortcut into co-organizer-accessible Manage Event
+ *
+ * <p>Relevant user stories:</p>
+ * <ul>
+ * <li>US 01.02.01 - As an entrant, I want to provide my personal information such as name, email and optional phone number in the app</li>
+ * <li>US 01.02.02 - As an entrant I want to update information such as name, email and contact information on my profile</li>
+ * <li>US 01.02.04 - As an entrant, I want to delete my profile if I no longer wish to use the app</li>
+ * </ul>
  */
 public class ProfileActivity extends BaseOrganizerActivity {
 
@@ -43,7 +52,9 @@ public class ProfileActivity extends BaseOrganizerActivity {
     private MaterialCardView cardDeleteAccount;
     private MaterialCardView cardCoOrganizerAccess;
 
+    private MaterialCardView cardNotificationSettings;
     private BottomNavigationView bottomNavigation;
+    private MaterialSwitch switchOptOut;
     private TextView tvProfileTitle;
     private TextView tvProfileSubtitle;
     private TextView tvDeleteAccountSubtitle;
@@ -52,6 +63,7 @@ public class ProfileActivity extends BaseOrganizerActivity {
     private String profileId;
     private String role;
     private boolean hasExistingProfileData = false;
+    private boolean isBindingOptOutPreference = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,10 +84,10 @@ public class ProfileActivity extends BaseOrganizerActivity {
         }
 
         configureUiForRole();
+        setupOptOutToggle();
         loadProfile();
 
         btnSaveChanges.setOnClickListener(v -> saveProfile());
-
         btnDeleteAccount.setOnClickListener(v -> {
             if (isEntrantRole()) {
                 showDeleteAccountDialog();
@@ -95,18 +107,18 @@ public class ProfileActivity extends BaseOrganizerActivity {
     private void initViews() {
         tvProfileTitle = findViewById(R.id.tvProfileTitle);
         tvProfileSubtitle = findViewById(R.id.tvProfileSubtitle);
-
         etName = findViewById(R.id.etName);
         etEmail = findViewById(R.id.etEmail);
         etPhone = findViewById(R.id.etPhone);
-
         btnSaveChanges = findViewById(R.id.btnSaveChanges);
         btnDeleteAccount = findViewById(R.id.btnDeleteAccount);
         btnCoOrganizerDashboard = findViewById(R.id.btnCoOrganizerDashboard);
 
         cardDeleteAccount = findViewById(R.id.cardDeleteAccount);
         cardCoOrganizerAccess = findViewById(R.id.cardCoOrganizerAccess);
-
+        cardNotificationSettings = findViewById(R.id.cardNotificationSettings);
+        switchOptOut = findViewById(R.id.switchOptOut);
+        btnDeleteAccount = findViewById(R.id.btnDeleteAccount);
         tvDeleteAccountSubtitle = findViewById(R.id.tvDeleteAccountSubtitle);
         bottomNavigation = findViewById(R.id.bottomNavigation);
     }
@@ -124,7 +136,7 @@ public class ProfileActivity extends BaseOrganizerActivity {
                 bottomNavigation.setVisibility(View.VISIBLE);
             }
             setupBottomNav(R.id.nav_profile);
-
+            cardNotificationSettings.setVisibility(View.VISIBLE);
             cardDeleteAccount.setVisibility(View.VISIBLE);
             tvDeleteAccountSubtitle.setText("Remove your profile and registrations.");
         } else if ("organizer".equals(role)) {
@@ -132,13 +144,14 @@ public class ProfileActivity extends BaseOrganizerActivity {
                 bottomNavigation.setVisibility(View.VISIBLE);
             }
             setupOrganizerBottomNav(R.id.nav_profile);
-
+            cardNotificationSettings.setVisibility(View.GONE);
             cardDeleteAccount.setVisibility(View.GONE);
             cardCoOrganizerAccess.setVisibility(View.GONE);
         } else {
             if (bottomNavigation != null) {
                 bottomNavigation.setVisibility(View.GONE);
             }
+            cardNotificationSettings.setVisibility(View.GONE);
             cardDeleteAccount.setVisibility(View.GONE);
             cardCoOrganizerAccess.setVisibility(View.GONE);
         }
@@ -160,6 +173,7 @@ public class ProfileActivity extends BaseOrganizerActivity {
                     String name = documentSnapshot.getString("name");
                     String email = documentSnapshot.getString("email");
                     String phone = documentSnapshot.getString("phone");
+                    Boolean isOptedOut = documentSnapshot.getBoolean("optOutNotifications");
 
                     if (name != null) {
                         etName.setText(name);
@@ -171,6 +185,12 @@ public class ProfileActivity extends BaseOrganizerActivity {
 
                     if (phone != null) {
                         etPhone.setText(phone);
+                    }
+
+                    if (isEntrantRole()) {
+                        isBindingOptOutPreference = true;
+                        switchOptOut.setChecked(isOptedOut != null && isOptedOut);
+                        isBindingOptOutPreference = false;
                     }
 
                     hasExistingProfileData =
@@ -225,6 +245,9 @@ public class ProfileActivity extends BaseOrganizerActivity {
         profile.put("name", name);
         profile.put("email", email);
         profile.put("phone", phone);
+        if (isEntrantRole()) {
+            profile.put("optOutNotifications", switchOptOut.isChecked());
+        }
 
         db.collection(getCollectionName())
                 .document(profileId)
@@ -238,12 +261,21 @@ public class ProfileActivity extends BaseOrganizerActivity {
                         Toast.makeText(this, "Failed to save profile", Toast.LENGTH_SHORT).show());
     }
 
+    /**
+     * Clears existing field errors.
+     */
     private void clearErrors() {
         etName.setError(null);
         etEmail.setError(null);
         etPhone.setError(null);
     }
 
+    /**
+     * Returns trimmed text from an input field.
+     *
+     * @param editText input field
+     * @return trimmed text, or an empty string if null
+     */
     private String getInputText(TextInputEditText editText) {
         if (editText.getText() == null) {
             return "";
@@ -251,11 +283,48 @@ public class ProfileActivity extends BaseOrganizerActivity {
         return editText.getText().toString().trim();
     }
 
+    /**
+     * Checks whether the phone number contains exactly 10 digits.
+     *
+     * @param phone the phone number entered by the user
+     * @return true if the phone number contains exactly 10 digits; false otherwise
+     */
     private boolean isValidPhone(String phone) {
         String digits = phone.replaceAll("\\D", "");
         return digits.length() == 10;
     }
 
+    /**
+     * Saves entrant notification preferences when the switch is toggled by the user.
+     */
+    private void setupOptOutToggle() {
+        if (!isEntrantRole()) {
+            return;
+        }
+
+        switchOptOut.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isBindingOptOutPreference) {
+                return;
+            }
+
+            db.collection("entrants")
+                    .document(profileId)
+                    .update("optOutNotifications", isChecked)
+                    .addOnSuccessListener(unused -> {
+                        String message = isChecked
+                                ? "Notifications disabled"
+                                : "Notifications enabled";
+                        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this, "Failed to update settings", Toast.LENGTH_SHORT).show()
+                    );
+        });
+    }
+
+    /**
+     * Shows a confirmation dialog before deleting the current account.
+     */
     private void showDeleteAccountDialog() {
         new MaterialAlertDialogBuilder(this)
                 .setTitle("Are you sure you want to delete this account?")
@@ -265,6 +334,9 @@ public class ProfileActivity extends BaseOrganizerActivity {
                 .show();
     }
 
+    /**
+     * Deletes the current entrant profile and returns the app to the initial state.
+     */
     private void deleteAccount() {
         if (!isEntrantRole()) {
             return;
@@ -304,6 +376,8 @@ public class ProfileActivity extends BaseOrganizerActivity {
                         );
                     }
 
+                    // TODO: update waitingCount if needed?? update some other lists maybe?
+
                     batch.commit()
                             .addOnSuccessListener(unused -> {
                                 Toast.makeText(this, "Account deleted", Toast.LENGTH_SHORT).show();
@@ -332,6 +406,9 @@ public class ProfileActivity extends BaseOrganizerActivity {
                 });
     }
 
+    /**
+     * Resets the app flow to the initial screen after account deletion.
+     */
     private void resetAppState() {
         Intent intent = new Intent(this, SelectRoleActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
