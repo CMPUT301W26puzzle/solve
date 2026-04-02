@@ -196,14 +196,27 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <Button
-        android:id="@+id/btnContinue"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:layout_marginTop="40dp"
-        android:text="Continue"
-        android:textSize="16sp"
-        android:textColor="#FFFFFF"
-        android:backgroundTint="#3D5AFE" />
+        android:layout_marginTop="40dp">
+
+        <Button
+            android:id="@+id/btnContinue"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Continue"
+            android:textSize="16sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#3D5AFE" />
+
+        <ProgressBar
+            android:id="@+id/btnProgress"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+    </FrameLayout>
+
 
 </LinearLayout>
