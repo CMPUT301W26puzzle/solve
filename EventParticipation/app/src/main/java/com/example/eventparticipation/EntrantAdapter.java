@@ -14,35 +14,57 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * RecyclerView adapter used to display entrants in the organizer waitlist screen.
+ * RecyclerView adapter used to display entrants in organizer waitlist screens.
  *
- * <p>Each row shows entrant name, email, join date, and current status.</p>
+ * <p>This adapter displays entrant identity information and a single status badge.
+ * It also supports row click callbacks so the parent screen can trigger organizer
+ * actions such as cancelling invitations.</p>
+ *
+ * <p>Status display logic:
+ * <ul>
+ *     <li>waiting -> Waiting</li>
+ *     <li>selected + pending -> Pending</li>
+ *     <li>selected + accepted -> Accepted</li>
+ *     <li>selected + declined -> Declined</li>
+ *     <li>enrolled -> Enrolled</li>
+ *     <li>cancelled -> Cancelled</li>
+ * </ul>
  */
 public class EntrantAdapter extends RecyclerView.Adapter<EntrantAdapter.EntrantViewHolder> {
 
-    /** Source list used by the adapter. */
+    /**
+     * Listener for row click events.
+     */
+    public interface OnEntrantClickListener {
+        /**
+         * Called when an entrant row is tapped.
+         *
+         * @param entrant tapped entrant
+         */
+        void onEntrantClick(Entrant entrant);
+    }
+
+    /** Entrants displayed by this adapter. */
     private final List<Entrant> entrants;
 
-    /** Date formatter used for rendering join dates. */
+    /** Date formatter used for joined-at display. */
     private final SimpleDateFormat dateFormat;
 
+    /** Optional row click listener. */
+    private final OnEntrantClickListener listener;
+
     /**
-     * Creates an adapter for the provided entrant list.
+     * Creates a new adapter instance.
      *
-     * @param entrants list of entrants to display
+     * @param entrants displayed entrant list
+     * @param listener optional click listener for row taps
      */
-    public EntrantAdapter(List<Entrant> entrants) {
+    public EntrantAdapter(List<Entrant> entrants, OnEntrantClickListener listener) {
         this.entrants = entrants;
+        this.listener = listener;
         this.dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
     }
 
-    /**
-     * Inflates a single entrant item view.
-     *
-     * @param parent parent view group
-     * @param viewType item view type
-     * @return new view holder instance
-     */
     @NonNull
     @Override
     public EntrantViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -51,12 +73,6 @@ public class EntrantAdapter extends RecyclerView.Adapter<EntrantAdapter.EntrantV
         return new EntrantViewHolder(view);
     }
 
-    /**
-     * Binds entrant data to the row at the given position.
-     *
-     * @param holder row view holder
-     * @param position adapter position
-     */
     @Override
     public void onBindViewHolder(@NonNull EntrantViewHolder holder, int position) {
         Entrant entrant = entrants.get(position);
@@ -70,97 +86,130 @@ public class EntrantAdapter extends RecyclerView.Adapter<EntrantAdapter.EntrantV
             holder.tvRegisteredDate.setText("Joined: -");
         }
 
-        holder.tvStatus.setText(getStatusText(entrant.getStatus()));
-        holder.tvStatus.setBackgroundColor(getStatusColor(entrant.getStatus()));
+        String displayStatus = getDisplayStatusText(
+                entrant.getSelectionStatus(),
+                entrant.getResponseStatus(),
+                entrant.getFinalStatus()
+        );
+
+        int statusColor = getDisplayStatusColor(
+                entrant.getSelectionStatus(),
+                entrant.getResponseStatus(),
+                entrant.getFinalStatus()
+        );
+
+        holder.tvStatus.setText(displayStatus);
+        holder.tvStatus.setBackgroundColor(statusColor);
+
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onEntrantClick(entrant);
+            }
+        });
     }
 
-    /**
-     * Returns the total number of rows displayed by the adapter.
-     *
-     * @return entrant count
-     */
     @Override
     public int getItemCount() {
-        return entrants.size();
+        return entrants == null ? 0 : entrants.size();
     }
 
     /**
-     * Converts a possibly null string into a UI-safe display value.
+     * Returns a user-facing status string for the badge.
      *
-     * @param value raw text value
-     * @return original value, or {@code "-"} when null
+     * @param selectionStatus entrant selection status
+     * @param responseStatus entrant response status
+     * @param finalStatus entrant final status
+     * @return display text for the badge
+     */
+    private String getDisplayStatusText(String selectionStatus, String responseStatus, String finalStatus) {
+        if ("enrolled".equals(finalStatus)) {
+            return "Enrolled";
+        }
+
+        if ("cancelled".equals(selectionStatus)) {
+            return "Cancelled";
+        }
+
+        if ("waiting".equals(selectionStatus)) {
+            return "Waiting";
+        }
+
+        if ("selected".equals(selectionStatus)) {
+            if ("accepted".equals(responseStatus)) {
+                return "Accepted";
+            }
+            if ("declined".equals(responseStatus)) {
+                return "Declined";
+            }
+            return "Pending";
+        }
+
+        return "Unknown";
+    }
+
+    /**
+     * Returns badge color based on entrant status.
+     *
+     * @param selectionStatus entrant selection status
+     * @param responseStatus entrant response status
+     * @param finalStatus entrant final status
+     * @return color integer for badge background
+     */
+    private int getDisplayStatusColor(String selectionStatus, String responseStatus, String finalStatus) {
+        if ("enrolled".equals(finalStatus)) {
+            return Color.parseColor("#9333EA");
+        }
+
+        if ("cancelled".equals(selectionStatus)) {
+            return Color.parseColor("#6B7280");
+        }
+
+        if ("waiting".equals(selectionStatus)) {
+            return Color.parseColor("#2563EB");
+        }
+
+        if ("selected".equals(selectionStatus)) {
+            if ("accepted".equals(responseStatus)) {
+                return Color.parseColor("#16A34A");
+            }
+            if ("declined".equals(responseStatus)) {
+                return Color.parseColor("#DC2626");
+            }
+            return Color.parseColor("#F59E0B");
+        }
+
+        return Color.parseColor("#9CA3AF");
+    }
+
+    /**
+     * Returns a non-null safe string for display.
+     *
+     * @param value possibly null value
+     * @return dash when null, otherwise original value
      */
     private String safe(String value) {
         return value == null ? "-" : value;
     }
 
     /**
-     * Maps internal waitlist status values to user-friendly labels.
-     *
-     * @param status raw status from Firestore
-     * @return display label for the status
-     */
-    private String getStatusText(String status) {
-        if (status == null) return "Unknown";
-        switch (status) {
-            case "waiting":
-                return "Waiting";
-            case "selected":
-                return "Selected";
-            case "enrolled":
-                return "Enrolled";
-            case "cancelled":
-                return "Cancelled";
-            case "not_selected":
-                return "Not Selected";
-            default:
-                return status;
-        }
-    }
-
-    /**
-     * Maps waitlist status values to badge background colors.
-     *
-     * @param status raw status from Firestore
-     * @return parsed color integer associated with the status
-     */
-    private int getStatusColor(String status) {
-        if (status == null) return Color.parseColor("#9CA3AF");
-        switch (status) {
-            case "waiting":
-                return Color.parseColor("#2563EB");
-            case "selected":
-                return Color.parseColor("#16A34A");
-            case "enrolled":
-                return Color.parseColor("#9333EA");
-            case "cancelled":
-                return Color.parseColor("#DC2626");
-            case "not_selected":
-                return Color.parseColor("#6B7280");
-            default:
-                return Color.parseColor("#9CA3AF");
-        }
-    }
-
-    /**
-     * ViewHolder representing one entrant row in the list.
+     * ViewHolder for a single entrant row.
      */
     static class EntrantViewHolder extends RecyclerView.ViewHolder {
 
-        /** Name label. */
+        /** Entrant display name. */
         TextView tvEntrantName;
 
-        /** Email label. */
+        /** Entrant email. */
         TextView tvEntrantEmail;
 
-        /** Join date label. */
+        /** Joined-at display label. */
         TextView tvRegisteredDate;
 
-        /** Status badge label. */
+        /** Status badge. */
         TextView tvStatus;
 
         /**
-         * Creates a view holder bound to a row view.
+         * Creates a view holder for an entrant row.
          *
          * @param itemView inflated row view
          */

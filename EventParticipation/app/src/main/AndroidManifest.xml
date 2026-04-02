@@ -43,5 +43,6 @@
         <activity android:name=".CameraQRActivity" android:exported="false" />
         <activity android:name=".EntrantQRCodeActivity" android:exported="false" />
         <activity android:name=".InfoPopup" android:exported="false" android:theme="@style/PopUp"/>
+        <activity android:name=".CoOrganizerDashboardActivity" />
     </application>
 </manifest>

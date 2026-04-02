@@ -7,15 +7,10 @@ import java.util.Date;
 /**
  * Model class representing a single entrant record stored in an event waitlist.
  *
- * <p>This class is used by Firestore object mapping and by organizer-facing UI screens
- * such as the entrant list and waitlist map. Each entrant may include profile information,
- * waitlist status, the location/address where they joined, and the timestamp of joining.</p>
- *
- * <p>Relevant user stories:</p>
- * <ul>
- *     <li>US 02.02.01 - View entrants in the waiting list</li>
- *     <li>US 02.02.02 - View entrant join locations on a map</li>
- * </ul>
+ * Status design:
+ * - selectionStatus: waiting / selected / cancelled
+ * - responseStatus: pending / accepted / declined
+ * - finalStatus: enrolled
  */
 public class Entrant {
 
@@ -31,8 +26,20 @@ public class Entrant {
     /** Email address of the entrant. */
     private String entrantEmail;
 
-    /** Current waitlist status, for example waiting, selected, enrolled, or cancelled. */
+    /**
+     * Legacy status field kept temporarily for backward compatibility.
+     * Old values might be: waiting, selected, enrolled, cancelled.
+     */
     private String status;
+
+    /** Selection layer status: waiting / selected / cancelled */
+    private String selectionStatus;
+
+    /** Response layer status for selected entrants: pending / accepted / declined */
+    private String responseStatus;
+
+    /** Final layer status: enrolled */
+    private String finalStatus;
 
     /** Human-readable address captured when the entrant joined the waitlist. */
     private String joinedAddress;
@@ -42,6 +49,18 @@ public class Entrant {
 
     /** Timestamp indicating when the entrant joined the waitlist. */
     private Date joinedAt;
+
+    /** Timestamp indicating when the entrant was selected. */
+    private Date selectedAt;
+
+    /** Timestamp indicating when the entrant responded to the selection. */
+    private Date respondedAt;
+
+    /** Timestamp indicating when the entrant was enrolled. */
+    private Date enrolledAt;
+
+    /** Timestamp indicating when the entrant was cancelled. */
+    private Date cancelledAt;
 
     /** Flag indicating if the entrant has opted out of notifications. */
     private boolean optOutNotifications;
@@ -53,212 +72,202 @@ public class Entrant {
     }
 
     /**
-     * Creates a fully populated entrant object.
-     *
-     * @param entrantId unique identifier of the entrant
-     * @param entrantName display name of the entrant
-     * @param entrantEmail email address of the entrant
-     * @param status current waitlist status
-     * @param joinedAddress human-readable join address
-     * @param joinedLocation geographic coordinates of the join location
-     * @param joinedAt timestamp when the entrant joined the waitlist
+     * Basic constructor.
      */
     public Entrant(String entrantId,
                    String entrantName,
                    String entrantEmail,
-                   String status,
+                   String selectionStatus,
+                   String responseStatus,
+                   String finalStatus,
                    String joinedAddress,
                    GeoPoint joinedLocation,
                    Date joinedAt) {
         this.entrantId = entrantId;
         this.entrantName = entrantName;
         this.entrantEmail = entrantEmail;
-        this.status = status;
+        this.selectionStatus = selectionStatus;
+        this.responseStatus = responseStatus;
+        this.finalStatus = finalStatus;
         this.joinedAddress = joinedAddress;
         this.joinedLocation = joinedLocation;
         this.joinedAt = joinedAt;
     }
 
-    /**
-     * Returns the Firestore document id.
-     *
-     * @return waitlist document id
-     */
     public String getId() {
         return id;
     }
 
-    /**
-     * Sets the Firestore document id.
-     *
-     * @param id waitlist document id
-     */
     public void setId(String id) {
         this.id = id;
     }
 
-    /**
-     * Returns the entrant's unique id.
-     *
-     * @return entrant id
-     */
     public String getEntrantId() {
         return entrantId;
     }
 
-    /**
-     * Sets the entrant id.
-     *
-     * @param entrantId entrant id
-     */
     public void setEntrantId(String entrantId) {
         this.entrantId = entrantId;
     }
 
-    /**
-     * Returns the entrant's display name.
-     *
-     * @return entrant name
-     */
     public String getEntrantName() {
         return entrantName;
     }
 
-    /**
-     * Sets the entrant display name.
-     *
-     * @param entrantName entrant name
-     */
     public void setEntrantName(String entrantName) {
         this.entrantName = entrantName;
     }
 
-    /**
-     * Returns the entrant's email address.
-     *
-     * @return entrant email
-     */
     public String getEntrantEmail() {
         return entrantEmail;
     }
 
-    /**
-     * Sets the entrant email address.
-     *
-     * @param entrantEmail entrant email
-     */
     public void setEntrantEmail(String entrantEmail) {
         this.entrantEmail = entrantEmail;
     }
 
     /**
-     * Returns the current waitlist status.
-     *
-     * @return status string
+     * Legacy getter. Prefer using getSelectionStatus(), getResponseStatus(), getFinalStatus().
      */
     public String getStatus() {
         return status;
     }
 
     /**
-     * Sets the entrant waitlist status.
-     *
-     * @param status status string
+     * Legacy setter. Prefer using setSelectionStatus(), setResponseStatus(), setFinalStatus().
      */
     public void setStatus(String status) {
         this.status = status;
     }
 
-    /**
-     * Returns the join address recorded for the entrant.
-     *
-     * @return joined address
-     */
+    public String getSelectionStatus() {
+        // New field first
+        if (selectionStatus != null && !selectionStatus.isEmpty()) {
+            return selectionStatus;
+        }
+
+        // Backward compatibility with old single-field status
+        if ("waiting".equals(status)) return "waiting";
+        if ("selected".equals(status)) return "selected";
+        if ("cancelled".equals(status)) return "cancelled";
+        if ("enrolled".equals(status)) return "selected"; // enrolled implies was selected
+
+        return null;
+    }
+
+    public void setSelectionStatus(String selectionStatus) {
+        this.selectionStatus = selectionStatus;
+    }
+
+    public String getResponseStatus() {
+        // New field first
+        if (responseStatus != null && !responseStatus.isEmpty()) {
+            return responseStatus;
+        }
+
+        // Backward compatibility
+        if ("selected".equals(status)) return "pending";
+        if ("enrolled".equals(status)) return "accepted";
+
+        return null;
+    }
+
+    public void setResponseStatus(String responseStatus) {
+        this.responseStatus = responseStatus;
+    }
+
+    public String getFinalStatus() {
+        // New field first
+        if (finalStatus != null && !finalStatus.isEmpty()) {
+            return finalStatus;
+        }
+
+        // Backward compatibility
+        if ("enrolled".equals(status)) return "enrolled";
+
+        return null;
+    }
+
+    public void setFinalStatus(String finalStatus) {
+        this.finalStatus = finalStatus;
+    }
+
     public String getJoinedAddress() {
         return joinedAddress;
     }
 
-    /**
-     * Sets the join address.
-     *
-     * @param joinedAddress join address
-     */
     public void setJoinedAddress(String joinedAddress) {
         this.joinedAddress = joinedAddress;
     }
 
-    /**
-     * Returns the geographic location where the entrant joined.
-     *
-     * @return join location, or {@code null} if unavailable
-     */
     public GeoPoint getJoinedLocation() {
         return joinedLocation;
     }
 
-    /**
-     * Sets the geographic join location.
-     *
-     * @param joinedLocation join coordinates
-     */
     public void setJoinedLocation(GeoPoint joinedLocation) {
         this.joinedLocation = joinedLocation;
     }
 
-    /**
-     * Returns the timestamp when the entrant joined the waitlist.
-     *
-     * @return join timestamp, or {@code null} if unavailable
-     */
     public Date getJoinedAt() {
         return joinedAt;
     }
 
-    /**
-     * Sets the join timestamp.
-     *
-     * @param joinedAt join time
-     */
     public void setJoinedAt(Date joinedAt) {
         this.joinedAt = joinedAt;
     }
 
-    /**
-     * Indicates whether this entrant has a valid stored location for map display.
-     *
-     * @return {@code true} if {@link #joinedLocation} is not null; otherwise {@code false}
-     */
+    public Date getSelectedAt() {
+        return selectedAt;
+    }
+
+    public void setSelectedAt(Date selectedAt) {
+        this.selectedAt = selectedAt;
+    }
+
+    public Date getRespondedAt() {
+        return respondedAt;
+    }
+
+    public void setRespondedAt(Date respondedAt) {
+        this.respondedAt = respondedAt;
+    }
+
+    public Date getEnrolledAt() {
+        return enrolledAt;
+    }
+
+    public void setEnrolledAt(Date enrolledAt) {
+        this.enrolledAt = enrolledAt;
+    }
+
+    public Date getCancelledAt() {
+        return cancelledAt;
+    }
+
+    public void setCancelledAt(Date cancelledAt) {
+        this.cancelledAt = cancelledAt;
+    }
+
     public boolean hasLocation() {
         return joinedLocation != null;
     }
 
-    /**
-     * Returns a concise debug string for logs.
-     *
-     * @return debug representation of the entrant
-     */
+    public boolean isOptOutNotifications() {
+        return optOutNotifications;
+    }
+
+    public void setOptOutNotifications(boolean optOutNotifications) {
+        this.optOutNotifications = optOutNotifications;
+    }
+
     @Override
     public String toString() {
         return "Entrant{" +
                 "entrantId='" + entrantId + '\'' +
                 ", entrantName='" + entrantName + '\'' +
-                ", status='" + status + '\'' +
+                ", selectionStatus='" + getSelectionStatus() + '\'' +
+                ", responseStatus='" + getResponseStatus() + '\'' +
+                ", finalStatus='" + getFinalStatus() + '\'' +
                 '}';
-    }
-
-    /**
-     * Checks if the entrant opted out of notifications.
-     * @return true if opted out, false otherwise.
-     */
-    public boolean isOptOutNotifications() {
-        return optOutNotifications;
-    }
-
-    /**
-     * Sets the entrant's notification preference.
-     * @param optOutNotifications true to opt out, false to receive.
-     */
-    public void setOptOutNotifications(boolean optOutNotifications) {
-        this.optOutNotifications = optOutNotifications;
     }
 }

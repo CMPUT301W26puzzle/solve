@@ -1,5 +1,6 @@
 package com.example.eventparticipation;
 
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -17,29 +18,24 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 /**
  * Event detail screen for entrants.
  *
- * <p>Displays full event information and allows the entrant to join or leave
- * the waiting list. The button state toggles based on whether the device ID
- * is already present in the event's waiting list.</p>
+ * Displays full event information and allows the entrant to join or leave
+ * the waiting list. Also supports declining a pending invitation.
  *
- * <p>Relevant user stories:</p>
- * <ul>
- * <li>US 01.01.01 - Join the waiting list</li>
- * <li>US 01.01.02 - Leave the waiting list</li>
- * <li>US 01.05.04 - Show waiting list count</li>
- * </ul>
+ * Status model:
+ * - selectionStatus: waiting / selected / cancelled
+ * - responseStatus: pending / accepted / declined
+ * - finalStatus: enrolled
  */
 public class EntrantEventDetailActivity extends AppCompatActivity {
 
-    /** Firestore document ID of the event being viewed. */
     private String eventId;
-
-    /** Current entrant id used for waitlist and notification actions. */
     private String entrantId;
 
     private ImageView ivEventPoster;
@@ -114,7 +110,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * Populates the UI using the Event passed via Intent extras.
+     * Populates the UI using Event passed via Intent extras.
      * Falls back to Firestore fetch if no extras are present.
      */
     private void loadEventFromIntent() {
@@ -123,7 +119,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                 : "Event");
 
         tvEventPrice.setText("Free");
-
         tvEventDate.setText("See event details");
         tvEventTime.setText("");
 
@@ -148,8 +143,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
 
     /**
      * Loads full event data from Firestore.
-     *
-     * @param eventId Firestore event document ID
      */
     private void loadEventFromFirestore(String eventId) {
         db.collection("events")
@@ -199,8 +192,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * Checks Firestore to see if this device is already on the waiting list,
-     * then updates the button label accordingly.
+     * Checks Firestore to see whether this entrant currently has an active waitlist entry.
      */
     private void checkWaitingListStatus() {
         if (eventId == null) {
@@ -213,17 +205,20 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                 .document(entrantId)
                 .get()
                 .addOnSuccessListener(doc -> {
-                    String status = doc.getString("status");
+                    String selectionStatus = doc.getString("selectionStatus");
+                    String finalStatus = doc.getString("finalStatus");
+
                     isOnWaitingList = doc.exists()
-                            && !"declined".equals(status)
-                            && !"not_selected".equals(status);
+                            && !"cancelled".equals(selectionStatus)
+                            && !"enrolled".equals(finalStatus);
+
                     updateButton();
                 })
                 .addOnFailureListener(e -> updateButton());
     }
 
     /**
-     * Adds this device to the event's waiting list in Firestore.
+     * Adds this entrant to the event waitlist unless they are a co-organizer.
      */
     private void joinWaitingList() {
         if (eventId == null) {
@@ -233,28 +228,47 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
 
         DocumentReference eventRef = db.collection("events").document(eventId);
 
-        Map<String, Object> waitlistEntry = new HashMap<>();
-        waitlistEntry.put("deviceId", entrantId);
-        waitlistEntry.put("entrantId", entrantId);
-        waitlistEntry.put("joinedAt", new Date());
-        waitlistEntry.put("status", "waiting");
+        eventRef.get().addOnSuccessListener(eventDoc -> {
+            List<String> coOrganizerIds = (List<String>) eventDoc.get("coOrganizerIds");
 
-        eventRef.collection("waitlist")
-                .document(entrantId)
-                .set(waitlistEntry)
-                .addOnSuccessListener(unused -> {
-                    eventRef.update("waitingCount", FieldValue.increment(1));
-                    isOnWaitingList = true;
-                    updateButton();
-                    Toast.makeText(this, "Joined waiting list!", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to join waiting list", Toast.LENGTH_SHORT).show()
-                );
+            if (coOrganizerIds != null && coOrganizerIds.contains(entrantId)) {
+                Toast.makeText(
+                        this,
+                        "Co-organizers cannot join the entrant pool for this event",
+                        Toast.LENGTH_LONG
+                ).show();
+                return;
+            }
+
+            Map<String, Object> waitlistEntry = new HashMap<>();
+            waitlistEntry.put("deviceId", entrantId);
+            waitlistEntry.put("entrantId", entrantId);
+            waitlistEntry.put("joinedAt", new Date());
+
+            // New status model
+            waitlistEntry.put("selectionStatus", "waiting");
+            waitlistEntry.put("responseStatus", null);
+            waitlistEntry.put("finalStatus", null);
+
+            eventRef.collection("waitlist")
+                    .document(entrantId)
+                    .set(waitlistEntry)
+                    .addOnSuccessListener(unused -> {
+                        eventRef.update("waitingCount", FieldValue.increment(1));
+                        isOnWaitingList = true;
+                        updateButton();
+                        Toast.makeText(this, "Joined waiting list!", Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this, "Failed to join waiting list", Toast.LENGTH_SHORT).show()
+                    );
+        }).addOnFailureListener(e ->
+                Toast.makeText(this, "Failed to check event role", Toast.LENGTH_SHORT).show()
+        );
     }
 
     /**
-     * Removes this device from the event's waiting list in Firestore.
+     * Removes this entrant from the waitlist, or declines a pending invitation if selected.
      */
     private void leaveWaitingList() {
         if (eventId == null) {
@@ -265,9 +279,9 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         DocumentReference waitRef = eventRef.collection("waitlist").document(entrantId);
 
         waitRef.get().addOnSuccessListener(doc -> {
-            String status = doc.getString("status");
+            String selectionStatus = doc.getString("selectionStatus");
 
-            if ("selected".equals(status)) {
+            if ("selected".equals(selectionStatus)) {
                 declineSelectedInvitation(eventRef, waitRef);
             } else {
                 waitRef.delete().addOnSuccessListener(unused -> {
@@ -275,23 +289,30 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                     isOnWaitingList = false;
                     updateButton();
                     Toast.makeText(this, "Left waiting list", Toast.LENGTH_SHORT).show();
-                });
+                }).addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to leave waiting list", Toast.LENGTH_SHORT).show()
+                );
             }
         });
     }
 
     /**
-     * Declines a selected invitation and triggers a replacement draw.
+     * Declines a selected invitation.
+     *
+     * Manual replacement flow:
+     * - mark this entrant declined
+     * - organizer later decides whether to draw a replacement
      */
     private void declineSelectedInvitation(DocumentReference eventRef, DocumentReference waitRef) {
         waitRef.update(
-                        "status", "declined",
+                        "selectionStatus", "selected",
+                        "responseStatus", "declined",
+                        "finalStatus", null,
                         "respondedAt", FieldValue.serverTimestamp()
                 )
                 .addOnSuccessListener(unused -> {
                     eventRef.update("selectedCount", FieldValue.increment(-1));
                     markInvitationNotificationsDeclined();
-                    triggerRedraw();
                     isOnWaitingList = false;
                     updateButton();
                     Toast.makeText(this, "Invitation declined", Toast.LENGTH_SHORT).show();
@@ -330,9 +351,16 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * Updates the join/leave button label and color based on current waiting list status.
+     * Updates the button label and color based on entrant status for this event.
      */
     private void updateButton() {
+        if (eventId == null) {
+            btnJoinLeave.setText("Join Waiting List");
+            btnJoinLeave.setEnabled(true);
+            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF000000));
+            return;
+        }
+
         if (isOnWaitingList) {
             db.collection("events")
                     .document(eventId)
@@ -340,48 +368,34 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                     .document(entrantId)
                     .get()
                     .addOnSuccessListener(doc -> {
-                        String status = doc.getString("status");
-                        if ("selected".equals(status)) {
+                        String selectionStatus = doc.getString("selectionStatus");
+                        String responseStatus = doc.getString("responseStatus");
+                        String finalStatus = doc.getString("finalStatus");
+
+                        if ("enrolled".equals(finalStatus)) {
+                            btnJoinLeave.setText("Enrolled");
+                            btnJoinLeave.setEnabled(false);
+                            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF6B7280));
+                        } else if ("selected".equals(selectionStatus)
+                                && "pending".equals(responseStatus)) {
                             btnJoinLeave.setText("Decline Invitation");
-                            btnJoinLeave.setBackgroundTintList(
-                                    android.content.res.ColorStateList.valueOf(0xFFCC0000)
-                            );
+                            btnJoinLeave.setEnabled(true);
+                            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFFCC0000));
                         } else {
                             btnJoinLeave.setText("Leave Waiting List");
-                            btnJoinLeave.setBackgroundTintList(
-                                    android.content.res.ColorStateList.valueOf(0xFFCC0000)
-                            );
+                            btnJoinLeave.setEnabled(true);
+                            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFFCC0000));
                         }
+                    })
+                    .addOnFailureListener(e -> {
+                        btnJoinLeave.setText("Leave Waiting List");
+                        btnJoinLeave.setEnabled(true);
+                        btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFFCC0000));
                     });
         } else {
             btnJoinLeave.setText("Join Waiting List");
-            btnJoinLeave.setBackgroundTintList(
-                    android.content.res.ColorStateList.valueOf(0xFF000000)
-            );
+            btnJoinLeave.setEnabled(true);
+            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF000000));
         }
-    }
-
-    /**
-     * Picks a random waiting entrant and promotes them to selected.
-     */
-    private void triggerRedraw() {
-        new WaitlistController()
-                .drawReplacement(eventId)
-                .addOnSuccessListener(replacementId -> {
-                    if (replacementId != null) {
-                        Toast.makeText(
-                                this,
-                                "A new entrant has been selected",
-                                Toast.LENGTH_SHORT
-                        ).show();
-                    }
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(
-                                this,
-                                "Failed to draw replacement",
-                                Toast.LENGTH_SHORT
-                        ).show()
-                );
     }
 }

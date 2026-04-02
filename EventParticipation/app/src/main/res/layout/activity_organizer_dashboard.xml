@@ -56,7 +56,7 @@
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Back to Entrant"
+                        android:text="Back"
                         android:textColor="@android:color/white"
                         app:strokeColor="@android:color/white"
                         app:strokeWidth="1dp"

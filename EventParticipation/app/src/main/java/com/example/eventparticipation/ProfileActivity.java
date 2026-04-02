@@ -10,6 +10,7 @@ import android.widget.Toast;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.textfield.TextInputEditText;
@@ -21,7 +22,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Activity for viewing and updating entrant profile information.
+ * Activity for viewing and updating profile information.
+ *
+ * Supports:
+ * - save/update profile
+ * - delete entrant account
+ * - test shortcut into co-organizer-accessible Manage Event
  *
  * <p>Relevant user stories:</p>
  * <ul>
@@ -34,12 +40,18 @@ public class ProfileActivity extends BaseOrganizerActivity {
 
     public static final String EXTRA_ROLE = "extra_role";
     public static final String EXTRA_PROFILE_ID = "extra_profile_id";
+    public static final String EXTRA_TEST_ENTRANT_ID = "extra_test_entrant_id";
 
     private TextInputEditText etName;
     private TextInputEditText etEmail;
     private TextInputEditText etPhone;
     private MaterialButton btnSaveChanges;
+    private MaterialButton btnDeleteAccount;
+    private MaterialButton btnCoOrganizerDashboard;
+
     private MaterialCardView cardDeleteAccount;
+    private MaterialCardView cardCoOrganizerAccess;
+
     private MaterialCardView cardNotificationSettings;
     private BottomNavigationView bottomNavigation;
     private MaterialSwitch switchOptOut;
@@ -83,10 +95,16 @@ public class ProfileActivity extends BaseOrganizerActivity {
                 showDeleteAccountDialog();
             }
         });
+
+
+        btnCoOrganizerDashboard.setOnClickListener(v -> {
+            Intent intent = new Intent(this, CoOrganizerDashboardActivity.class);
+            startActivity(intent);
+        });
     }
 
     /**
-     * Binds the layout views.
+     * Binds layout views.
      */
     private void initViews() {
         tvProfileTitle = findViewById(R.id.tvProfileTitle);
@@ -95,7 +113,11 @@ public class ProfileActivity extends BaseOrganizerActivity {
         etEmail = findViewById(R.id.etEmail);
         etPhone = findViewById(R.id.etPhone);
         btnSaveChanges = findViewById(R.id.btnSaveChanges);
+        btnDeleteAccount = findViewById(R.id.btnDeleteAccount);
+        btnCoOrganizerDashboard = findViewById(R.id.btnCoOrganizerDashboard);
+
         cardDeleteAccount = findViewById(R.id.cardDeleteAccount);
+        cardCoOrganizerAccess = findViewById(R.id.cardCoOrganizerAccess);
         cardNotificationSettings = findViewById(R.id.cardNotificationSettings);
         switchOptOut = findViewById(R.id.switchOptOut);
         btnDeleteAccount = findViewById(R.id.btnDeleteAccount);
@@ -107,6 +129,9 @@ public class ProfileActivity extends BaseOrganizerActivity {
         String titleRole = Character.toUpperCase(role.charAt(0)) + role.substring(1);
         tvProfileTitle.setText(titleRole + " Profile");
         tvProfileSubtitle.setText("Manage your account settings");
+
+        // For testing, show co-organizer access card for entrant role
+        cardCoOrganizerAccess.setVisibility(isEntrantRole() ? View.VISIBLE : View.GONE);
 
         if (isEntrantRole()) {
             if (bottomNavigation != null) {
@@ -123,17 +148,19 @@ public class ProfileActivity extends BaseOrganizerActivity {
             setupOrganizerBottomNav(R.id.nav_profile);
             cardNotificationSettings.setVisibility(View.GONE);
             cardDeleteAccount.setVisibility(View.GONE);
+            cardCoOrganizerAccess.setVisibility(View.GONE);
         } else {
             if (bottomNavigation != null) {
                 bottomNavigation.setVisibility(View.GONE);
             }
             cardNotificationSettings.setVisibility(View.GONE);
             cardDeleteAccount.setVisibility(View.GONE);
+            cardCoOrganizerAccess.setVisibility(View.GONE);
         }
     }
 
     /**
-     * Loads the current entrant profile from Firestore.
+     * Loads current profile data from Firestore.
      */
     private void loadProfile() {
         db.collection(getCollectionName())
@@ -169,9 +196,9 @@ public class ProfileActivity extends BaseOrganizerActivity {
                     }
 
                     hasExistingProfileData =
-                            (name != null && !name.trim().isEmpty()) ||
-                                    (email != null && !email.trim().isEmpty()) ||
-                                    (phone != null && !phone.trim().isEmpty());
+                            (name != null && !name.trim().isEmpty())
+                                    || (email != null && !email.trim().isEmpty())
+                                    || (phone != null && !phone.trim().isEmpty());
 
                     btnSaveChanges.setText(hasExistingProfileData ? "Update" : "Save Changes");
                 })
@@ -181,7 +208,7 @@ public class ProfileActivity extends BaseOrganizerActivity {
     }
 
     /**
-     * Validates and saves the profile data to Firestore.
+     * Validates and saves profile data.
      */
     private void saveProfile() {
         String name = getInputText(etName);
@@ -232,9 +259,8 @@ public class ProfileActivity extends BaseOrganizerActivity {
                     btnSaveChanges.setText("Update");
                     Toast.makeText(this, "Profile saved", Toast.LENGTH_SHORT).show();
                 })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Failed to save profile", Toast.LENGTH_SHORT).show();
-                });
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to save profile", Toast.LENGTH_SHORT).show());
     }
 
     /**

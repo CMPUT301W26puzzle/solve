@@ -19,69 +19,79 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Organizer screen for viewing entrants who joined a specific event waitlist.
  *
- * <p>This activity supports status-tab filtering, search by name or email,
- * and displays an empty state when no matching entrants exist.</p>
- *
- * <p>Relevant user story:</p>
+ * <p>This screen supports:
  * <ul>
- *     <li>US 02.02.01 - View the list of entrants who joined the waiting list</li>
+ *     <li>Viewing entrants by tab category</li>
+ *     <li>Searching entrants by name or email</li>
+ *     <li>Exporting final enrolled entrants to CSV</li>
+ *     <li>Cancelling invitations for selected entrants from the Selected tab</li>
+ * </ul>
+ *
+ * <p>Status model:
+ * <ul>
+ *     <li>selectionStatus: waiting / selected / cancelled</li>
+ *     <li>responseStatus: pending / accepted / declined</li>
+ *     <li>finalStatus: enrolled</li>
  * </ul>
  */
 public class EntrantListActivity extends AppCompatActivity {
 
-    /** RecyclerView displaying entrant rows. */
+    /** RecyclerView displaying entrants. */
     private RecyclerView rvEntrants;
 
-    /** Adapter used by the entrant list. */
+    /** Adapter backing the entrant list UI. */
     private EntrantAdapter entrantAdapter;
 
-    /** Full list loaded from Firestore. */
+    /** Full entrant list loaded from Firestore. */
     private final List<Entrant> entrantList = new ArrayList<>();
 
-    /** List currently displayed in the UI after filtering and search. */
+    /** List currently displayed after tab filter and search filter are applied. */
     private final List<Entrant> displayedList = new ArrayList<>();
 
-    /** Tab layout used for status filtering. */
+    /** Tab layout used for status buckets. */
     private TabLayout tabLayout;
 
-    /** Search field used for name/email filtering. */
+    /** Search input for filtering entrants by name or email. */
     private EditText etSearch;
 
-    /** Empty state layout shown when no results exist. */
+    /** Empty state shown when no entrants match the current filters. */
     private LinearLayout layoutEmptyState;
 
-    /** Placeholder export button. */
+    /** Floating action button used to export enrolled entrants to CSV. */
     private FloatingActionButton fabExport;
 
-    /** Event id passed into this activity. */
+    /** Event ID whose waitlist is being displayed. */
     private String eventId;
 
-    /** Organizer id passed into this activity. */
+    /** Organizer ID passed into the screen. */
     private String organizerId;
 
-    /** Current status filter selected from tabs. */
+    /** Currently selected tab filter value. */
     private String currentFilter = "all";
 
-    /** Firestore database instance. */
+    /** Firestore instance. */
     private FirebaseFirestore db;
 
-    /**
-     * Initializes the activity, validates intent extras, sets up the toolbar,
-     * and loads waitlist entrants.
-     *
-     * @param savedInstanceState previously saved state bundle, or {@code null}
-     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -114,8 +124,8 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Applies status bar insets to the toolbar so that the toolbar content
-     * stays below the system status bar on edge-to-edge devices.
+     * Applies status bar insets to the toolbar so toolbar content does not overlap
+     * the system status bar.
      */
     private void applyWindowInsets() {
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -145,7 +155,7 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Returns the default toolbar height from the current theme.
+     * Returns the themed toolbar height in pixels.
      *
      * @return toolbar height in pixels
      */
@@ -161,7 +171,7 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Configures the toolbar and enables back navigation.
+     * Sets up the toolbar and enables back navigation.
      */
     private void setupToolbar() {
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -175,11 +185,6 @@ public class EntrantListActivity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(v -> finish());
     }
 
-    /**
-     * Handles the toolbar up button.
-     *
-     * @return always returns {@code true}
-     */
     @Override
     public boolean onSupportNavigateUp() {
         finish();
@@ -187,7 +192,7 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Binds layout views from the XML layout.
+     * Binds layout views.
      */
     private void initViews() {
         rvEntrants = findViewById(R.id.rvEntrants);
@@ -198,16 +203,24 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Configures the RecyclerView and its adapter.
+     * Sets up the RecyclerView and row click behavior.
+     *
+     * <p>If the current tab is Selected and the tapped entrant is eligible,
+     * tapping a row opens the Cancel Invitation confirmation dialog.
      */
     private void setupRecyclerView() {
-        entrantAdapter = new EntrantAdapter(displayedList);
+        entrantAdapter = new EntrantAdapter(displayedList, entrant -> {
+            if (canCancelInvitation(entrant)) {
+                showCancelInvitationDialog(entrant);
+            }
+        });
+
         rvEntrants.setLayoutManager(new LinearLayoutManager(this));
         rvEntrants.setAdapter(entrantAdapter);
     }
 
     /**
-     * Registers listeners for status tabs, search input, and the export placeholder action.
+     * Sets up tab switching, search filtering, and export button behavior.
      */
     private void setupListeners() {
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
@@ -238,19 +251,16 @@ public class EntrantListActivity extends AppCompatActivity {
 
             @Override
             public void onTabUnselected(TabLayout.Tab tab) {
-                // No action needed.
             }
 
             @Override
             public void onTabReselected(TabLayout.Tab tab) {
-                // No action needed.
             }
         });
 
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                // No action needed.
             }
 
             @Override
@@ -260,24 +270,20 @@ public class EntrantListActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                // No action needed.
             }
         });
 
-        fabExport.setOnClickListener(v ->
-                Toast.makeText(this, "Export feature coming soon", Toast.LENGTH_SHORT).show());
+        fabExport.setOnClickListener(v -> exportEnrolledEntrantsToCsv());
     }
 
     /**
-     * Loads all entrants from the event waitlist stored in Firestore.
-     * Each document is converted into an {@link Entrant} object and added
-     * to the in-memory list before filtering is applied.
+     * Loads all waitlist entrants for the current event from Firestore.
      */
     private void loadEntrants() {
         db.collection("events")
                 .document(eventId)
                 .collection("waitlist")
-                .orderBy("joinedAt", com.google.firebase.firestore.Query.Direction.ASCENDING)
+                .orderBy("joinedAt", Query.Direction.ASCENDING)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     entrantList.clear();
@@ -296,7 +302,7 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Applies the current status filter and search query to the loaded entrants.
+     * Applies the current tab filter and search query to the full entrant list.
      */
     private void applyFilterAndSearch() {
         String query = etSearch.getText() == null
@@ -322,22 +328,125 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Returns whether the entrant matches the selected status tab.
+     * Returns whether an entrant matches the currently selected tab filter.
      *
-     * @param entrant entrant to evaluate
-     * @param filter current status filter
-     * @return true if the entrant should be shown
+     * @param entrant entrant to test
+     * @param filter current filter name
+     * @return true if entrant should be shown for that filter
      */
     private boolean matchesStatusFilter(Entrant entrant, String filter) {
         if ("all".equals(filter)) {
             return true;
         }
-        return filter.equalsIgnoreCase(safe(entrant.getStatus()));
+
+        String selectionStatus = safe(entrant.getSelectionStatus()).toLowerCase();
+        String finalStatus = safe(entrant.getFinalStatus()).toLowerCase();
+
+        switch (filter) {
+            case "waiting":
+                return "waiting".equals(selectionStatus);
+
+            case "selected":
+                return "selected".equals(selectionStatus)
+                        && !"enrolled".equals(finalStatus);
+
+            case "enrolled":
+                return "enrolled".equals(finalStatus);
+
+            case "cancelled":
+                return "cancelled".equals(selectionStatus);
+
+            default:
+                return true;
+        }
     }
 
     /**
-     * Updates the visible UI state after filtering.
-     * Shows the empty state when no entrants match the current criteria.
+     * Returns whether the given entrant can have their invitation cancelled.
+     *
+     * <p>Cancellation is allowed from:
+     * <ul>
+     *     <li>Selected tab</li>
+     *     <li>All tab</li>
+     * </ul>
+     *
+     * <p>The entrant must still be:
+     * <ul>
+     *     <li>selectionStatus = selected</li>
+     *     <li>responseStatus = pending</li>
+     *     <li>finalStatus is not enrolled</li>
+     * </ul>
+     *
+     * @param entrant entrant to test
+     * @return true if cancellation is allowed
+     */
+    private boolean canCancelInvitation(Entrant entrant) {
+        if (!"selected".equals(currentFilter) && !"all".equals(currentFilter)) {
+            return false;
+        }
+
+        String selectionStatus = safe(entrant.getSelectionStatus()).toLowerCase();
+        String responseStatus = safe(entrant.getResponseStatus()).toLowerCase();
+        String finalStatus = safe(entrant.getFinalStatus()).toLowerCase();
+
+        return "selected".equals(selectionStatus)
+                && "pending".equals(responseStatus)
+                && !"enrolled".equals(finalStatus);
+    }
+
+    /**
+     * Shows a confirmation dialog before cancelling a selected entrant's invitation.
+     *
+     * @param entrant selected entrant whose invitation may be cancelled
+     */
+    private void showCancelInvitationDialog(Entrant entrant) {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Cancel Invitation")
+                .setMessage("Cancel invitation for " + safe(entrant.getEntrantName()) + "?")
+                .setNegativeButton("No", null)
+                .setPositiveButton("Yes", (dialog, which) -> cancelInvitation(entrant))
+                .show();
+    }
+
+    /**
+     * Cancels a selected entrant's invitation.
+     *
+     * <p>This updates the waitlist entry to:
+     * <ul>
+     *     <li>selectionStatus = cancelled</li>
+     *     <li>finalStatus = null</li>
+     *     <li>cancelledAt = server timestamp</li>
+     * </ul>
+     *
+     * <p>The responseStatus is intentionally preserved.
+     *
+     * @param entrant entrant whose invitation should be cancelled
+     */
+    private void cancelInvitation(Entrant entrant) {
+        if (entrant == null || safe(entrant.getEntrantId()).isEmpty()) {
+            Toast.makeText(this, "Invalid entrant", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        db.collection("events")
+                .document(eventId)
+                .collection("waitlist")
+                .document(entrant.getEntrantId())
+                .update(
+                        "selectionStatus", "cancelled",
+                        "finalStatus", null,
+                        "cancelledAt", FieldValue.serverTimestamp()
+                )
+                .addOnSuccessListener(unused -> {
+                    Toast.makeText(this, "Invitation cancelled", Toast.LENGTH_SHORT).show();
+                    loadEntrants();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to cancel invitation", Toast.LENGTH_LONG).show());
+    }
+
+    /**
+     * Updates the empty state and notifies the adapter after the displayed list changes.
      */
     private void updateUI() {
         if (displayedList.isEmpty()) {
@@ -352,7 +461,7 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Recomputes tab titles with entrant counts for each status.
+     * Recomputes tab counts from the full entrant list.
      */
     private void updateTabCounts() {
         int allCount = entrantList.size();
@@ -362,23 +471,17 @@ public class EntrantListActivity extends AppCompatActivity {
         int cancelledCount = 0;
 
         for (Entrant entrant : entrantList) {
-            String status = safe(entrant.getStatus()).toLowerCase();
+            String selectionStatus = safe(entrant.getSelectionStatus()).toLowerCase();
+            String finalStatus = safe(entrant.getFinalStatus()).toLowerCase();
 
-            switch (status) {
-                case "waiting":
-                    waitingCount++;
-                    break;
-                case "selected":
-                    selectedCount++;
-                    break;
-                case "enrolled":
-                    enrolledCount++;
-                    break;
-                case "cancelled":
-                    cancelledCount++;
-                    break;
-                default:
-                    break;
+            if ("waiting".equals(selectionStatus)) {
+                waitingCount++;
+            } else if ("selected".equals(selectionStatus) && !"enrolled".equals(finalStatus)) {
+                selectedCount++;
+            } else if ("enrolled".equals(finalStatus)) {
+                enrolledCount++;
+            } else if ("cancelled".equals(selectionStatus)) {
+                cancelledCount++;
             }
         }
 
@@ -390,10 +493,10 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Safely updates tab text if the tab exists.
+     * Sets a tab label if that tab exists.
      *
      * @param index tab index
-     * @param text tab title text
+     * @param text text to display
      */
     private void setTabText(int index, String text) {
         TabLayout.Tab tab = tabLayout.getTabAt(index);
@@ -403,10 +506,118 @@ public class EntrantListActivity extends AppCompatActivity {
     }
 
     /**
-     * Converts a nullable string into a non-null value for safe filtering.
+     * Exports all final enrolled entrants for this event to a CSV file.
+     */
+    private void exportEnrolledEntrantsToCsv() {
+        db.collection("events")
+                .document(eventId)
+                .collection("waitlist")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<Entrant> enrolledEntrants = new ArrayList<>();
+
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        Entrant entrant = doc.toObject(Entrant.class);
+                        entrant.setId(doc.getId());
+
+                        if ("enrolled".equalsIgnoreCase(safe(entrant.getFinalStatus()))) {
+                            enrolledEntrants.add(entrant);
+                        }
+                    }
+
+                    if (enrolledEntrants.isEmpty()) {
+                        Toast.makeText(this, "No enrolled entrants to export", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    writeCsvFile(enrolledEntrants);
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to export CSV", Toast.LENGTH_LONG).show());
+    }
+
+    /**
+     * Writes a CSV file containing enrolled entrants.
      *
-     * @param value raw value
-     * @return empty string when null, otherwise the original value
+     * @param enrolledEntrants enrolled entrants to export
+     */
+    private void writeCsvFile(List<Entrant> enrolledEntrants) {
+        OutputStreamWriter writer = null;
+        try {
+            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+                    .format(new Date());
+            String fileName = "enrolled_entrants_" + eventId + "_" + timestamp + ".csv";
+
+            File directory = getExternalFilesDir(null);
+            if (directory == null) {
+                Toast.makeText(this, "Storage unavailable", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            File file = new File(directory, fileName);
+            writer = new OutputStreamWriter(new FileOutputStream(file));
+
+            writer.append("Entrant ID,Name,Email,Joined At,Selection Status,Response Status,Final Status\n");
+
+            for (Entrant entrant : enrolledEntrants) {
+                writer.append(csv(safe(entrant.getEntrantId()))).append(",");
+                writer.append(csv(safe(entrant.getEntrantName()))).append(",");
+                writer.append(csv(safe(entrant.getEntrantEmail()))).append(",");
+                writer.append(csv(formatDate(entrant.getJoinedAt()))).append(",");
+                writer.append(csv(safe(entrant.getSelectionStatus()))).append(",");
+                writer.append(csv(safe(entrant.getResponseStatus()))).append(",");
+                writer.append(csv(safe(entrant.getFinalStatus()))).append("\n");
+            }
+
+            writer.flush();
+
+            Toast.makeText(
+                    this,
+                    "CSV exported to: " + file.getAbsolutePath(),
+                    Toast.LENGTH_LONG
+            ).show();
+
+        } catch (Exception e) {
+            Toast.makeText(this, "Failed to write CSV", Toast.LENGTH_LONG).show();
+        } finally {
+            try {
+                if (writer != null) {
+                    writer.close();
+                }
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    /**
+     * Formats a date for CSV output.
+     *
+     * @param date date to format
+     * @return formatted string or empty string if null
+     */
+    private String formatDate(Date date) {
+        if (date == null) {
+            return "";
+        }
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(date);
+    }
+
+    /**
+     * Escapes a value for CSV output.
+     *
+     * @param value input value
+     * @return CSV-safe quoted value
+     */
+    private String csv(String value) {
+        String safeValue = value == null ? "" : value;
+        return "\"" + safeValue.replace("\"", "\"\"") + "\"";
+    }
+
+    /**
+     * Returns a non-null safe string.
+     *
+     * @param value possibly null string
+     * @return empty string when null, otherwise original value
      */
     @NonNull
     private String safe(String value) {

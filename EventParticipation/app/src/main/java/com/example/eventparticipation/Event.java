@@ -3,294 +3,381 @@ package com.example.eventparticipation;
 import java.util.Date;
 
 /**
- * Model class representing an event with lottery and requirement settings.
+ * Model class representing an event stored in Firestore.
  *
- * <p>Acts as the primary Data Transfer Object (DTO) for Firebase Firestore,
- * encapsulating all details of an event including its waitlist restrictions,
- * promotional materials, and schedule.</p>
+ * <p>This class acts as the primary Data Transfer Object (DTO) for top-level event
+ * documents in the {@code events} collection. It contains event metadata, venue data,
+ * registration period fields, and derived waitlist counts used by dashboard cards.</p>
  *
- * <p>Relevant user stories:</p>
+ * <p>Relevant derived count fields:
  * <ul>
- * <li>US 01.01.03 - View a list of events</li>
- * <li>US 02.01.01 - Create a new event</li>
- * <li>US 02.01.04 - Set a registration period</li>
- * <li>US 02.03.01 - Optionally limit waitlist capacity</li>
+ *     <li>{@code waitingCount}: entrants still waiting on the waitlist</li>
+ *     <li>{@code selectedCount}: entrants selected but not yet enrolled</li>
+ *     <li>{@code enrolledCount}: entrants who completed enrollment</li>
  * </ul>
  */
 public class Event {
 
-    /** The unique Firestore document ID for this event. */
+    /** Unique Firestore document ID for this event. */
     private String id;
 
-    /** The ID of the facility where this event is being hosted. */
+    /** Facility ID associated with this event, if any. */
     private String facilityId;
 
-    /** The unique identifier of the organizer who created the event. */
+    /** Organizer ID who owns the event. */
     private String organizerId;
 
-    /** The display name or title of the event. */
+    /** Human-readable event name. */
     private String name;
 
-    /** The date and time when the event is scheduled to start. */
+    /** Event start time. */
     private Date startTime;
 
-    /** The maximum number of attendees allowed to enroll in the event. */
+    /** Maximum number of attendees who can enroll in the event. */
     private int capacity;
 
-    /** The date and time when the waitlist registration period opens. */
+    /** Registration start time for the waitlist. */
     private Date registrationStart;
 
-    /** The date and time when the waitlist registration period closes. */
+    /** Registration end time for the waitlist. */
     private Date registrationEnd;
 
-    /** The cloud storage download URL for the event's promotional poster image. */
+    /** Download URL of the poster image stored in Firebase Storage. */
     private String posterUrl;
 
-    /** Flag indicating whether an entrant must provide their geolocation to join the waitlist. */
+    /** Whether geolocation is required to join the waitlist. */
     private boolean geolocationRequired;
 
-    /** An optional cap on the maximum number of entrants allowed on the waitlist. Null if unlimited. */
+    /** Optional waitlist size limit. Null means unlimited. */
     private Integer waitlistLimit;
 
-    /** The physical address or location name of the event venue. */
+    /** Venue display address. */
     private String venueAddress;
 
-    /** The current number of entrants who have been successfully enrolled in the event. */
+    /** Number of entrants currently enrolled in the event. */
     private int enrolledCount;
 
-    /** The current number of entrants waiting on the waitlist. */
+    /** Number of entrants still waiting on the waitlist. */
     private int waitingCount;
 
-    /** The count of entrants currently selected by the lottery. */
+    /** Number of entrants currently selected but not yet enrolled. */
     private int selectedCount;
 
-    /** The latitude of the event venue. */
+    /** Venue latitude. */
     private Double venueLat;
 
-    /** The longitude of the event venue.  */
+    /** Venue longitude. */
     private Double venueLng;
 
-    /** * Default constructor required for Firebase Firestore object mapping.
+    /**
+     * Required empty constructor for Firestore object mapping.
      */
-    public Event() {}
+    public Event() {
+    }
 
     /**
-     * Retrieves the unique event ID.
+     * Returns the Firestore document ID.
      *
-     * @return The unique Firestore document ID of the event.
+     * @return event ID
      */
-    public String getId() { return id; }
+    public String getId() {
+        return id;
+    }
 
     /**
-     * Sets the unique event ID.
+     * Sets the Firestore document ID.
      *
-     * @param id The unique Firestore document ID to set.
+     * @param id event ID
      */
-    public void setId(String id) { this.id = id; }
+    public void setId(String id) {
+        this.id = id;
+    }
 
     /**
-     * Retrieves the facility ID associated with this event.
+     * Returns the facility ID.
      *
-     * @return The facility ID.
+     * @return facility ID
      */
-    public String getFacilityId() { return facilityId; }
+    public String getFacilityId() {
+        return facilityId;
+    }
 
     /**
-     * Sets the facility ID for this event.
+     * Sets the facility ID.
      *
-     * @param facilityId The facility ID to set.
+     * @param facilityId facility ID
      */
-    public void setFacilityId(String facilityId) { this.facilityId = facilityId; }
+    public void setFacilityId(String facilityId) {
+        this.facilityId = facilityId;
+    }
 
     /**
-     * Retrieves the ID of the organizer who created the event.
+     * Returns the organizer ID.
      *
-     * @return The organizer's ID.
+     * @return organizer ID
      */
-    public String getOrganizerId() { return organizerId; }
+    public String getOrganizerId() {
+        return organizerId;
+    }
 
     /**
-     * Sets the ID of the organizer for this event.
+     * Sets the organizer ID.
      *
-     * @param organizerId The organizer's ID to set.
+     * @param organizerId organizer ID
      */
-    public void setOrganizerId(String organizerId) { this.organizerId = organizerId; }
+    public void setOrganizerId(String organizerId) {
+        this.organizerId = organizerId;
+    }
 
     /**
-     * Retrieves the name or title of the event.
+     * Returns the event name.
      *
-     * @return The event name.
+     * @return event name
      */
-    public String getName() { return name; }
+    public String getName() {
+        return name;
+    }
 
     /**
-     * Sets the name or title of the event.
+     * Sets the event name.
      *
-     * @param name The event name to set.
+     * @param name event name
      */
-    public void setName(String name) { this.name = name; }
-
-
-    public Date getRegistrationStart() { return registrationStart; }
+    public void setName(String name) {
+        this.name = name;
+    }
 
     /**
-     * Sets the opening date and time for event registration.
+     * Returns the event start time.
      *
-     * @param registrationStart The registration start date to set.
+     * @return start time
      */
-    public void setRegistrationStart(Date registrationStart) { this.registrationStart = registrationStart; }
+    public Date getStartTime() {
+        return startTime;
+    }
 
     /**
-     * Retrieves the closing date and time for event registration.
+     * Sets the event start time.
      *
-     * @return The registration end date.
+     * @param startTime start time
      */
-    public Date getRegistrationEnd() { return registrationEnd; }
+    public void setStartTime(Date startTime) {
+        this.startTime = startTime;
+    }
 
     /**
-     * Sets the closing date and time for event registration.
+     * Returns the event capacity.
      *
-     * @param registrationEnd The registration end date to set.
+     * @return capacity
      */
-    public void setRegistrationEnd(Date registrationEnd) { this.registrationEnd = registrationEnd; }
+    public int getCapacity() {
+        return capacity;
+    }
 
     /**
-     * Checks whether geolocation is required to join the event's waitlist.
+     * Sets the event capacity.
      *
-     * @return {@code true} if geolocation is required, {@code false} otherwise.
+     * @param capacity capacity
      */
-    public boolean isGeolocationRequired() { return geolocationRequired; }
+    public void setCapacity(int capacity) {
+        this.capacity = capacity;
+    }
 
     /**
-     * Sets the geolocation requirement for joining the waitlist.
+     * Returns the registration start time.
      *
-     * @param geolocationRequired {@code true} to require geolocation, {@code false} otherwise.
+     * @return registration start
      */
-    public void setGeolocationRequired(boolean geolocationRequired) { this.geolocationRequired = geolocationRequired; }
+    public Date getRegistrationStart() {
+        return registrationStart;
+    }
 
     /**
-     * Retrieves the optional limit on the number of entrants allowed on the waitlist.
+     * Sets the registration start time.
      *
-     * @return The waitlist limit, or {@code null} if there is no limit.
+     * @param registrationStart registration start
      */
-    public Integer getWaitlistLimit() { return waitlistLimit; }
+    public void setRegistrationStart(Date registrationStart) {
+        this.registrationStart = registrationStart;
+    }
 
     /**
-     * Sets the limit on the number of entrants allowed on the waitlist.
+     * Returns the registration end time.
      *
-     * @param waitlistLimit The maximum number of entrants, or {@code null} for unlimited.
+     * @return registration end
      */
-    public void setWaitlistLimit(Integer waitlistLimit) { this.waitlistLimit = waitlistLimit; }
+    public Date getRegistrationEnd() {
+        return registrationEnd;
+    }
 
     /**
-     * Retrieves the download URL for the event's promotional poster.
+     * Sets the registration end time.
      *
-     * @return The poster URL as a String.
+     * @param registrationEnd registration end
      */
-    public String getPosterUrl() { return posterUrl; }
+    public void setRegistrationEnd(Date registrationEnd) {
+        this.registrationEnd = registrationEnd;
+    }
 
     /**
-     * Sets the download URL for the event's promotional poster.
+     * Returns the poster URL.
      *
-     * @param posterUrl The poster URL to set.
+     * @return poster URL
      */
-    public void setPosterUrl(String posterUrl) { this.posterUrl = posterUrl; }
+    public String getPosterUrl() {
+        return posterUrl;
+    }
 
     /**
-     * Retrieves the maximum attendee capacity for the event.
+     * Sets the poster URL.
      *
-     * @return The event capacity.
+     * @param posterUrl poster URL
      */
-    public int getCapacity() { return capacity; }
+    public void setPosterUrl(String posterUrl) {
+        this.posterUrl = posterUrl;
+    }
 
     /**
-     * Sets the maximum attendee capacity for the event.
+     * Returns whether geolocation is required.
      *
-     * @param capacity The event capacity to set.
+     * @return true if required, false otherwise
      */
-    public void setCapacity(int capacity) { this.capacity = capacity; }
+    public boolean isGeolocationRequired() {
+        return geolocationRequired;
+    }
 
     /**
-     * Retrieves the physical address or location name of the venue.
+     * Sets whether geolocation is required.
      *
-     * @return The venue address.
+     * @param geolocationRequired whether geolocation is required
      */
-    public String getVenueAddress() { return venueAddress; }
+    public void setGeolocationRequired(boolean geolocationRequired) {
+        this.geolocationRequired = geolocationRequired;
+    }
 
     /**
-     * Sets the physical address or location name of the venue.
+     * Returns the optional waitlist limit.
      *
-     * @param venueAddress The venue address to set.
+     * @return waitlist limit, or null if unlimited
      */
-    public void setVenueAddress(String venueAddress) { this.venueAddress = venueAddress; }
+    public Integer getWaitlistLimit() {
+        return waitlistLimit;
+    }
 
     /**
-     * Retrieves the number of entrants currently enrolled in the event.
+     * Sets the optional waitlist limit.
      *
-     * @return The count of enrolled entrants.
+     * @param waitlistLimit waitlist limit
      */
-    public int getEnrolledCount() { return enrolledCount;  }
+    public void setWaitlistLimit(Integer waitlistLimit) {
+        this.waitlistLimit = waitlistLimit;
+    }
 
     /**
-     * Sets the number of entrants currently enrolled in the event.
+     * Returns the venue address.
      *
-     * @param enrolledCount The new enrolled count.
+     * @return venue address
      */
-    public void setEnrolledCount(int enrolledCount) { this.enrolledCount = enrolledCount; }
+    public String getVenueAddress() {
+        return venueAddress;
+    }
 
     /**
-     * Retrieves the number of entrants currently waiting on the waitlist.
+     * Sets the venue address.
      *
-     * @return The count of waiting entrants.
+     * @param venueAddress venue address
      */
-    public int getWaitingCount() { return waitingCount; }
+    public void setVenueAddress(String venueAddress) {
+        this.venueAddress = venueAddress;
+    }
 
     /**
-     * Sets the number of entrants currently waiting on the waitlist.
+     * Returns the enrolled count.
      *
-     * @param waitingCount The new waitlist count.
+     * @return enrolled count
      */
-    public void setWaitingCount(int waitingCount) { this.waitingCount = waitingCount; }
+    public int getEnrolledCount() {
+        return enrolledCount;
+    }
 
     /**
-     * Retrieves the number of entrants currently selected from the waitlist.
+     * Sets the enrolled count.
      *
-     * @return The count of selected entrants.
+     * @param enrolledCount enrolled count
      */
-    public int getSelectedCount() { return selectedCount; }
+    public void setEnrolledCount(int enrolledCount) {
+        this.enrolledCount = enrolledCount;
+    }
 
     /**
-     * Sets the number of entrants currently selected for the event.
+     * Returns the waiting count.
      *
-     * @param selectedCount The new selected count.
+     * @return waiting count
      */
-    public void setSelectedCount(int selectedCount) { this.selectedCount = selectedCount; }
+    public int getWaitingCount() {
+        return waitingCount;
+    }
 
     /**
-     * Retrieves the venue latitude.
+     * Sets the waiting count.
      *
-     * @return The venue latitude.
+     * @param waitingCount waiting count
      */
-    public Double getVenueLat() { return venueLat; }
+    public void setWaitingCount(int waitingCount) {
+        this.waitingCount = waitingCount;
+    }
 
     /**
-     * Sets the event latitude.
+     * Returns the selected count.
      *
-     * @param venueLat The venue latitude.
+     * @return selected count
      */
-    public void setVenueLat(Double venueLat) { this.venueLat = venueLat; }
+    public int getSelectedCount() {
+        return selectedCount;
+    }
 
     /**
-     * Retrieves the venue longitude.
+     * Sets the selected count.
      *
-     * @return The venue longitude.
+     * @param selectedCount selected count
      */
-    public Double getVenueLng() { return venueLng; }
+    public void setSelectedCount(int selectedCount) {
+        this.selectedCount = selectedCount;
+    }
 
     /**
-     * Sets the event longitude.
+     * Returns the venue latitude.
      *
-     * @param venueLng The venue longitude.
+     * @return venue latitude
      */
-    public void setVenueLng(Double venueLng) { this.venueLng = venueLng; }
+    public Double getVenueLat() {
+        return venueLat;
+    }
+
+    /**
+     * Sets the venue latitude.
+     *
+     * @param venueLat venue latitude
+     */
+    public void setVenueLat(Double venueLat) {
+        this.venueLat = venueLat;
+    }
+
+    /**
+     * Returns the venue longitude.
+     *
+     * @return venue longitude
+     */
+    public Double getVenueLng() {
+        return venueLng;
+    }
+
+    /**
+     * Sets the venue longitude.
+     *
+     * @param venueLng venue longitude
+     */
+    public void setVenueLng(Double venueLng) {
+        this.venueLng = venueLng;
+    }
 }
