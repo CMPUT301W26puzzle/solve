@@ -23,7 +23,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Dashboard showing only events that the current user can access as a co-organizer.
+ * Dashboard showing only the events that the current user can access as a co-organizer.
+ *
+ * <p>The event cards on this screen display counts from the top-level event document.
+ * Those counts are expected to be synchronized from the authoritative waitlist subcollection
+ * by {@link WaitlistController} and {@link ManageEventActivity}.
  */
 public class CoOrganizerDashboardActivity extends AppCompatActivity {
 
@@ -81,6 +85,11 @@ public class CoOrganizerDashboardActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Returns the toolbar height from the current theme.
+     *
+     * @return toolbar height in pixels
+     */
     private int getToolbarHeight() {
         TypedValue typedValue = new TypedValue();
         if (getTheme().resolveAttribute(android.R.attr.actionBarSize, typedValue, true)) {
@@ -92,6 +101,9 @@ public class CoOrganizerDashboardActivity extends AppCompatActivity {
         return (int) (56 * getResources().getDisplayMetrics().density);
     }
 
+    /**
+     * Configures the toolbar and back navigation.
+     */
     private void setupToolbar() {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -110,16 +122,23 @@ public class CoOrganizerDashboardActivity extends AppCompatActivity {
         return true;
     }
 
+    /**
+     * Binds layout views.
+     */
     private void initViews() {
         rvEvents = findViewById(R.id.rvCoOrganizerEvents);
         layoutEmptyState = findViewById(R.id.layoutEmptyState);
     }
 
+    /**
+     * Sets up the RecyclerView and item click behavior.
+     */
     private void setupRecyclerView() {
         adapter = new CoOrganizerEventAdapter(eventList, event -> {
             Intent intent = new Intent(this, ManageEventActivity.class);
             intent.putExtra("EVENT_ID", event.getId());
             intent.putExtra("ORGANIZER_ID", event.getOrganizerId());
+            intent.putExtra("ACCESS_MODE", "coorganizer");
             startActivity(intent);
         });
 
@@ -127,6 +146,9 @@ public class CoOrganizerDashboardActivity extends AppCompatActivity {
         rvEvents.setAdapter(adapter);
     }
 
+    /**
+     * Loads all events where the current user appears in the coOrganizerIds array.
+     */
     private void loadCoOrganizerEvents() {
         db.collection("events")
                 .whereArrayContains("coOrganizerIds", currentUserId)
@@ -146,6 +168,9 @@ public class CoOrganizerDashboardActivity extends AppCompatActivity {
                         Toast.makeText(this, "Failed to load co-organizer events", Toast.LENGTH_LONG).show());
     }
 
+    /**
+     * Updates empty state visibility after the event list is loaded.
+     */
     private void updateUI() {
         if (eventList.isEmpty()) {
             rvEvents.setVisibility(View.GONE);

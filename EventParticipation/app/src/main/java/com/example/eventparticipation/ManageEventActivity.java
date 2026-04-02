@@ -23,6 +23,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.bumptech.glide.Glide;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -44,10 +45,15 @@ import java.util.Locale;
 /**
  * Organizer / co-organizer screen for managing a specific event.
  *
- * Access rules:
- * - organizer can access
- * - co-organizer can access
- * - co-organizer cannot assign another co-organizer
+ * <p>Access rules:
+ * <ul>
+ *     <li>Organizer can access the event</li>
+ *     <li>Co-organizer can access the event</li>
+ *     <li>Co-organizer cannot assign another co-organizer</li>
+ * </ul>
+ *
+ * <p>This screen also displays derived waitlist counts and keeps the top-level
+ * event document counts synchronized with the authoritative waitlist subcollection.
  */
 public class ManageEventActivity extends AppCompatActivity {
 
@@ -88,6 +94,7 @@ public class ManageEventActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
     private FirebaseStorage storage;
+    private String accessMode;
 
     private final ActivityResultLauncher<String> imagePickerLauncher =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
@@ -106,6 +113,10 @@ public class ManageEventActivity extends AppCompatActivity {
         eventId = getIntent().getStringExtra("EVENT_ID");
         organizerId = getIntent().getStringExtra("ORGANIZER_ID");
         currentUserId = DeviceIdProvider.getId(this);
+        accessMode = getIntent().getStringExtra("ACCESS_MODE");
+        if (accessMode == null || accessMode.trim().isEmpty()) {
+            accessMode = "organizer";
+        }
 
         if (eventId == null || eventId.trim().isEmpty()) {
             Toast.makeText(this, "Missing EVENT_ID", Toast.LENGTH_LONG).show();
@@ -127,10 +138,12 @@ public class ManageEventActivity extends AppCompatActivity {
         setInitialPlaceholderValues();
         setupClickListeners();
         updatePosterUI();
-
         checkManageAccessAndLoad();
     }
 
+    /**
+     * Applies system bar insets to the toolbar so that content stays below the status bar.
+     */
     private void applyWindowInsets() {
         Toolbar toolbar = findViewById(R.id.toolbar);
 
@@ -158,6 +171,11 @@ public class ManageEventActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Returns the toolbar height defined by the current theme.
+     *
+     * @return toolbar height in pixels
+     */
     private int getToolbarHeight() {
         TypedValue typedValue = new TypedValue();
         if (getTheme().resolveAttribute(android.R.attr.actionBarSize, typedValue, true)) {
@@ -169,6 +187,9 @@ public class ManageEventActivity extends AppCompatActivity {
         return (int) (56 * getResources().getDisplayMetrics().density);
     }
 
+    /**
+     * Configures the toolbar and up navigation behavior.
+     */
     private void setupToolbar() {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -187,6 +208,9 @@ public class ManageEventActivity extends AppCompatActivity {
         return true;
     }
 
+    /**
+     * Binds all views from the layout.
+     */
     private void initViews() {
         tvEventName = findViewById(R.id.tvEventName);
         tvEventDate = findViewById(R.id.tvEventDate);
@@ -214,6 +238,9 @@ public class ManageEventActivity extends AppCompatActivity {
         btnAssignCoOrganizer = findViewById(R.id.btnAssignCoOrganizer);
     }
 
+    /**
+     * Fills the screen with placeholder values before Firestore data is loaded.
+     */
     private void setInitialPlaceholderValues() {
         tvEventName.setText("Event Name");
         tvEventDate.setText("Date not available");
@@ -228,6 +255,9 @@ public class ManageEventActivity extends AppCompatActivity {
         imgEventPoster.setImageDrawable(null);
     }
 
+    /**
+     * Wires up all click listeners used on the screen.
+     */
     private void setupClickListeners() {
         btnUploadPoster.setOnClickListener(v -> openImagePicker());
         btnUpdatePoster.setOnClickListener(v -> openImagePicker());
@@ -248,9 +278,7 @@ public class ManageEventActivity extends AppCompatActivity {
         });
 
         btnRunLottery.setOnClickListener(v -> showRunLotteryDialog());
-
         btnDrawReplacement.setOnClickListener(v -> drawReplacementApplicant());
-
         btnAssignCoOrganizer.setOnClickListener(v -> showAssignCoOrganizerDialog());
 
         btnShowQRCode.setOnClickListener(v ->
@@ -262,6 +290,10 @@ public class ManageEventActivity extends AppCompatActivity {
         btnExportCsv.setOnClickListener(v -> exportEnrolledEntrantsToCsv());
     }
 
+    /**
+     * Verifies whether the current user has permission to manage the event and, if so,
+     * loads all event details and current counts.
+     */
     private void checkManageAccessAndLoad() {
         db.collection("events")
                 .document(eventId)
@@ -276,8 +308,16 @@ public class ManageEventActivity extends AppCompatActivity {
                     String ownerId = safe(doc.getString("organizerId"));
                     List<String> coOrganizerIds = (List<String>) doc.get("coOrganizerIds");
 
-                    isOwner = currentUserId.equals(ownerId) || currentUserId.equals(organizerId);
-                    isCoOrganizer = coOrganizerIds != null && coOrganizerIds.contains(currentUserId);
+                    if ("organizer".equals(accessMode)) {
+                        isOwner = organizerId.equals(ownerId);
+                        isCoOrganizer = false;
+                    } else if ("coorganizer".equals(accessMode)) {
+                        isOwner = false;
+                        isCoOrganizer = coOrganizerIds != null && coOrganizerIds.contains(currentUserId);
+                    } else {
+                        isOwner = false;
+                        isCoOrganizer = false;
+                    }
 
                     if (!isOwner && !isCoOrganizer) {
                         Toast.makeText(this, "You do not have access to manage this event", Toast.LENGTH_LONG).show();
@@ -295,6 +335,9 @@ public class ManageEventActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Applies UI restrictions based on the current role.
+     */
     private void applyRoleRestrictions() {
         if (isCoOrganizer && !isOwner) {
             btnAssignCoOrganizer.setVisibility(View.GONE);
@@ -303,6 +346,9 @@ public class ManageEventActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Shows the dialog used to run a lottery and select a number of entrants.
+     */
     private void showRunLotteryDialog() {
         EditText input = new EditText(this);
         input.setHint("Number of entrants to select");
@@ -342,6 +388,9 @@ public class ManageEventActivity extends AppCompatActivity {
                 .show();
     }
 
+    /**
+     * Draws a single replacement applicant and refreshes counts afterwards.
+     */
     private void drawReplacementApplicant() {
         new WaitlistController().drawReplacement(eventId)
                 .addOnSuccessListener(entrantId -> {
@@ -356,6 +405,9 @@ public class ManageEventActivity extends AppCompatActivity {
                         Toast.makeText(this, "Failed to draw replacement.", Toast.LENGTH_SHORT).show());
     }
 
+    /**
+     * Loads all eligible entrants and allows the organizer to assign one as a co-organizer.
+     */
     private void showAssignCoOrganizerDialog() {
         if (!isOwner) {
             Toast.makeText(this, "Only the organizer can assign co-organizers", Toast.LENGTH_SHORT).show();
@@ -435,6 +487,12 @@ public class ManageEventActivity extends AppCompatActivity {
                         Toast.makeText(this, "Failed to load entrants", Toast.LENGTH_LONG).show());
     }
 
+    /**
+     * Assigns an entrant as co-organizer, removes them from the waitlist,
+     * and then recomputes the event counts.
+     *
+     * @param entrant entrant to promote
+     */
     private void assignCoOrganizer(Entrant entrant) {
         if (entrant == null || safe(entrant.getEntrantId()).isEmpty()) {
             Toast.makeText(this, "Invalid entrant", Toast.LENGTH_SHORT).show();
@@ -454,14 +512,22 @@ public class ManageEventActivity extends AppCompatActivity {
         batch.delete(waitRef);
 
         batch.commit()
-                .addOnSuccessListener(unused -> {
-                    Toast.makeText(this, "Co-organizer assigned successfully", Toast.LENGTH_SHORT).show();
-                    loadWaitlistCounts();
-                })
+                .addOnSuccessListener(unused ->
+                        new WaitlistController().syncEventCounts(eventId)
+                                .addOnSuccessListener(syncUnused -> {
+                                    Toast.makeText(this, "Co-organizer assigned successfully", Toast.LENGTH_SHORT).show();
+                                    loadWaitlistCounts();
+                                })
+                                .addOnFailureListener(e ->
+                                        Toast.makeText(this, "Assigned, but failed to sync counts", Toast.LENGTH_LONG).show())
+                )
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Failed to assign co-organizer", Toast.LENGTH_LONG).show());
     }
 
+    /**
+     * Loads immutable event metadata shown on the screen.
+     */
     private void loadEventData() {
         db.collection("events")
                 .document(eventId)
@@ -503,7 +569,30 @@ public class ManageEventActivity extends AppCompatActivity {
                         Toast.makeText(this, "Failed to load event: " + e.getMessage(), Toast.LENGTH_LONG).show());
     }
 
+    /**
+     * Loads the authoritative waitlist counts from the waitlist subcollection,
+     * updates the UI, and writes those counts back to the top-level event document.
+     */
     private void loadWaitlistCounts() {
+        computeAndPersistWaitlistCounts()
+                .addOnSuccessListener(counts -> {
+                    tvWaitingCount.setText(String.valueOf(counts.waiting));
+                    tvSelectedCount.setText(String.valueOf(counts.selected));
+                    tvEnrolledCount.setText(String.valueOf(counts.enrolled));
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to load waitlist counts", Toast.LENGTH_SHORT).show());
+    }
+
+    /**
+     * Computes waitlist counts from the waitlist subcollection and persists them to
+     * the top-level event document.
+     *
+     * @return a task containing the computed counts
+     */
+    private com.google.android.gms.tasks.Task<WaitlistCounts> computeAndPersistWaitlistCounts() {
+        TaskCompletionSource<WaitlistCounts> taskSource = new TaskCompletionSource<>();
+
         db.collection("events")
                 .document(eventId)
                 .collection("waitlist")
@@ -517,23 +606,35 @@ public class ManageEventActivity extends AppCompatActivity {
                         String selectionStatus = safe(doc.getString("selectionStatus")).toLowerCase();
                         String finalStatus = safe(doc.getString("finalStatus")).toLowerCase();
 
-                        if ("waiting".equals(selectionStatus)) {
-                            waiting++;
-                        } else if ("selected".equals(selectionStatus) && !"enrolled".equals(finalStatus)) {
-                            selected++;
-                        } else if ("enrolled".equals(finalStatus)) {
+                        if ("enrolled".equals(finalStatus)) {
                             enrolled++;
+                        } else if ("selected".equals(selectionStatus)) {
+                            selected++;
+                        } else if ("waiting".equals(selectionStatus)) {
+                            waiting++;
                         }
                     }
 
-                    tvWaitingCount.setText(String.valueOf(waiting));
-                    tvSelectedCount.setText(String.valueOf(selected));
-                    tvEnrolledCount.setText(String.valueOf(enrolled));
+                    WaitlistCounts counts = new WaitlistCounts(waiting, selected, enrolled);
+
+                    db.collection("events")
+                            .document(eventId)
+                            .update(
+                                    "waitingCount", waiting,
+                                    "selectedCount", selected,
+                                    "enrolledCount", enrolled
+                            )
+                            .addOnSuccessListener(unused -> taskSource.setResult(counts))
+                            .addOnFailureListener(taskSource::setException);
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to load waitlist counts", Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(taskSource::setException);
+
+        return taskSource.getTask();
     }
 
+    /**
+     * Exports all currently enrolled entrants to a CSV file.
+     */
     private void exportEnrolledEntrantsToCsv() {
         db.collection("events")
                 .document(eventId)
@@ -562,6 +663,11 @@ public class ManageEventActivity extends AppCompatActivity {
                         Toast.makeText(this, "Failed to export CSV", Toast.LENGTH_LONG).show());
     }
 
+    /**
+     * Writes the enrolled entrants to a CSV file stored in app external storage.
+     *
+     * @param enrolledEntrants entrants to export
+     */
     private void writeCsvFile(List<Entrant> enrolledEntrants) {
         OutputStreamWriter writer = null;
         try {
@@ -591,7 +697,6 @@ public class ManageEventActivity extends AppCompatActivity {
             }
 
             writer.flush();
-
             Toast.makeText(this, "CSV exported to: " + file.getAbsolutePath(), Toast.LENGTH_LONG).show();
 
         } catch (Exception e) {
@@ -606,6 +711,12 @@ public class ManageEventActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Formats a date for CSV export.
+     *
+     * @param date date to format
+     * @return formatted timestamp string, or empty string if null
+     */
     private String formatCsvDate(Date date) {
         if (date == null) {
             return "";
@@ -613,11 +724,20 @@ public class ManageEventActivity extends AppCompatActivity {
         return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(date);
     }
 
+    /**
+     * Escapes a value for safe CSV output.
+     *
+     * @param value raw value
+     * @return quoted and escaped CSV-safe string
+     */
     private String csv(String value) {
         String safeValue = value == null ? "" : value;
         return "\"" + safeValue.replace("\"", "\"\"") + "\"";
     }
 
+    /**
+     * Updates poster-related UI visibility and button state.
+     */
     private void updatePosterUI() {
         if (hasPoster) {
             imgEventPoster.setVisibility(View.VISIBLE);
@@ -636,10 +756,18 @@ public class ManageEventActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Opens the image picker for poster upload.
+     */
     private void openImagePicker() {
         imagePickerLauncher.launch("image/*");
     }
 
+    /**
+     * Uploads the selected poster image to Firebase Storage and stores its download URL.
+     *
+     * @param imageUri chosen image URI
+     */
     private void uploadPosterToFirebase(Uri imageUri) {
         StorageReference posterRef = storage.getReference()
                 .child("posters/" + organizerId + "/" + eventId + "/poster.jpg");
@@ -676,6 +804,9 @@ public class ManageEventActivity extends AppCompatActivity {
                         Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
     }
 
+    /**
+     * Removes the poster URL from the event document and resets poster UI.
+     */
     private void removePoster() {
         db.collection("events")
                 .document(eventId)
@@ -691,6 +822,12 @@ public class ManageEventActivity extends AppCompatActivity {
                         Toast.makeText(this, "Failed to remove poster", Toast.LENGTH_LONG).show());
     }
 
+    /**
+     * Formats the event registration start value for display.
+     *
+     * @param eventDateObject Firestore field value
+     * @return formatted date string
+     */
     @NonNull
     private String formatEventDate(Object eventDateObject) {
         if (eventDateObject instanceof com.google.firebase.Timestamp) {
@@ -711,8 +848,36 @@ public class ManageEventActivity extends AppCompatActivity {
         return "Date not available";
     }
 
+    /**
+     * Returns a non-null string for null-safe comparisons.
+     *
+     * @param value input string
+     * @return original string or empty string if null
+     */
     @NonNull
     private String safe(String value) {
         return value == null ? "" : value;
+    }
+
+    /**
+     * Immutable value object holding waitlist-derived counts.
+     */
+    private static class WaitlistCounts {
+        final int waiting;
+        final int selected;
+        final int enrolled;
+
+        /**
+         * Creates a new count bundle.
+         *
+         * @param waiting waiting count
+         * @param selected selected count
+         * @param enrolled enrolled count
+         */
+        WaitlistCounts(int waiting, int selected, int enrolled) {
+            this.waiting = waiting;
+            this.selected = selected;
+            this.enrolled = enrolled;
+        }
     }
 }
