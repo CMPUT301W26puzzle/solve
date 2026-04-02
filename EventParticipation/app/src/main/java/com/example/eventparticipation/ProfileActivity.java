@@ -64,8 +64,6 @@ public class ProfileActivity extends BaseOrganizerActivity {
     private String role;
     private boolean hasExistingProfileData = false;
     private boolean isBindingOptOutPreference = false;
-    private MaterialButton btnDeleteAccount;
-    public static final String EXTRA_TEST_ENTRANT_ID = "extra_test_entrant_id";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
