@@ -27,6 +27,9 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class ManageEventActivityIntentTest {
 
+    private static final String EVENT_ID = "event_001";
+    private static final String ORGANIZER_ID = "organizer_demo_001";
+
     @Before
     public void setUp() {
         Intents.init();
@@ -45,8 +48,8 @@ public class ManageEventActivityIntentTest {
 
         intended(allOf(
                 hasComponent(EntrantListActivity.class.getName()),
-                hasExtra("EVENT_ID", "event_001"),
-                hasExtra("ORGANIZER_ID", "organizer_demo_001")
+                hasExtra("EVENT_ID", EVENT_ID),
+                hasExtra("ORGANIZER_ID", ORGANIZER_ID)
         ));
     }
 
@@ -58,8 +61,8 @@ public class ManageEventActivityIntentTest {
 
         intended(allOf(
                 hasComponent(WaitlistMapActivity.class.getName()),
-                hasExtra("EVENT_ID", "event_001"),
-                hasExtra("ORGANIZER_ID", "organizer_demo_001")
+                hasExtra("EVENT_ID", EVENT_ID),
+                hasExtra("ORGANIZER_ID", ORGANIZER_ID)
         ));
     }
 
@@ -68,8 +71,8 @@ public class ManageEventActivityIntentTest {
                 ApplicationProvider.getApplicationContext(),
                 ManageEventActivity.class
         );
-        intent.putExtra("EVENT_ID", "event_001");
-        intent.putExtra("ORGANIZER_ID", "organizer_demo_001");
+        intent.putExtra("EVENT_ID", EVENT_ID);
+        intent.putExtra("ORGANIZER_ID", ORGANIZER_ID);
         return intent;
     }
 }

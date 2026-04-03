@@ -1,7 +1,5 @@
 package com.example.eventparticipation;
 
-import static android.content.Intent.getIntent;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -10,11 +8,9 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
@@ -89,32 +85,6 @@ public class EntrantNotificationsActivity extends BaseEntrantActivity implements
         rvNotifications.setLayoutManager(new LinearLayoutManager(this));
         rvNotifications.setAdapter(adapter);
     }
-
-//    private void setupBottomNav() {
-//        BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
-//        bottomNav.setSelectedItemId(R.id.nav_notifications);
-//        bottomNav.setOnItemSelectedListener(item -> {
-//            int id = item.getItemId();
-//            if (id == R.id.nav_notifications) {
-//                return true;
-//            } else if (id == R.id.nav_home) {
-//                startActivity(new Intent(this, EntrantDashboardActivity.class));
-//                finish();
-//                return true;
-//            } else if (id == R.id.nav_my_events) {
-//                startActivity(new Intent(this, EntrantMyEventsActivity.class));
-//                finish();
-//                return true;
-//            } else if (id == R.id.nav_scan) {
-//                Toast.makeText(this, "Scan coming soon", Toast.LENGTH_SHORT).show();
-//                return true;
-//            } else if (id == R.id.nav_profile) {
-//                Toast.makeText(this, "Profile coming soon", Toast.LENGTH_SHORT).show();
-//                return true;
-//            }
-//            return false;
-//        });
-//    }
 
     @SuppressWarnings("unchecked")
     private void loadTestNotifications() {
@@ -202,13 +172,28 @@ public class EntrantNotificationsActivity extends BaseEntrantActivity implements
             return;
         }
 
-        notificationRepository.acceptInvitation(entrantId, item)
-                .addOnSuccessListener(unused -> Toast.makeText(this,
-                        "Invitation accepted",
-                        Toast.LENGTH_SHORT).show())
-                .addOnFailureListener(e -> Toast.makeText(this,
-                        e.getMessage() != null ? e.getMessage() : "Failed to accept invitation",
-                        Toast.LENGTH_SHORT).show());
+        String type = item.getType() == null ? "" : item.getType().trim();
+
+        if (NotificationItem.TYPE_SELECTED.equals(type)) {
+            notificationRepository.acceptInvitation(entrantId, item)
+                    .addOnSuccessListener(unused -> Toast.makeText(this,
+                            "Invitation accepted",
+                            Toast.LENGTH_SHORT).show())
+                    .addOnFailureListener(e -> Toast.makeText(this,
+                            e.getMessage() != null ? e.getMessage() : "Failed to accept invitation",
+                            Toast.LENGTH_SHORT).show());
+            return;
+        }
+
+        if (NotificationItem.TYPE_COORGANIZER_INVITATION.equals(type)) {
+            notificationRepository.acceptCoOrganizerInvitation(entrantId, item)
+                    .addOnSuccessListener(unused -> Toast.makeText(this,
+                            "Co-organizer invitation accepted",
+                            Toast.LENGTH_SHORT).show())
+                    .addOnFailureListener(e -> Toast.makeText(this,
+                            e.getMessage() != null ? e.getMessage() : "Failed to accept co-organizer invitation",
+                            Toast.LENGTH_SHORT).show());
+        }
     }
 
     @Override
@@ -223,12 +208,27 @@ public class EntrantNotificationsActivity extends BaseEntrantActivity implements
             return;
         }
 
-        notificationRepository.declineInvitation(entrantId, item)
-                .addOnSuccessListener(unused -> Toast.makeText(this,
-                        "Invitation declined",
-                        Toast.LENGTH_SHORT).show())
-                .addOnFailureListener(e -> Toast.makeText(this,
-                        e.getMessage() != null ? e.getMessage() : "Failed to decline invitation",
-                        Toast.LENGTH_SHORT).show());
+        String type = item.getType() == null ? "" : item.getType().trim();
+
+        if (NotificationItem.TYPE_SELECTED.equals(type)) {
+            notificationRepository.declineInvitation(entrantId, item)
+                    .addOnSuccessListener(unused -> Toast.makeText(this,
+                            "Invitation declined",
+                            Toast.LENGTH_SHORT).show())
+                    .addOnFailureListener(e -> Toast.makeText(this,
+                            e.getMessage() != null ? e.getMessage() : "Failed to decline invitation",
+                            Toast.LENGTH_SHORT).show());
+            return;
+        }
+
+        if (NotificationItem.TYPE_COORGANIZER_INVITATION.equals(type)) {
+            notificationRepository.declineCoOrganizerInvitation(entrantId, item)
+                    .addOnSuccessListener(unused -> Toast.makeText(this,
+                            "Co-organizer invitation declined",
+                            Toast.LENGTH_SHORT).show())
+                    .addOnFailureListener(e -> Toast.makeText(this,
+                            e.getMessage() != null ? e.getMessage() : "Failed to decline co-organizer invitation",
+                            Toast.LENGTH_SHORT).show());
+        }
     }
 }

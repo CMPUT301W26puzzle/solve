@@ -26,11 +26,27 @@ public class NotificationActionHelper {
         return "You were not selected in this draw for " + safeEventName + ". You remain on the waiting list.";
     }
 
+    public static String buildCoOrganizerAssignedMessage(String eventName) {
+        String safeEventName = eventName == null || eventName.trim().isEmpty()
+                ? "the event"
+                : eventName.trim();
+        return "You have been assigned as a co-organizer for " + safeEventName + ".";
+    }
+
+    public static String buildCoOrganizerInvitationMessage(String eventName) {
+        String safeEventName = eventName == null || eventName.trim().isEmpty()
+                ? "the event"
+                : eventName.trim();
+        return "You have been invited to become a co-organizer for "
+                + safeEventName + ". Accept to become a co-organizer.";
+    }
+
     public static boolean shouldShowAcceptAction(NotificationItem item) {
         return item != null
-                && NotificationItem.TYPE_SELECTED.equals(item.getType())
                 && item.isActionRequired()
-                && NotificationItem.ACTION_PENDING.equals(item.getActionStatus());
+                && NotificationItem.ACTION_PENDING.equals(item.getActionStatus())
+                && (NotificationItem.TYPE_SELECTED.equals(item.getType())
+                || NotificationItem.TYPE_COORGANIZER_INVITATION.equals(item.getType()));
     }
 
     public static boolean shouldShowDeclineAction(NotificationItem item) {
@@ -38,7 +54,15 @@ public class NotificationActionHelper {
     }
 
     public static String getPrimaryActionLabel(NotificationItem item) {
-        return shouldShowAcceptAction(item) ? "Accept Invitation" : "";
+        if (!shouldShowAcceptAction(item)) {
+            return "";
+        }
+
+        if (NotificationItem.TYPE_COORGANIZER_INVITATION.equals(item.getType())) {
+            return "Accept Co-organizer Invite";
+        }
+
+        return "Accept Invitation";
     }
 
     public static String getActionStateLabel(NotificationItem item) {
@@ -46,12 +70,19 @@ public class NotificationActionHelper {
             return "";
         }
 
+        boolean isCoOrganizerInvitation =
+                NotificationItem.TYPE_COORGANIZER_INVITATION.equals(item.getType());
+
         if (NotificationItem.ACTION_ACCEPTED.equals(item.getActionStatus())) {
-            return "Invitation accepted";
+            return isCoOrganizerInvitation
+                    ? "Co-organizer invitation accepted"
+                    : "Invitation accepted";
         }
 
         if (NotificationItem.ACTION_DECLINED.equals(item.getActionStatus())) {
-            return "Invitation declined";
+            return isCoOrganizerInvitation
+                    ? "Co-organizer invitation declined"
+                    : "Invitation declined";
         }
 
         return "";

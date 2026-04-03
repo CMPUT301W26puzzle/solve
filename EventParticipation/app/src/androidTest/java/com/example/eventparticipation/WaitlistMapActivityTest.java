@@ -43,6 +43,7 @@ public class WaitlistMapActivityTest {
                 WaitlistMapActivity.class
         );
         intent.putExtra("EVENT_ID", "event_001");
+        intent.putExtra("ORGANIZER_ID", "organizer_demo_001");
         return intent;
     }
 }

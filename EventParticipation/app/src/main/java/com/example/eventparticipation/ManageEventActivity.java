@@ -24,10 +24,10 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.bumptech.glide.Glide;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.storage.FirebaseStorage;
@@ -47,13 +47,13 @@ import java.util.Locale;
  *
  * <p>Access rules:
  * <ul>
- *     <li>Organizer can access the event</li>
- *     <li>Co-organizer can access the event</li>
- *     <li>Co-organizer cannot assign another co-organizer</li>
+ *     <li>Organizer can access the event.</li>
+ *     <li>Co-organizer can access the event.</li>
+ *     <li>Co-organizer cannot assign another co-organizer.</li>
  * </ul>
  *
  * <p>This screen also displays derived waitlist counts and keeps the top-level
- * event document counts synchronized with the authoritative waitlist subcollection.
+ * event document counts synchronized with the authoritative waitlist subcollection.</p>
  */
 public class ManageEventActivity extends AppCompatActivity {
 
@@ -406,7 +406,10 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Loads all eligible entrants and allows the organizer to assign one as a co-organizer.
+     * Loads all eligible entrants and allows the organizer to send one a co-organizer invitation.
+     *
+     * <p>Entrants who already have a pending co-organizer invitation for this event
+     * are filtered out and not shown in the selection dialog.</p>
      */
     private void showAssignCoOrganizerDialog() {
         if (!isOwner) {
@@ -414,12 +417,14 @@ public class ManageEventActivity extends AppCompatActivity {
             return;
         }
 
+        NotificationRepository repository = new NotificationRepository(db);
+
         db.collection("events")
                 .document(eventId)
                 .collection("waitlist")
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
-                    List<Entrant> eligibleEntrants = new ArrayList<>();
+                    List<com.google.android.gms.tasks.Task<EntrantCandidate>> candidateTasks = new ArrayList<>();
 
                     for (QueryDocumentSnapshot doc : querySnapshot) {
                         Entrant entrant = doc.toObject(Entrant.class);
@@ -429,69 +434,124 @@ public class ManageEventActivity extends AppCompatActivity {
                         String responseStatus = safe(entrant.getResponseStatus()).toLowerCase();
                         String finalStatus = safe(entrant.getFinalStatus()).toLowerCase();
 
-                        boolean canAssign =
+                        boolean baseEligible =
                                 "waiting".equals(selectionStatus)
                                         || ("selected".equals(selectionStatus)
                                         && "pending".equals(responseStatus)
                                         && !"enrolled".equals(finalStatus));
 
-                        if (canAssign) {
-                            eligibleEntrants.add(entrant);
+                        if (!baseEligible) {
+                            continue;
                         }
+
+                        String entrantId = safe(entrant.getEntrantId());
+                        if (entrantId.isEmpty()) {
+                            continue;
+                        }
+
+                        com.google.android.gms.tasks.Task<EntrantCandidate> candidateTask =
+                                repository.hasPendingCoOrganizerInvitation(entrantId, eventId)
+                                        .continueWith(task -> {
+                                            boolean hasPending = false;
+                                            if (task.isSuccessful() && task.getResult() != null) {
+                                                hasPending = task.getResult();
+                                            }
+                                            return new EntrantCandidate(entrant, hasPending);
+                                        });
+
+                        candidateTasks.add(candidateTask);
                     }
 
-                    if (eligibleEntrants.isEmpty()) {
+                    if (candidateTasks.isEmpty()) {
                         Toast.makeText(this,
-                                "No eligible entrants available for co-organizer assignment",
+                                "No eligible entrants available for co-organizer invitation",
                                 Toast.LENGTH_SHORT).show();
                         return;
                     }
 
-                    String[] labels = new String[eligibleEntrants.size()];
-                    for (int i = 0; i < eligibleEntrants.size(); i++) {
-                        Entrant entrant = eligibleEntrants.get(i);
+                    Tasks.whenAllSuccess(candidateTasks)
+                            .addOnSuccessListener(results -> {
+                                List<Entrant> eligibleEntrants = new ArrayList<>();
 
-                        String selectionStatus = safe(entrant.getSelectionStatus()).toLowerCase();
-                        String responseStatus = safe(entrant.getResponseStatus()).toLowerCase();
+                                for (Object result : results) {
+                                    EntrantCandidate candidate = (EntrantCandidate) result;
+                                    if (!candidate.hasPendingInvitation && candidate.entrant != null) {
+                                        eligibleEntrants.add(candidate.entrant);
+                                    }
+                                }
 
-                        String displayStatus;
-                        if ("waiting".equals(selectionStatus)) {
-                            displayStatus = "Waiting";
-                        } else if ("selected".equals(selectionStatus) && "pending".equals(responseStatus)) {
-                            displayStatus = "Selected / Pending";
-                        } else {
-                            displayStatus = "Eligible";
-                        }
-
-                        labels[i] = safe(entrant.getEntrantName())
-                                + " (" + safe(entrant.getEntrantEmail()) + ")"
-                                + " - " + displayStatus;
-                    }
-
-                    final int[] selectedIndex = {-1};
-
-                    new MaterialAlertDialogBuilder(this)
-                            .setTitle("Assign Co-organizer")
-                            .setSingleChoiceItems(labels, -1, (dialog, which) -> selectedIndex[0] = which)
-                            .setNegativeButton("Cancel", null)
-                            .setPositiveButton("Assign", (dialog, which) -> {
-                                if (selectedIndex[0] < 0) {
-                                    Toast.makeText(this, "Please select an entrant", Toast.LENGTH_SHORT).show();
+                                if (eligibleEntrants.isEmpty()) {
+                                    Toast.makeText(this,
+                                            "All eligible entrants already have pending co-organizer invitations",
+                                            Toast.LENGTH_SHORT).show();
                                     return;
                                 }
-                                assignCoOrganizer(eligibleEntrants.get(selectedIndex[0]));
+
+                                String[] labels = new String[eligibleEntrants.size()];
+                                for (int i = 0; i < eligibleEntrants.size(); i++) {
+                                    Entrant entrant = eligibleEntrants.get(i);
+
+                                    String selectionStatus = safe(entrant.getSelectionStatus()).toLowerCase();
+                                    String responseStatus = safe(entrant.getResponseStatus()).toLowerCase();
+
+                                    String displayStatus;
+                                    if ("waiting".equals(selectionStatus)) {
+                                        displayStatus = "Waiting";
+                                    } else if ("selected".equals(selectionStatus)
+                                            && "pending".equals(responseStatus)) {
+                                        displayStatus = "Selected / Pending";
+                                    } else {
+                                        displayStatus = "Eligible";
+                                    }
+
+                                    labels[i] = safe(entrant.getEntrantName())
+                                            + " (" + safe(entrant.getEntrantEmail()) + ")"
+                                            + " - " + displayStatus;
+                                }
+
+                                final int[] selectedIndex = {-1};
+
+                                new MaterialAlertDialogBuilder(this)
+                                        .setTitle("Invite Co-organizer")
+                                        .setSingleChoiceItems(
+                                                labels,
+                                                -1,
+                                                (dialog, which) -> selectedIndex[0] = which
+                                        )
+                                        .setNegativeButton("Cancel", null)
+                                        .setPositiveButton("Send Invitation", (dialog, which) -> {
+                                            if (selectedIndex[0] < 0) {
+                                                Toast.makeText(this,
+                                                        "Please select an entrant",
+                                                        Toast.LENGTH_SHORT).show();
+                                                return;
+                                            }
+                                            assignCoOrganizer(eligibleEntrants.get(selectedIndex[0]));
+                                        })
+                                        .show();
                             })
-                            .show();
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(
+                                            this,
+                                            "Failed to check existing co-organizer invitations",
+                                            Toast.LENGTH_LONG
+                                    ).show());
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Failed to load entrants", Toast.LENGTH_LONG).show());
     }
 
     /**
-     * Assigns an entrant as co-organizer, removes them from the waitlist,
-     * and then recomputes the event counts.
+     * Sends a co-organizer invitation to the selected entrant.
      *
-     * @param entrant entrant to promote
+     * <p>This does NOT immediately promote the entrant to co-organizer and does NOT
+     * remove them from the waitlist. Promotion only happens after the entrant accepts
+     * the invitation from their notifications screen.</p>
+     *
+     * <p>If a pending co-organizer invitation already exists for the same entrant
+     * and event, this method does not send a duplicate invitation.</p>
+     *
+     * @param entrant entrant to invite
      */
     private void assignCoOrganizer(Entrant entrant) {
         if (entrant == null || safe(entrant.getEntrantId()).isEmpty()) {
@@ -501,28 +561,48 @@ public class ManageEventActivity extends AppCompatActivity {
 
         String entrantId = entrant.getEntrantId();
 
-        com.google.firebase.firestore.DocumentReference eventRef =
-                db.collection("events").document(eventId);
+        String eventName = tvEventName.getText() == null
+                ? ""
+                : tvEventName.getText().toString().trim();
 
-        com.google.firebase.firestore.DocumentReference waitRef =
-                eventRef.collection("waitlist").document(entrantId);
+        NotificationRepository repository = new NotificationRepository(db);
 
-        com.google.firebase.firestore.WriteBatch batch = db.batch();
-        batch.update(eventRef, "coOrganizerIds", FieldValue.arrayUnion(entrantId));
-        batch.delete(waitRef);
+        repository.sendCoOrganizerInvitation(entrantId, eventId, eventName)
+                .addOnSuccessListener(result -> {
+                    if (result == null) {
+                        Toast.makeText(
+                                this,
+                                "Failed to send co-organizer invitation",
+                                Toast.LENGTH_LONG
+                        ).show();
+                        return;
+                    }
 
-        batch.commit()
-                .addOnSuccessListener(unused ->
-                        new WaitlistController().syncEventCounts(eventId)
-                                .addOnSuccessListener(syncUnused -> {
-                                    Toast.makeText(this, "Co-organizer assigned successfully", Toast.LENGTH_SHORT).show();
-                                    loadWaitlistCounts();
-                                })
-                                .addOnFailureListener(e ->
-                                        Toast.makeText(this, "Assigned, but failed to sync counts", Toast.LENGTH_LONG).show())
-                )
+                    if (result.isAlreadyPending()) {
+                        Toast.makeText(
+                                this,
+                                "Co-organizer invitation already pending",
+                                Toast.LENGTH_SHORT
+                        ).show();
+                        return;
+                    }
+
+                    Toast.makeText(
+                            this,
+                            "Co-organizer invitation sent",
+                            Toast.LENGTH_SHORT
+                    ).show();
+
+                    loadWaitlistCounts();
+                })
                 .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to assign co-organizer", Toast.LENGTH_LONG).show());
+                        Toast.makeText(
+                                this,
+                                e.getMessage() != null
+                                        ? e.getMessage()
+                                        : "Failed to send co-organizer invitation",
+                                Toast.LENGTH_LONG
+                        ).show());
     }
 
     /**
@@ -860,6 +940,19 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
+     * Small helper object used while building the co-organizer candidate list.
+     */
+    private static class EntrantCandidate {
+        final Entrant entrant;
+        final boolean hasPendingInvitation;
+
+        EntrantCandidate(Entrant entrant, boolean hasPendingInvitation) {
+            this.entrant = entrant;
+            this.hasPendingInvitation = hasPendingInvitation;
+        }
+    }
+
+    /**
      * Immutable value object holding waitlist-derived counts.
      */
     private static class WaitlistCounts {
@@ -867,13 +960,6 @@ public class ManageEventActivity extends AppCompatActivity {
         final int selected;
         final int enrolled;
 
-        /**
-         * Creates a new count bundle.
-         *
-         * @param waiting waiting count
-         * @param selected selected count
-         * @param enrolled enrolled count
-         */
         WaitlistCounts(int waiting, int selected, int enrolled) {
             this.waiting = waiting;
             this.selected = selected;

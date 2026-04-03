@@ -10,6 +10,8 @@ public class NotificationItem implements Serializable {
 
     public static final String TYPE_SELECTED = "selected";
     public static final String TYPE_NOT_SELECTED = "not_selected";
+    public static final String TYPE_COORGANIZER_ASSIGNED = "coorganizer_assigned";
+    public static final String TYPE_COORGANIZER_INVITATION = "coorganizer_invitation";
 
     public static final String ACTION_PENDING = "pending";
     public static final String ACTION_ACCEPTED = "accepted";
