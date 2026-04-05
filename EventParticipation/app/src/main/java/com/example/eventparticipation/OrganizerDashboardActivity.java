@@ -71,13 +71,15 @@ public class OrganizerDashboardActivity extends BaseOrganizerActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_organizer_dashboard);
 
-        organizerId = DeviceIdProvider.getId(this);
-
-        if (!DeviceIdProvider.isValidId(organizerId)) {
-            Toast.makeText(this, "Failed to get device ID", Toast.LENGTH_SHORT).show();
+        SessionManager session = SessionManager.getInstance(this);
+        if (!session.isLoggedIn()) {
+            Toast.makeText(this, "Please log in first", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, SelectRoleActivity.class));
             finish();
             return;
         }
+
+        organizerId = session.getUserId();
 
         db = FirebaseFirestore.getInstance();
 

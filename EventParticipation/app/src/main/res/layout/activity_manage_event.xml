@@ -398,6 +398,27 @@
                         app:icon="@drawable/ic_refresh" />
 
                     <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnInviteUser"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Invite User (Private)"
+                        app:icon="@drawable/ic_add" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnMassNotification"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Send Mass Notification"
+                        app:icon="@drawable/belllogo" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCancelEntrant"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Cancel an Entrant"
+                        app:icon="@drawable/ic_close" />
+
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnAssignCoOrganizer"
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         android:layout_width="match_parent"
@@ -425,6 +446,7 @@
                         android:text="Edit Event Details"
                         app:cornerRadius="8dp"
                         app:icon="@drawable/ic_edit" />
+
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnExportCsv"

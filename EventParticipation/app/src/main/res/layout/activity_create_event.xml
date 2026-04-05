@@ -72,19 +72,28 @@
                     android:inputType="number" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.materialswitch.MaterialSwitch
+            <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/switchGeolocation"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="require geolocation to join" />
+                android:textSize="16sp"
+                android:text="Require Geolocation to Join" />
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switchPrivateEvent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Make Event Private (Hide from Dashboard)"
+                android:textSize="16sp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSaveEvent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:text="create event" />
+                android:text="Create Event" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

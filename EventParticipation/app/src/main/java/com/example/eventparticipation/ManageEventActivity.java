@@ -18,6 +18,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -28,8 +29,12 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.WriteBatch;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
@@ -39,63 +44,117 @@ import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
- * Organizer / co-organizer screen for managing a specific event.
+ * Main control panel for organizers and co-organizers to manage an event.
  *
- * <p>Access rules:
- * <ul>
- *     <li>Organizer can access the event.</li>
- *     <li>Co-organizer can access the event.</li>
- *     <li>Co-organizer cannot assign another co-organizer.</li>
- * </ul>
- *
- * <p>This screen also displays derived waitlist counts and keeps the top-level
- * event document counts synchronized with the authoritative waitlist subcollection.</p>
+ * <p>This activity provides comprehensive event management tools including lottery execution,
+ * waitlist management, participant communications, poster modifications, and metrics tracking.
+ * Access is restricted strictly to the event's designated owner and assigned co-organizers.</p>
  */
 public class ManageEventActivity extends AppCompatActivity {
 
+    /** Text view for displaying the event's name. */
     private TextView tvEventName;
+
+    /** Text view for displaying the event's registration date range. */
     private TextView tvEventDate;
+
+    /** Text view for displaying the event's maximum waitlist capacity. */
     private TextView tvEventCapacity;
 
+    /** Text view displaying the current number of entrants in the "waiting" state. */
     private TextView tvWaitingCount;
+
+    /** Text view displaying the current number of entrants in the "selected" state. */
     private TextView tvSelectedCount;
+
+    /** Text view displaying the current number of entrants in the "enrolled" state. */
     private TextView tvEnrolledCount;
 
+    /** Image view for rendering the event's promotional poster. */
     private ImageView imgEventPoster;
+
+    /** Layout container displayed when no poster is currently uploaded. */
     private LinearLayout layoutPosterPlaceholder;
+
+    /** Floating action button for removing the currently uploaded poster. */
     private FloatingActionButton fabRemovePoster;
 
+    /** Button to trigger the initial upload of a poster. */
     private MaterialButton btnUploadPoster;
+
+    /** Button to trigger updating or replacing an existing poster. */
     private MaterialButton btnUpdatePoster;
 
+    /** Button to navigate to the entrant list management screen. */
     private MaterialButton btnViewEntrants;
+
+    /** Button to navigate to the waitlist geolocation map. */
     private MaterialButton btnViewMap;
 
+    /** Button to trigger the lottery selection process. */
     private MaterialButton btnRunLottery;
+
+    /** Button to draw a single replacement entrant from the waitlist. */
     private MaterialButton btnDrawReplacement;
+
+    /** Button to display the event's promotional QR code. */
     private MaterialButton btnShowQRCode;
+
+    /** Button to edit the event's core details. */
     private MaterialButton btnEditEvent;
+
+    /** Button to export the final enrolled entrant list to a CSV file. */
     private MaterialButton btnExportCsv;
+
+    /** Button to assign a waiting entrant as a co-organizer. */
     private MaterialButton btnAssignCoOrganizer;
 
+    /** Button to manually invite a specific user to the event via email. */
+    private MaterialButton btnInviteUser;
+
+    /** Button to send a custom notification to a specific demographic group. */
+    private MaterialButton btnMassNotification;
+
+    /** Button to manually cancel an unresponsive entrant's spot. */
+    private MaterialButton btnCancelEntrant;
+
+    /** The unique document ID of the event being managed. */
     private String eventId;
+
+    /** The device ID of the user who originally created the event. */
     private String organizerId;
+
+    /** The device ID of the current user viewing this screen. */
     private String currentUserId;
 
-    private boolean hasPoster = false;
-    private String currentPosterUrl = "";
-
-    private boolean isOwner = false;
-    private boolean isCoOrganizer = false;
-
-    private FirebaseFirestore db;
-    private FirebaseStorage storage;
+    /** The string determining the user's entry access mode. */
     private String accessMode;
 
+    /** Flag indicating whether the event currently has a poster uploaded. */
+    private boolean hasPoster = false;
+
+    /** The current download URL for the event's poster in Firebase Storage. */
+    private String currentPosterUrl = "";
+
+    /** Flag indicating if the current user is the primary creator and owner of the event. */
+    private boolean isOwner = false;
+
+    /** Flag indicating if the current user is an assigned co-organizer for the event. */
+    private boolean isCoOrganizer = false;
+
+    /** Entry point for Firestore database operations. */
+    private FirebaseFirestore db;
+
+    /** Entry point for Firebase Storage operations. */
+    private FirebaseStorage storage;
+
+    /** Launcher for the intent to pick images from the device gallery. */
     private final ActivityResultLauncher<String> imagePickerLauncher =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
                 if (uri != null) {
@@ -103,6 +162,11 @@ public class ManageEventActivity extends AppCompatActivity {
                 }
             });
 
+    /**
+     * Initializes the activity, binds views, and triggers security access checks.
+     *
+     * @param savedInstanceState Contains data from the most recently supplied state.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -111,21 +175,23 @@ public class ManageEventActivity extends AppCompatActivity {
         applyWindowInsets();
 
         eventId = getIntent().getStringExtra("EVENT_ID");
-        organizerId = getIntent().getStringExtra("ORGANIZER_ID");
+        SessionManager session = SessionManager.getInstance(this);
+        if (!session.isLoggedIn()) {
+            Toast.makeText(this, "Please log in first", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, SelectRoleActivity.class));
+            finish();
+            return;
+        }
+        organizerId = session.getUserId();
         currentUserId = DeviceIdProvider.getId(this);
         accessMode = getIntent().getStringExtra("ACCESS_MODE");
+
         if (accessMode == null || accessMode.trim().isEmpty()) {
             accessMode = "organizer";
         }
 
-        if (eventId == null || eventId.trim().isEmpty()) {
-            Toast.makeText(this, "Missing EVENT_ID", Toast.LENGTH_LONG).show();
-            finish();
-            return;
-        }
-
-        if (organizerId == null || organizerId.trim().isEmpty()) {
-            Toast.makeText(this, "Missing ORGANIZER_ID", Toast.LENGTH_LONG).show();
+        if (eventId == null || organizerId == null) {
+            Toast.makeText(this, "Missing Event or Organizer ID", Toast.LENGTH_LONG).show();
             finish();
             return;
         }
@@ -142,80 +208,55 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Applies system bar insets to the toolbar so that content stays below the status bar.
+     * Applies system bar insets to the toolbar to prevent overlap with the status bar.
      */
     private void applyWindowInsets() {
         Toolbar toolbar = findViewById(R.id.toolbar);
-
-        final int originalPaddingLeft = toolbar.getPaddingLeft();
-        final int originalPaddingTop = toolbar.getPaddingTop();
-        final int originalPaddingRight = toolbar.getPaddingRight();
-        final int originalPaddingBottom = toolbar.getPaddingBottom();
         final int originalToolbarHeight = getToolbarHeight();
 
         ViewCompat.setOnApplyWindowInsetsListener(toolbar, (view, windowInsets) -> {
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars());
-
-            view.setPadding(
-                    originalPaddingLeft,
-                    originalPaddingTop + insets.top,
-                    originalPaddingRight,
-                    originalPaddingBottom
-            );
-
+            view.setPadding(view.getPaddingLeft(), insets.top, view.getPaddingRight(), view.getPaddingBottom());
             ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
             layoutParams.height = originalToolbarHeight + insets.top;
             view.setLayoutParams(layoutParams);
-
             return windowInsets;
         });
     }
 
     /**
-     * Returns the toolbar height defined by the current theme.
+     * Retrieves the default toolbar height defined by the current application theme.
      *
-     * @return toolbar height in pixels
+     * @return The toolbar height in pixels.
      */
     private int getToolbarHeight() {
-        TypedValue typedValue = new TypedValue();
-        if (getTheme().resolveAttribute(android.R.attr.actionBarSize, typedValue, true)) {
-            return TypedValue.complexToDimensionPixelSize(
-                    typedValue.data,
-                    getResources().getDisplayMetrics()
-            );
+        TypedValue tv = new TypedValue();
+        if (getTheme().resolveAttribute(android.R.attr.actionBarSize, tv, true)) {
+            return TypedValue.complexToDimensionPixelSize(tv.data, getResources().getDisplayMetrics());
         }
         return (int) (56 * getResources().getDisplayMetrics().density);
     }
 
     /**
-     * Configures the toolbar and up navigation behavior.
+     * Configures the action bar and enables up navigation.
      */
     private void setupToolbar() {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
-
         toolbar.setNavigationOnClickListener(v -> finish());
     }
 
-    @Override
-    public boolean onSupportNavigateUp() {
-        finish();
-        return true;
-    }
-
     /**
-     * Binds all views from the layout.
+     * Binds layout views to their corresponding class variables.
      */
     private void initViews() {
         tvEventName = findViewById(R.id.tvEventName);
         tvEventDate = findViewById(R.id.tvEventDate);
         tvEventCapacity = findViewById(R.id.tvEventCapacity);
-
         tvWaitingCount = findViewById(R.id.tvWaitingCount);
         tvSelectedCount = findViewById(R.id.tvSelectedCount);
         tvEnrolledCount = findViewById(R.id.tvEnrolledCount);
@@ -223,44 +264,42 @@ public class ManageEventActivity extends AppCompatActivity {
         imgEventPoster = findViewById(R.id.imgEventPoster);
         layoutPosterPlaceholder = findViewById(R.id.layoutPosterPlaceholder);
         fabRemovePoster = findViewById(R.id.fabRemovePoster);
-
         btnUploadPoster = findViewById(R.id.btnUploadPoster);
         btnUpdatePoster = findViewById(R.id.btnUpdatePoster);
 
         btnViewEntrants = findViewById(R.id.btnViewEntrants);
         btnViewMap = findViewById(R.id.btnViewMap);
-
         btnRunLottery = findViewById(R.id.btnRunLottery);
         btnDrawReplacement = findViewById(R.id.btnDrawReplacement);
         btnShowQRCode = findViewById(R.id.btnShowQRCode);
         btnEditEvent = findViewById(R.id.btnEditEvent);
         btnExportCsv = findViewById(R.id.btnExportCsv);
         btnAssignCoOrganizer = findViewById(R.id.btnAssignCoOrganizer);
+
+        btnInviteUser = findViewById(R.id.btnInviteUser);
+        btnMassNotification = findViewById(R.id.btnMassNotification);
+        btnCancelEntrant = findViewById(R.id.btnCancelEntrant);
     }
 
     /**
-     * Fills the screen with placeholder values before Firestore data is loaded.
+     * Populates the views with empty data before Firestore callbacks complete.
      */
     private void setInitialPlaceholderValues() {
-        tvEventName.setText("Event Name");
-        tvEventDate.setText("Date not available");
-        tvEventCapacity.setText("Waitlist Limit: Unlimited");
-
+        tvEventName.setText("Loading...");
+        tvEventDate.setText("...");
+        tvEventCapacity.setText("...");
         tvWaitingCount.setText("0");
         tvSelectedCount.setText("0");
         tvEnrolledCount.setText("0");
-
-        currentPosterUrl = "";
-        hasPoster = false;
         imgEventPoster.setImageDrawable(null);
     }
 
     /**
-     * Wires up all click listeners used on the screen.
+     * Configures interaction callbacks for all action buttons.
      */
     private void setupClickListeners() {
-        btnUploadPoster.setOnClickListener(v -> openImagePicker());
-        btnUpdatePoster.setOnClickListener(v -> openImagePicker());
+        btnUploadPoster.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
+        btnUpdatePoster.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
         fabRemovePoster.setOnClickListener(v -> removePoster());
 
         btnViewEntrants.setOnClickListener(v -> {
@@ -273,80 +312,322 @@ public class ManageEventActivity extends AppCompatActivity {
         btnViewMap.setOnClickListener(v -> {
             Intent intent = new Intent(this, WaitlistMapActivity.class);
             intent.putExtra("EVENT_ID", eventId);
-            intent.putExtra("ORGANIZER_ID", organizerId);
             startActivity(intent);
         });
 
         btnRunLottery.setOnClickListener(v -> showRunLotteryDialog());
         btnDrawReplacement.setOnClickListener(v -> drawReplacementApplicant());
         btnAssignCoOrganizer.setOnClickListener(v -> showAssignCoOrganizerDialog());
-
         btnShowQRCode.setOnClickListener(v -> showQRCodeDialog());
-
-        btnEditEvent.setOnClickListener(v ->
-                Toast.makeText(this, "Edit event feature coming soon", Toast.LENGTH_SHORT).show());
-
         btnExportCsv.setOnClickListener(v -> exportEnrolledEntrantsToCsv());
-    }
 
-    /**
-     * Verifies whether the current user has permission to manage the event and, if so,
-     * loads all event details and current counts.
-     */
-    private void checkManageAccessAndLoad() {
-        db.collection("events")
-                .document(eventId)
-                .get()
-                .addOnSuccessListener(doc -> {
-                    if (!doc.exists()) {
-                        Toast.makeText(this, "Event not found", Toast.LENGTH_LONG).show();
-                        finish();
-                        return;
-                    }
-
-                    String ownerId = safe(doc.getString("organizerId"));
-                    List<String> coOrganizerIds = (List<String>) doc.get("coOrganizerIds");
-
-                    if ("organizer".equals(accessMode)) {
-                        isOwner = organizerId.equals(ownerId);
-                        isCoOrganizer = false;
-                    } else if ("coorganizer".equals(accessMode)) {
-                        isOwner = false;
-                        isCoOrganizer = coOrganizerIds != null && coOrganizerIds.contains(currentUserId);
-                    } else {
-                        isOwner = false;
-                        isCoOrganizer = false;
-                    }
-
-                    if (!isOwner && !isCoOrganizer) {
-                        Toast.makeText(this, "You do not have access to manage this event", Toast.LENGTH_LONG).show();
-                        finish();
-                        return;
-                    }
-
-                    applyRoleRestrictions();
-                    loadEventData();
-                    loadWaitlistCounts();
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Failed to verify access", Toast.LENGTH_LONG).show();
-                    finish();
-                });
-    }
-
-    /**
-     * Applies UI restrictions based on the current role.
-     */
-    private void applyRoleRestrictions() {
-        if (isCoOrganizer && !isOwner) {
-            btnAssignCoOrganizer.setVisibility(View.GONE);
-        } else {
-            btnAssignCoOrganizer.setVisibility(View.VISIBLE);
+        if (btnInviteUser != null) {
+            btnInviteUser.setOnClickListener(v -> showInviteUserDialog());
+        }
+        if (btnMassNotification != null) {
+            btnMassNotification.setOnClickListener(v -> showMassNotificationDialog());
+        }
+        if (btnCancelEntrant != null) {
+            btnCancelEntrant.setOnClickListener(v -> showCancelEntrantDialog());
         }
     }
 
     /**
-     * Shows the dialog used to run a lottery and select a number of entrants.
+     * Verifies the user's role and halts execution if they lack administrative privileges.
+     */
+    private void checkManageAccessAndLoad() {
+        db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
+            if (!doc.exists()) {
+                finish();
+                return;
+            }
+
+            String ownerId = safe(doc.getString("organizerId"));
+            List<String> coOrganizerIds = (List<String>) doc.get("coOrganizerIds");
+
+            if ("organizer".equals(accessMode)) {
+                isOwner = organizerId.equals(ownerId);
+                isCoOrganizer = false;
+            } else if ("coorganizer".equals(accessMode)) {
+                isOwner = false;
+                isCoOrganizer = coOrganizerIds != null && coOrganizerIds.contains(currentUserId);
+            }
+
+            if (!isOwner && !isCoOrganizer) {
+                Toast.makeText(this, "Access Denied", Toast.LENGTH_LONG).show();
+                finish();
+                return;
+            }
+
+            btnAssignCoOrganizer.setVisibility((isCoOrganizer && !isOwner) ? View.GONE : View.VISIBLE);
+            loadEventData(doc);
+            loadWaitlistCounts();
+        });
+    }
+
+    /**
+     * Parses the Firestore document and populates the primary user interface elements.
+     *
+     * @param documentSnapshot The fetched event document.
+     */
+    private void loadEventData(DocumentSnapshot documentSnapshot) {
+        String name = safe(documentSnapshot.getString("name"));
+        String posterUrl = safe(documentSnapshot.getString("posterUrl"));
+        Long limitLong = documentSnapshot.getLong("waitlistLimit");
+
+        tvEventName.setText(name.isEmpty() ? "Unnamed Event" : name);
+        tvEventCapacity.setText("Capacity: " + (limitLong == null ? "Unlimited" : limitLong));
+
+        currentPosterUrl = posterUrl;
+        hasPoster = !currentPosterUrl.isEmpty();
+
+        if (hasPoster) {
+            Glide.with(this).load(currentPosterUrl).into(imgEventPoster);
+        }
+        updatePosterUI();
+    }
+
+    /**
+     * Fetches the waitlist, categorizes entrants by status, and synchronizes the totals.
+     */
+    private void loadWaitlistCounts() {
+        db.collection("events").document(eventId).collection("waitlist").get()
+                .addOnSuccessListener(querySnapshot -> {
+                    int waiting = 0, selected = 0, enrolled = 0;
+
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        String status = safe(doc.getString("selectionStatus")).toLowerCase();
+                        String fStatus = safe(doc.getString("finalStatus")).toLowerCase();
+
+                        if ("enrolled".equals(fStatus)) {
+                            enrolled++;
+                        } else if ("selected".equals(status)) {
+                            selected++;
+                        } else if ("waiting".equals(status)) {
+                            waiting++;
+                        }
+                    }
+
+                    tvWaitingCount.setText(String.valueOf(waiting));
+                    tvSelectedCount.setText(String.valueOf(selected));
+                    tvEnrolledCount.setText(String.valueOf(enrolled));
+
+                    db.collection("events").document(eventId).update(
+                            "waitingCount", waiting, "selectedCount", selected, "enrolledCount", enrolled);
+                });
+    }
+
+    /**
+     * Prompts the organizer for a target email and forces a user onto the waitlist.
+     */
+    private void showInviteUserDialog() {
+        EditText input = new EditText(this);
+        input.setHint("Enter user's exact email");
+        input.setInputType(InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Private Invite")
+                .setMessage("Search for an entrant by email to add them directly to the waitlist.")
+                .setView(input)
+                .setPositiveButton("Invite", (dialog, which) -> {
+                    String email = input.getText().toString().trim();
+                    if (!email.isEmpty()) {
+                        inviteUserByEmail(email);
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /**
+     * Locates a user document by email and generates a waitlist entity for them.
+     *
+     * @param email The target user's email address.
+     */
+    private void inviteUserByEmail(String email) {
+        db.collection("entrants").whereEqualTo("email", email).limit(1).get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (querySnapshot.isEmpty()) {
+                        Toast.makeText(this, "User not found", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    String targetUserId = querySnapshot.getDocuments().get(0).getId();
+                    Map<String, Object> waitlistEntry = new HashMap<>();
+                    waitlistEntry.put("deviceId", targetUserId);
+                    waitlistEntry.put("entrantId", targetUserId);
+                    waitlistEntry.put("joinedAt", new Date());
+                    waitlistEntry.put("selectionStatus", "waiting");
+
+                    db.collection("events").document(eventId).collection("waitlist").document(targetUserId)
+                            .set(waitlistEntry).addOnSuccessListener(aVoid -> {
+                                Toast.makeText(this, "User successfully invited!", Toast.LENGTH_SHORT).show();
+                                loadWaitlistCounts();
+                            });
+                });
+    }
+
+    /**
+     * Displays a dialog allowing organizers to draft and route a custom message to an audience.
+     */
+    private void showMassNotificationDialog() {
+        String[] audiences = {"All Waiting", "All Selected", "All Cancelled"};
+        final int[] selectedAudience = {0};
+
+        EditText inputMessage = new EditText(this);
+        inputMessage.setHint("Type your message...");
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Send Mass Notification")
+                .setSingleChoiceItems(audiences, 0, (dialog, which) -> selectedAudience[0] = which)
+                .setView(inputMessage)
+                .setPositiveButton("Send", (dialog, which) -> {
+                    String targetStatus = selectedAudience[0] == 1 ? "selected" : (selectedAudience[0] == 2 ? "cancelled" : "waiting");
+                    sendMassNotification(targetStatus, inputMessage.getText().toString().trim());
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /**
+     * Dispatches a custom notification payload to all entrants currently matching the target status.
+     *
+     * @param targetStatus The waitlist demographic to target.
+     * @param message The content of the notification.
+     */
+    private void sendMassNotification(String targetStatus, String message) {
+        if (message.isEmpty()) return;
+
+        db.collection("events").document(eventId).collection("waitlist")
+                .whereEqualTo("selectionStatus", targetStatus).get()
+                .addOnSuccessListener(querySnapshot -> {
+                    WriteBatch batch = db.batch();
+
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        DocumentReference notifRef = db.collection("entrants").document(doc.getId())
+                                .collection("notifications").document();
+
+                        Map<String, Object> notification = new HashMap<>();
+                        notification.put("eventId", eventId);
+                        notification.put("type", "organizer_message");
+                        notification.put("message", message);
+                        notification.put("unread", true);
+                        notification.put("createdAt", FieldValue.serverTimestamp());
+                        batch.set(notifRef, notification);
+                    }
+
+                    batch.commit().addOnSuccessListener(aVoid ->
+                            Toast.makeText(this, "Sent to " + querySnapshot.size() + " users.", Toast.LENGTH_SHORT).show());
+                });
+    }
+
+    /**
+     * Presents a dialog permitting the organizer to forcefully revoke an entrant's selection status.
+     */
+    private void showCancelEntrantDialog() {
+        EditText input = new EditText(this);
+        input.setHint("Enter User Email to Cancel");
+        input.setInputType(InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Cancel Entrant")
+                .setView(input)
+                .setPositiveButton("Cancel User", (dialog, which) -> {
+                    db.collection("entrants").whereEqualTo("email", input.getText().toString().trim()).limit(1).get()
+                            .addOnSuccessListener(q -> {
+                                if (!q.isEmpty()) {
+                                    cancelPendingEntrant(q.getDocuments().get(0).getId());
+                                }
+                            });
+                })
+                .setNegativeButton("Close", null)
+                .show();
+    }
+
+    /**
+     * Updates an entrant's state to cancelled, functionally ejecting them from the event.
+     *
+     * @param targetUserId The ID of the document to be terminated.
+     */
+    private void cancelPendingEntrant(String targetUserId) {
+        db.collection("events").document(eventId).collection("waitlist").document(targetUserId)
+                .update("selectionStatus", "cancelled", "responseStatus", "declined", "finalStatus", "cancelled")
+                .addOnSuccessListener(unused -> loadWaitlistCounts());
+    }
+
+    /**
+     * Deletes a specific event comment from the Firestore backend.
+     *
+     * @param commentId The unique ID of the comment to destroy.
+     */
+    public void deleteEventComment(String commentId) {
+        if (!isOwner && !isCoOrganizer) return;
+
+        db.collection("events").document(eventId)
+                .collection("comments").document(commentId)
+                .delete()
+                .addOnSuccessListener(aVoid -> Toast.makeText(this, "Comment deleted", Toast.LENGTH_SHORT).show());
+    }
+
+    /**
+     * Queries enrolled entrants, compiles their details into CSV format, and launches a system
+     * share intent allowing the organizer to save or transmit the final file.
+     */
+    private void exportEnrolledEntrantsToCsv() {
+        db.collection("events").document(eventId).collection("waitlist").whereEqualTo("finalStatus", "enrolled")
+                .get().addOnSuccessListener(querySnapshot -> {
+                    if (querySnapshot.isEmpty()) {
+                        Toast.makeText(this, "No enrolled entrants to export", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    try {
+                        File file = new File(getExternalFilesDir(null), "export_" + System.currentTimeMillis() + ".csv");
+                        OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(file));
+                        writer.append("Entrant ID,Status\n");
+
+                        for (QueryDocumentSnapshot doc : querySnapshot) {
+                            writer.append(doc.getId()).append(",Enrolled\n");
+                        }
+
+                        writer.flush();
+                        writer.close();
+
+                        Uri fileUri = FileProvider.getUriForFile(this, getApplicationContext().getPackageName() + ".provider", file);
+                        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                        shareIntent.setType("text/csv");
+                        shareIntent.putExtra(Intent.EXTRA_STREAM, fileUri);
+                        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        startActivity(Intent.createChooser(shareIntent, "Share CSV file"));
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+    }
+
+    /**
+     * Generates a deep-link encoded QR code that routes scanning devices to the event listing.
+     */
+    private void showQRCodeDialog() {
+        try {
+            String deepLinkUrl = "https://eventparticipation.com/event?id=" + eventId;
+            android.graphics.Bitmap qrBitmap = QRCodeGenerator.generateQRCode(deepLinkUrl, 512);
+            ImageView imageView = new ImageView(this);
+            imageView.setImageBitmap(qrBitmap);
+            imageView.setPadding(32, 32, 32, 32);
+
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle("Promotional QR Code")
+                    .setView(imageView)
+                    .setPositiveButton("Close", null)
+                    .show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Displays a numeric input prompt to execute the event lottery against the waiting queue.
      */
     private void showRunLotteryDialog() {
         EditText input = new EditText(this);
@@ -360,586 +641,158 @@ public class ManageEventActivity extends AppCompatActivity {
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Run", (dialog, which) -> {
                     String value = input.getText() == null ? "" : input.getText().toString().trim();
-                    if (value.isEmpty()) {
-                        Toast.makeText(this, "Enter a lottery size", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+                    if (value.isEmpty()) return;
 
                     int sampleSize;
                     try {
                         sampleSize = Integer.parseInt(value);
                     } catch (NumberFormatException e) {
-                        Toast.makeText(this, "Enter a valid number", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
                     new WaitlistController().runLottery(eventId, sampleSize)
-                            .addOnSuccessListener(unused -> {
-                                Toast.makeText(this, "Lottery complete. Notifications sent.", Toast.LENGTH_SHORT).show();
-                                loadWaitlistCounts();
-                            })
-                            .addOnFailureListener(e -> Toast.makeText(
-                                    this,
-                                    e.getMessage() != null ? e.getMessage() : "Failed to run lottery",
-                                    Toast.LENGTH_LONG
-                            ).show());
+                            .addOnSuccessListener(unused -> loadWaitlistCounts());
                 })
                 .show();
     }
 
     /**
-     * Draws a single replacement applicant and refreshes counts afterwards.
+     * Executes logic to randomly select a single replacement candidate from the pool.
      */
     private void drawReplacementApplicant() {
         new WaitlistController().drawReplacement(eventId)
                 .addOnSuccessListener(entrantId -> {
-                    if (entrantId != null) {
-                        Toast.makeText(this, "Replacement drawn successfully!", Toast.LENGTH_SHORT).show();
-                        loadWaitlistCounts();
-                    } else {
-                        Toast.makeText(this, "Waitlist is empty. No replacement drawn.", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to draw replacement.", Toast.LENGTH_SHORT).show());
+                    if (entrantId != null) loadWaitlistCounts();
+                });
     }
 
     /**
-     * Loads all eligible entrants and allows the organizer to send one a co-organizer invitation.
-     *
-     * <p>Entrants who already have a pending co-organizer invitation for this event
-     * are filtered out and not shown in the selection dialog.</p>
+     * Fetches eligible users and displays a dialog allowing the organizer to dispatch
+     * a co-organizer administrative role invitation.
      */
     private void showAssignCoOrganizerDialog() {
-        if (!isOwner) {
-            Toast.makeText(this, "Only the organizer can assign co-organizers", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (!isOwner) return;
 
         NotificationRepository repository = new NotificationRepository(db);
 
-        db.collection("events")
-                .document(eventId)
-                .collection("waitlist")
-                .get()
+        db.collection("events").document(eventId).collection("waitlist").get()
                 .addOnSuccessListener(querySnapshot -> {
                     List<com.google.android.gms.tasks.Task<EntrantCandidate>> candidateTasks = new ArrayList<>();
 
                     for (QueryDocumentSnapshot doc : querySnapshot) {
                         Entrant entrant = doc.toObject(Entrant.class);
                         entrant.setId(doc.getId());
-
-                        String selectionStatus = safe(entrant.getSelectionStatus()).toLowerCase();
-                        String responseStatus = safe(entrant.getResponseStatus()).toLowerCase();
-                        String finalStatus = safe(entrant.getFinalStatus()).toLowerCase();
-
-                        boolean baseEligible =
-                                "waiting".equals(selectionStatus)
-                                        || ("selected".equals(selectionStatus)
-                                        && "pending".equals(responseStatus)
-                                        && !"enrolled".equals(finalStatus));
-
-                        if (!baseEligible) {
-                            continue;
-                        }
-
                         String entrantId = safe(entrant.getEntrantId());
-                        if (entrantId.isEmpty()) {
-                            continue;
-                        }
+                        if (entrantId.isEmpty()) continue;
 
                         com.google.android.gms.tasks.Task<EntrantCandidate> candidateTask =
                                 repository.hasPendingCoOrganizerInvitation(entrantId, eventId)
-                                        .continueWith(task -> {
-                                            boolean hasPending = false;
-                                            if (task.isSuccessful() && task.getResult() != null) {
-                                                hasPending = task.getResult();
-                                            }
-                                            return new EntrantCandidate(entrant, hasPending);
-                                        });
-
+                                        .continueWith(task -> new EntrantCandidate(entrant, task.isSuccessful() && task.getResult() != null && task.getResult()));
                         candidateTasks.add(candidateTask);
                     }
 
-                    if (candidateTasks.isEmpty()) {
-                        Toast.makeText(this,
-                                "No eligible entrants available for co-organizer invitation",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+                    if (candidateTasks.isEmpty()) return;
 
-                    Tasks.whenAllSuccess(candidateTasks)
-                            .addOnSuccessListener(results -> {
-                                List<Entrant> eligibleEntrants = new ArrayList<>();
+                    Tasks.whenAllSuccess(candidateTasks).addOnSuccessListener(results -> {
+                        List<Entrant> eligibleEntrants = new ArrayList<>();
+                        for (Object result : results) {
+                            EntrantCandidate candidate = (EntrantCandidate) result;
+                            if (!candidate.hasPendingInvitation && candidate.entrant != null) {
+                                eligibleEntrants.add(candidate.entrant);
+                            }
+                        }
 
-                                for (Object result : results) {
-                                    EntrantCandidate candidate = (EntrantCandidate) result;
-                                    if (!candidate.hasPendingInvitation && candidate.entrant != null) {
-                                        eligibleEntrants.add(candidate.entrant);
+                        if (eligibleEntrants.isEmpty()) return;
+
+                        String[] labels = new String[eligibleEntrants.size()];
+                        for (int i = 0; i < eligibleEntrants.size(); i++) {
+                            labels[i] = safe(eligibleEntrants.get(i).getEntrantName());
+                        }
+
+                        final int[] selectedIndex = {-1};
+                        new MaterialAlertDialogBuilder(this)
+                                .setTitle("Invite Co-organizer")
+                                .setSingleChoiceItems(labels, -1, (dialog, which) -> selectedIndex[0] = which)
+                                .setNegativeButton("Cancel", null)
+                                .setPositiveButton("Send Invitation", (dialog, which) -> {
+                                    if (selectedIndex[0] >= 0) {
+                                        assignCoOrganizer(eligibleEntrants.get(selectedIndex[0]));
                                     }
-                                }
-
-                                if (eligibleEntrants.isEmpty()) {
-                                    Toast.makeText(this,
-                                            "All eligible entrants already have pending co-organizer invitations",
-                                            Toast.LENGTH_SHORT).show();
-                                    return;
-                                }
-
-                                String[] labels = new String[eligibleEntrants.size()];
-                                for (int i = 0; i < eligibleEntrants.size(); i++) {
-                                    Entrant entrant = eligibleEntrants.get(i);
-
-                                    String selectionStatus = safe(entrant.getSelectionStatus()).toLowerCase();
-                                    String responseStatus = safe(entrant.getResponseStatus()).toLowerCase();
-
-                                    String displayStatus;
-                                    if ("waiting".equals(selectionStatus)) {
-                                        displayStatus = "Waiting";
-                                    } else if ("selected".equals(selectionStatus)
-                                            && "pending".equals(responseStatus)) {
-                                        displayStatus = "Selected / Pending";
-                                    } else {
-                                        displayStatus = "Eligible";
-                                    }
-
-                                    labels[i] = safe(entrant.getEntrantName())
-                                            + " (" + safe(entrant.getEntrantEmail()) + ")"
-                                            + " - " + displayStatus;
-                                }
-
-                                final int[] selectedIndex = {-1};
-
-                                new MaterialAlertDialogBuilder(this)
-                                        .setTitle("Invite Co-organizer")
-                                        .setSingleChoiceItems(
-                                                labels,
-                                                -1,
-                                                (dialog, which) -> selectedIndex[0] = which
-                                        )
-                                        .setNegativeButton("Cancel", null)
-                                        .setPositiveButton("Send Invitation", (dialog, which) -> {
-                                            if (selectedIndex[0] < 0) {
-                                                Toast.makeText(this,
-                                                        "Please select an entrant",
-                                                        Toast.LENGTH_SHORT).show();
-                                                return;
-                                            }
-                                            assignCoOrganizer(eligibleEntrants.get(selectedIndex[0]));
-                                        })
-                                        .show();
-                            })
-                            .addOnFailureListener(e ->
-                                    Toast.makeText(
-                                            this,
-                                            "Failed to check existing co-organizer invitations",
-                                            Toast.LENGTH_LONG
-                                    ).show());
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to load entrants", Toast.LENGTH_LONG).show());
+                                })
+                                .show();
+                    });
+                });
     }
 
     /**
-     * Sends a co-organizer invitation to the selected entrant.
+     * Commits a co-organizer invitation to the target entrant's notification array.
      *
-     * <p>This does NOT immediately promote the entrant to co-organizer and does NOT
-     * remove them from the waitlist. Promotion only happens after the entrant accepts
-     * the invitation from their notifications screen.</p>
-     *
-     * <p>If a pending co-organizer invitation already exists for the same entrant
-     * and event, this method does not send a duplicate invitation.</p>
-     *
-     * @param entrant entrant to invite
+     * @param entrant The individual slated for promotion.
      */
     private void assignCoOrganizer(Entrant entrant) {
-        if (entrant == null || safe(entrant.getEntrantId()).isEmpty()) {
-            Toast.makeText(this, "Invalid entrant", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String entrantId = entrant.getEntrantId();
-
-        String eventName = tvEventName.getText() == null
-                ? ""
-                : tvEventName.getText().toString().trim();
+        if (entrant == null || safe(entrant.getEntrantId()).isEmpty()) return;
 
         NotificationRepository repository = new NotificationRepository(db);
-
-        repository.sendCoOrganizerInvitation(entrantId, eventId, eventName)
-                .addOnSuccessListener(result -> {
-                    if (result == null) {
-                        Toast.makeText(
-                                this,
-                                "Failed to send co-organizer invitation",
-                                Toast.LENGTH_LONG
-                        ).show();
-                        return;
-                    }
-
-                    if (result.isAlreadyPending()) {
-                        Toast.makeText(
-                                this,
-                                "Co-organizer invitation already pending",
-                                Toast.LENGTH_SHORT
-                        ).show();
-                        return;
-                    }
-
-                    Toast.makeText(
-                            this,
-                            "Co-organizer invitation sent",
-                            Toast.LENGTH_SHORT
-                    ).show();
-
-                    loadWaitlistCounts();
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(
-                                this,
-                                e.getMessage() != null
-                                        ? e.getMessage()
-                                        : "Failed to send co-organizer invitation",
-                                Toast.LENGTH_LONG
-                        ).show());
+        repository.sendCoOrganizerInvitation(entrant.getEntrantId(), eventId, safe(tvEventName.getText().toString()))
+                .addOnSuccessListener(result -> loadWaitlistCounts());
     }
 
     /**
-     * Loads immutable event metadata shown on the screen.
-     */
-    private void loadEventData() {
-        db.collection("events")
-                .document(eventId)
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (!documentSnapshot.exists()) {
-                        Toast.makeText(this, "Event not found", Toast.LENGTH_LONG).show();
-                        finish();
-                        return;
-                    }
-
-                    String name = safe(documentSnapshot.getString("name"));
-                    String posterUrl = safe(documentSnapshot.getString("posterUrl"));
-
-                    Long limitLong = documentSnapshot.getLong("waitlistLimit");
-                    String limitText = limitLong == null ? "Unlimited" : String.valueOf(limitLong);
-
-                    Object eventDateObject = documentSnapshot.get("registrationStart");
-                    String formattedDate = formatEventDate(eventDateObject);
-
-                    tvEventName.setText(name.isEmpty() ? "Event Name" : name);
-                    tvEventDate.setText(formattedDate);
-                    tvEventCapacity.setText("Waitlist Limit: " + limitText);
-
-                    currentPosterUrl = posterUrl;
-                    hasPoster = !currentPosterUrl.isEmpty();
-
-                    if (hasPoster) {
-                        Glide.with(this)
-                                .load(currentPosterUrl)
-                                .into(imgEventPoster);
-                    } else {
-                        imgEventPoster.setImageDrawable(null);
-                    }
-
-                    updatePosterUI();
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to load event: " + e.getMessage(), Toast.LENGTH_LONG).show());
-    }
-
-    /**
-     * Loads the authoritative waitlist counts from the waitlist subcollection,
-     * updates the UI, and writes those counts back to the top-level event document.
-     */
-    private void loadWaitlistCounts() {
-        computeAndPersistWaitlistCounts()
-                .addOnSuccessListener(counts -> {
-                    tvWaitingCount.setText(String.valueOf(counts.waiting));
-                    tvSelectedCount.setText(String.valueOf(counts.selected));
-                    tvEnrolledCount.setText(String.valueOf(counts.enrolled));
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to load waitlist counts", Toast.LENGTH_SHORT).show());
-    }
-
-    /**
-     * Computes waitlist counts from the waitlist subcollection and persists them to
-     * the top-level event document.
+     * Compresses the selected image URI into a smaller JPEG before committing it
+     * to Firebase Storage to optimize data usage and prevent out-of-memory errors.
      *
-     * @return a task containing the computed counts
-     */
-    private com.google.android.gms.tasks.Task<WaitlistCounts> computeAndPersistWaitlistCounts() {
-        TaskCompletionSource<WaitlistCounts> taskSource = new TaskCompletionSource<>();
-
-        db.collection("events")
-                .document(eventId)
-                .collection("waitlist")
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    int waiting = 0;
-                    int selected = 0;
-                    int enrolled = 0;
-
-                    for (QueryDocumentSnapshot doc : querySnapshot) {
-                        String selectionStatus = safe(doc.getString("selectionStatus")).toLowerCase();
-                        String finalStatus = safe(doc.getString("finalStatus")).toLowerCase();
-
-                        if ("enrolled".equals(finalStatus)) {
-                            enrolled++;
-                        } else if ("selected".equals(selectionStatus)) {
-                            selected++;
-                        } else if ("waiting".equals(selectionStatus)) {
-                            waiting++;
-                        }
-                    }
-
-                    WaitlistCounts counts = new WaitlistCounts(waiting, selected, enrolled);
-
-                    db.collection("events")
-                            .document(eventId)
-                            .update(
-                                    "waitingCount", waiting,
-                                    "selectedCount", selected,
-                                    "enrolledCount", enrolled
-                            )
-                            .addOnSuccessListener(unused -> taskSource.setResult(counts))
-                            .addOnFailureListener(taskSource::setException);
-                })
-                .addOnFailureListener(taskSource::setException);
-
-        return taskSource.getTask();
-    }
-
-    /**
-     * Exports all currently enrolled entrants to a CSV file.
-     */
-    private void exportEnrolledEntrantsToCsv() {
-        db.collection("events")
-                .document(eventId)
-                .collection("waitlist")
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    List<Entrant> enrolledEntrants = new ArrayList<>();
-
-                    for (QueryDocumentSnapshot doc : querySnapshot) {
-                        Entrant entrant = doc.toObject(Entrant.class);
-                        entrant.setId(doc.getId());
-
-                        if ("enrolled".equalsIgnoreCase(safe(entrant.getFinalStatus()))) {
-                            enrolledEntrants.add(entrant);
-                        }
-                    }
-
-                    if (enrolledEntrants.isEmpty()) {
-                        Toast.makeText(this, "No enrolled entrants to export", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    writeCsvFile(enrolledEntrants);
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to export CSV", Toast.LENGTH_LONG).show());
-    }
-
-    /**
-     * Writes the enrolled entrants to a CSV file stored in app external storage.
-     *
-     * @param enrolledEntrants entrants to export
-     */
-    private void writeCsvFile(List<Entrant> enrolledEntrants) {
-        OutputStreamWriter writer = null;
-        try {
-            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
-                    .format(new Date());
-            String fileName = "enrolled_entrants_" + eventId + "_" + timestamp + ".csv";
-
-            File directory = getExternalFilesDir(null);
-            if (directory == null) {
-                Toast.makeText(this, "Storage unavailable", Toast.LENGTH_LONG).show();
-                return;
-            }
-
-            File file = new File(directory, fileName);
-            writer = new OutputStreamWriter(new FileOutputStream(file));
-
-            writer.append("Entrant ID,Name,Email,Joined At,Selection Status,Response Status,Final Status\n");
-
-            for (Entrant entrant : enrolledEntrants) {
-                writer.append(csv(safe(entrant.getEntrantId()))).append(",");
-                writer.append(csv(safe(entrant.getEntrantName()))).append(",");
-                writer.append(csv(safe(entrant.getEntrantEmail()))).append(",");
-                writer.append(csv(formatCsvDate(entrant.getJoinedAt()))).append(",");
-                writer.append(csv(safe(entrant.getSelectionStatus()))).append(",");
-                writer.append(csv(safe(entrant.getResponseStatus()))).append(",");
-                writer.append(csv(safe(entrant.getFinalStatus()))).append("\n");
-            }
-
-            writer.flush();
-            Toast.makeText(this, "CSV exported to: " + file.getAbsolutePath(), Toast.LENGTH_LONG).show();
-
-        } catch (Exception e) {
-            Toast.makeText(this, "Failed to write CSV", Toast.LENGTH_LONG).show();
-        } finally {
-            try {
-                if (writer != null) {
-                    writer.close();
-                }
-            } catch (Exception ignored) {
-            }
-        }
-    }
-
-    /**
-     * Formats a date for CSV export.
-     *
-     * @param date date to format
-     * @return formatted timestamp string, or empty string if null
-     */
-    private String formatCsvDate(Date date) {
-        if (date == null) {
-            return "";
-        }
-        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(date);
-    }
-
-    /**
-     * Escapes a value for safe CSV output.
-     *
-     * @param value raw value
-     * @return quoted and escaped CSV-safe string
-     */
-    private String csv(String value) {
-        String safeValue = value == null ? "" : value;
-        return "\"" + safeValue.replace("\"", "\"\"") + "\"";
-    }
-
-    /**
-     * Updates poster-related UI visibility and button state.
-     */
-    private void updatePosterUI() {
-        if (hasPoster) {
-            imgEventPoster.setVisibility(View.VISIBLE);
-            layoutPosterPlaceholder.setVisibility(View.GONE);
-            fabRemovePoster.setVisibility(View.VISIBLE);
-
-            btnUploadPoster.setEnabled(false);
-            btnUpdatePoster.setEnabled(true);
-        } else {
-            imgEventPoster.setVisibility(View.GONE);
-            layoutPosterPlaceholder.setVisibility(View.VISIBLE);
-            fabRemovePoster.setVisibility(View.GONE);
-
-            btnUploadPoster.setEnabled(true);
-            btnUpdatePoster.setEnabled(false);
-        }
-    }
-
-    /**
-     * Opens the image picker for poster upload.
-     */
-    private void openImagePicker() {
-        imagePickerLauncher.launch("image/*");
-    }
-
-    /**
-     * Uploads the selected poster image to Firebase Storage and stores its download URL.
-     *
-     * @param imageUri chosen image URI
+     * @param imageUri The local device location of the selected image.
      */
     private void uploadPosterToFirebase(Uri imageUri) {
-        StorageReference posterRef = storage.getReference()
-                .child("posters/" + organizerId + "/" + eventId + "/poster.jpg");
+        try {
+            android.graphics.Bitmap bmp = android.provider.MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 50, baos);
+            byte[] data = baos.toByteArray();
 
-        posterRef.putFile(imageUri)
-                .continueWithTask(task -> {
-                    if (!task.isSuccessful()) {
-                        Exception exception = task.getException();
-                        if (exception != null) {
-                            throw exception;
-                        }
-                    }
-                    return posterRef.getDownloadUrl();
-                })
-                .addOnSuccessListener(downloadUri -> {
-                    currentPosterUrl = downloadUri.toString();
-                    hasPoster = true;
+            StorageReference posterRef = storage.getReference().child("posters/" + eventId + ".jpg");
 
-                    db.collection("events")
-                            .document(eventId)
-                            .update("posterUrl", currentPosterUrl)
-                            .addOnSuccessListener(unused -> {
-                                Glide.with(this)
-                                        .load(currentPosterUrl)
-                                        .into(imgEventPoster);
-
-                                updatePosterUI();
-                                Toast.makeText(this, "Poster uploaded successfully", Toast.LENGTH_SHORT).show();
-                            })
-                            .addOnFailureListener(e ->
-                                    Toast.makeText(this, "Failed to save poster URL", Toast.LENGTH_LONG).show());
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            posterRef.putBytes(data).continueWithTask(task -> posterRef.getDownloadUrl()).addOnSuccessListener(downloadUri -> {
+                db.collection("events").document(eventId).update("posterUrl", downloadUri.toString());
+                Glide.with(this).load(downloadUri.toString()).into(imgEventPoster);
+                hasPoster = true;
+                updatePosterUI();
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
-     * Removes the poster URL from the event document and resets poster UI.
+     * Swaps layout visibility states based on whether a poster is presently assigned.
+     */
+    private void updatePosterUI() {
+        imgEventPoster.setVisibility(hasPoster ? View.VISIBLE : View.GONE);
+        layoutPosterPlaceholder.setVisibility(hasPoster ? View.GONE : View.VISIBLE);
+        fabRemovePoster.setVisibility(hasPoster ? View.VISIBLE : View.GONE);
+    }
+
+    /**
+     * Detaches the poster URL from the event entity and resets the placeholder interface.
      */
     private void removePoster() {
-        db.collection("events")
-                .document(eventId)
-                .update("posterUrl", "")
-                .addOnSuccessListener(unused -> {
-                    currentPosterUrl = "";
-                    hasPoster = false;
-                    imgEventPoster.setImageDrawable(null);
-                    updatePosterUI();
-                    Toast.makeText(this, "Poster removed", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to remove poster", Toast.LENGTH_LONG).show());
+        db.collection("events").document(eventId).update("posterUrl", "");
+        hasPoster = false;
+        updatePosterUI();
     }
 
     /**
-     * Formats the event registration start value for display.
+     * Null-safe utility mechanism.
      *
-     * @param eventDateObject Firestore field value
-     * @return formatted date string
+     * @param value Potential null string.
+     * @return Empty string or the original value.
      */
-    @NonNull
-    private String formatEventDate(Object eventDateObject) {
-        if (eventDateObject instanceof com.google.firebase.Timestamp) {
-            Date date = ((com.google.firebase.Timestamp) eventDateObject).toDate();
-            return new SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(date);
-        }
-
-        if (eventDateObject instanceof Date) {
-            return new SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
-                    .format((Date) eventDateObject);
-        }
-
-        if (eventDateObject instanceof String) {
-            String value = ((String) eventDateObject).trim();
-            return value.isEmpty() ? "Date not available" : value;
-        }
-
-        return "Date not available";
-    }
-
-    /**
-     * Returns a non-null string for null-safe comparisons.
-     *
-     * @param value input string
-     * @return original string or empty string if null
-     */
-    @NonNull
     private String safe(String value) {
         return value == null ? "" : value;
     }
 
     /**
-     * Small helper object used while building the co-organizer candidate list.
+     * Evaluative wrapper utilized while parsing the waitlist for potential co-organizers.
      */
     private static class EntrantCandidate {
         final Entrant entrant;
@@ -948,51 +801,6 @@ public class ManageEventActivity extends AppCompatActivity {
         EntrantCandidate(Entrant entrant, boolean hasPendingInvitation) {
             this.entrant = entrant;
             this.hasPendingInvitation = hasPendingInvitation;
-        }
-    }
-
-    /**
-     * Immutable value object holding waitlist-derived counts.
-     */
-    private static class WaitlistCounts {
-        final int waiting;
-        final int selected;
-        final int enrolled;
-
-        WaitlistCounts(int waiting, int selected, int enrolled) {
-            this.waiting = waiting;
-            this.selected = selected;
-            this.enrolled = enrolled;
-        }
-    }
-
-    /**
-     * Generates and displays the promotional QR code for the event using the QRCodeGenerator.
-     */
-    private void showQRCodeDialog() {
-        try {
-            // Generate a 512x512 QR code bitmap using the eventId[cite: 1, 2]
-            int width = 512;
-            android.graphics.Bitmap qrBitmap = QRCodeGenerator.generateQRCode(eventId, width);
-
-            // Create an ImageView to display the generated QR code
-            ImageView imageView = new ImageView(this);
-            imageView.setImageBitmap(qrBitmap);
-
-            // Add some padding so the QR code doesn't touch the dialog edges
-            int padding = (int) (16 * getResources().getDisplayMetrics().density);
-            imageView.setPadding(padding, padding, padding, padding);
-
-            // Display the QR code in a Material dialog[cite: 1]
-            new MaterialAlertDialogBuilder(this)
-                    .setTitle("Promotional QR Code")
-                    .setView(imageView)
-                    .setPositiveButton("Close", null)
-                    .show();
-
-        } catch (com.google.zxing.WriterException e) {
-            // Handle the exception if the encoding process fails[cite: 2]
-            Toast.makeText(this, "Failed to generate QR code: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 }

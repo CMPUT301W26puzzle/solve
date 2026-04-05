@@ -1,5 +1,6 @@
 package com.example.eventparticipation;
 
+import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.view.View;
@@ -72,7 +73,14 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_entrant_event_detail);
 
         db = FirebaseFirestore.getInstance();
-        entrantId = DeviceIdProvider.getId(this);
+        SessionManager session = SessionManager.getInstance(this);
+        if (!session.isLoggedIn()) {
+            Toast.makeText(this, "Please log in first", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, SelectRoleActivity.class));
+            finish();
+            return;
+        }
+        entrantId = session.getUserId();
         eventId = getIntent().getStringExtra("EVENT_ID");
 
         initViews();
