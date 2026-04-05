@@ -22,6 +22,7 @@ import android.app.Instrumentation;
 import android.content.Intent;
 import android.net.Uri;
 
+import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.intent.Intents;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -35,15 +36,13 @@ import org.junit.runner.RunWith;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
-
+import static android.app.Activity.RESULT_OK;
 /**
  * UI Tests for Event Creation User Stories.
  */
 @RunWith(AndroidJUnit4.class)
 public class CreateEventActivityTest {
-
-    @Rule
-    public ActivityScenarioRule<CreateEventActivity> activityRule = new ActivityScenarioRule<>(CreateEventActivity.class);
+    private ActivityScenario<CreateEventActivity> scenario;
 
     @Before
     public void setUp() {
@@ -51,10 +50,15 @@ public class CreateEventActivityTest {
 
         android.content.Context context = androidx.test.core.app.ApplicationProvider.getApplicationContext();
         SessionManager.getInstance(context).saveSession("test_organizer_id", "organizer");
+        scenario = ActivityScenario.launch(CreateEventActivity.class);
     }
 
     @After
     public void tearDown() {
+        if (scenario != null) {
+            scenario.close();
+        }
+
         Intents.release();
 
         android.content.Context context = androidx.test.core.app.ApplicationProvider.getApplicationContext();
@@ -123,6 +127,13 @@ public class CreateEventActivityTest {
         onView(withId(R.id.etEventName))
                 .perform(typeText("Annual Tech Symposium"), closeSoftKeyboard());
 
+        onView(withId(R.id.btnDateRange)).perform(click());
+        onView(withContentDescription(containsString("Today")))
+                .perform(click());
+        clickTomorrow();
+        onView(withId(com.google.android.material.R.id.confirm_button))
+                .check(matches(isEnabled()))
+                .perform(click());
         onView(withId(R.id.btnSaveEvent))
                 .perform(click());
 

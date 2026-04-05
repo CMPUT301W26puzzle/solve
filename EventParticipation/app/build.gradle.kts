@@ -61,12 +61,9 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.espresso.intents)
-    androidTestImplementation(libs.espresso.contrib)
-
-
-    implementation("com.google.protobuf:protobuf-javalite:3.22.3")
-    testImplementation("com.google.protobuf:protobuf-javalite:3.22.3")
-    androidTestImplementation("com.google.protobuf:protobuf-javalite:3.22.3")
+    androidTestImplementation(libs.espresso.contrib) {
+        exclude(group = "com.google.protobuf", module = "protobuf-lite")
+    }
 }
 
 tasks.register<Javadoc>("generateJavadoc") {

@@ -46,25 +46,25 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>User stories covered:
  * <ul>
- *     <li>US 02.09.01 - As an organizer, I want to invite an entrant to become a
- *     co-organizer for my event.</li>
- *     <li>US 01.09.01 - As an entrant, I want to receive and accept a co-organizer
- *     invitation.</li>
+ * <li>US 02.09.01 - As an organizer, I want to invite an entrant to become a
+ * co-organizer for my event.</li>
+ * <li>US 01.09.01 - As an entrant, I want to receive and accept a co-organizer
+ * invitation.</li>
  * </ul>
  *
  * <p>This test verifies the full updated flow:
  * <ul>
- *     <li>The organizer sends a co-organizer invitation from ManageEventActivity.</li>
- *     <li>The entrant is not immediately promoted and remains in the waitlist.</li>
- *     <li>A pending co-organizer invitation notification is created.</li>
- *     <li>The entrant notifications UI displays the invitation and action buttons.</li>
- *     <li>The entrant accepts the invitation.</li>
- *     <li>After acceptance, the entrant is added to coOrganizerIds.</li>
- *     <li>After acceptance, the entrant is removed from the waitlist.</li>
- *     <li>The invitation notification is marked as accepted.</li>
- *     <li>The entrant can then access ManageEventActivity in coorganizer mode.</li>
- *     <li>The co-organizer dashboard applies the expected role restriction:
- *         the assign-co-organizer button is hidden with GONE visibility.</li>
+ * <li>The organizer sends a co-organizer invitation from ManageEventActivity.</li>
+ * <li>The entrant is not immediately promoted and remains in the waitlist.</li>
+ * <li>A pending co-organizer invitation notification is created.</li>
+ * <li>The entrant notifications UI displays the invitation and action buttons.</li>
+ * <li>The entrant accepts the invitation.</li>
+ * <li>After acceptance, the entrant is added to coOrganizerIds.</li>
+ * <li>After acceptance, the entrant is removed from the waitlist.</li>
+ * <li>The invitation notification is marked as accepted.</li>
+ * <li>The entrant can then access ManageEventActivity in coorganizer mode.</li>
+ * <li>The co-organizer dashboard applies the expected role restriction:
+ * the assign-co-organizer button is hidden with GONE visibility.</li>
  * </ul>
  * </p>
  */
@@ -191,6 +191,9 @@ public class ManageEventActivityCoOrganizerInvitationAcceptEndToEndTest {
                         TimeUnit.SECONDS
                 ), errors);
 
+        // CLEAR SESSION AT THE END TO PREVENT LEAKS
+        SessionManager.getInstance(ApplicationProvider.getApplicationContext()).clearSession();
+
         if (errors.length() > 0) {
             throw new AssertionError("Cleanup failed:\n" + errors);
         }
@@ -216,10 +219,11 @@ public class ManageEventActivityCoOrganizerInvitationAcceptEndToEndTest {
      * @throws Exception when UI synchronization fails
      */
     private void launchManageEventAndSendInvitation() throws Exception {
-        Intent manageIntent = new Intent(
-                ApplicationProvider.getApplicationContext(),
-                ManageEventActivity.class
-        );
+        Context context = ApplicationProvider.getApplicationContext();
+        // 1. MOCK THE ORGANIZER SESSION
+        SessionManager.getInstance(context).saveSession(TEST_ORGANIZER_ID, "organizer");
+
+        Intent manageIntent = new Intent(context, ManageEventActivity.class);
         manageIntent.putExtra("EVENT_ID", TEST_EVENT_ID);
         manageIntent.putExtra("ORGANIZER_ID", TEST_ORGANIZER_ID);
 
@@ -228,7 +232,7 @@ public class ManageEventActivityCoOrganizerInvitationAcceptEndToEndTest {
 
             onView(withId(R.id.btnAssignCoOrganizer))
                     .perform(scrollTo(), click());
-
+            Thread.sleep(1000);
             onView(withText("Invite Co-organizer"))
                     .check(matches(isDisplayed()));
 
@@ -305,10 +309,11 @@ public class ManageEventActivityCoOrganizerInvitationAcceptEndToEndTest {
      * @throws Exception when UI synchronization fails
      */
     private void verifyEntrantNotificationsUiAndAcceptInvitation() throws Exception {
-        Intent notificationsIntent = new Intent(
-                ApplicationProvider.getApplicationContext(),
-                EntrantNotificationsActivity.class
-        );
+        Context context = ApplicationProvider.getApplicationContext();
+        // 2. SWITCH TO THE ENTRANT SESSION
+        SessionManager.getInstance(context).saveSession(testEntrantId, "entrant");
+
+        Intent notificationsIntent = new Intent(context, EntrantNotificationsActivity.class);
 
         try (ActivityScenario<EntrantNotificationsActivity> scenario =
                      ActivityScenario.launch(notificationsIntent)) {
@@ -392,10 +397,11 @@ public class ManageEventActivityCoOrganizerInvitationAcceptEndToEndTest {
      * @throws Exception when UI synchronization fails
      */
     private void verifyCoOrganizerDashboardAccess() throws Exception {
-        Intent coOrganizerIntent = new Intent(
-                ApplicationProvider.getApplicationContext(),
-                ManageEventActivity.class
-        );
+        Context context = ApplicationProvider.getApplicationContext();
+        // 3. SWITCH TO CO-ORGANIZER SESSION
+        SessionManager.getInstance(context).saveSession(testEntrantId, "organizer");
+
+        Intent coOrganizerIntent = new Intent(context, ManageEventActivity.class);
         coOrganizerIntent.putExtra("EVENT_ID", TEST_EVENT_ID);
         coOrganizerIntent.putExtra("ORGANIZER_ID", TEST_ORGANIZER_ID);
         coOrganizerIntent.putExtra("ACCESS_MODE", "coorganizer");

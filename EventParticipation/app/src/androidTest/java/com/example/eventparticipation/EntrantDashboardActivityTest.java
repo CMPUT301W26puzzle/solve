@@ -10,6 +10,8 @@ import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import android.content.Context;
@@ -20,6 +22,18 @@ import androidx.test.core.app.ApplicationProvider;
  */
 @RunWith(AndroidJUnit4.class)
 public class EntrantDashboardActivityTest {
+
+    @Before
+    public void setUp() {
+        Context context = ApplicationProvider.getApplicationContext();
+        SessionManager.getInstance(context).saveSession("test_entrant_id", "entrant");
+    }
+
+    @After
+    public void tearDown() {
+        Context context = ApplicationProvider.getApplicationContext();
+        SessionManager.getInstance(context).clearSession();
+    }
 
     /** Activity launches and reaches RESUMED state. */
     @Test

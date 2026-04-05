@@ -123,13 +123,13 @@ public class ManageEventActivity extends AppCompatActivity {
     /** The unique document ID of the event being managed. */
     private String eventId;
 
-    /** The device ID of the user who originally created the event. */
+    /** The device ID of the user who originally created the event (the owner). */
     private String organizerId;
 
     /** The device ID of the current user viewing this screen. */
     private String currentUserId;
 
-    /** The string determining the user's entry access mode. */
+    /** The string determining the user's entry access mode ("organizer" or "coorganizer"). */
     private String accessMode;
 
     /** Flag indicating whether the event currently has a poster uploaded. */
@@ -171,6 +171,8 @@ public class ManageEventActivity extends AppCompatActivity {
         applyWindowInsets();
 
         eventId = getIntent().getStringExtra("EVENT_ID");
+        organizerId = getIntent().getStringExtra("ORGANIZER_ID");
+
         SessionManager session = SessionManager.getInstance(this);
         if (!session.isLoggedIn()) {
             Toast.makeText(this, "Please log in first", Toast.LENGTH_SHORT).show();
@@ -178,16 +180,21 @@ public class ManageEventActivity extends AppCompatActivity {
             finish();
             return;
         }
-        organizerId = session.getUserId();
-        currentUserId = DeviceIdProvider.getId(this);
+
+        currentUserId = session.getUserId();
         accessMode = getIntent().getStringExtra("ACCESS_MODE");
 
         if (accessMode == null || accessMode.trim().isEmpty()) {
             accessMode = "organizer";
         }
 
-        if (eventId == null || organizerId == null) {
-            Toast.makeText(this, "Missing Event or Organizer ID", Toast.LENGTH_LONG).show();
+        // Use current user ID as a fallback if organizerId was missing from Intent
+        if (organizerId == null || organizerId.isEmpty()) {
+            organizerId = currentUserId;
+        }
+
+        if (eventId == null) {
+            Toast.makeText(this, "Missing Event ID", Toast.LENGTH_LONG).show();
             finish();
             return;
         }
@@ -308,6 +315,7 @@ public class ManageEventActivity extends AppCompatActivity {
         btnViewMap.setOnClickListener(v -> {
             Intent intent = new Intent(this, WaitlistMapActivity.class);
             intent.putExtra("EVENT_ID", eventId);
+            intent.putExtra("ORGANIZER_ID", organizerId);
             startActivity(intent);
         });
 
@@ -338,11 +346,13 @@ public class ManageEventActivity extends AppCompatActivity {
                 return;
             }
 
-            String ownerId = safe(doc.getString("organizerId"));
+            String actualOwnerId = safe(doc.getString("organizerId"));
+            organizerId = actualOwnerId; // Ensure we use the server's owner ID
+
             List<String> coOrganizerIds = (List<String>) doc.get("coOrganizerIds");
 
             if ("organizer".equals(accessMode)) {
-                isOwner = organizerId.equals(ownerId);
+                isOwner = currentUserId.equals(actualOwnerId);
                 isCoOrganizer = false;
             } else if ("coorganizer".equals(accessMode)) {
                 isOwner = false;
@@ -697,11 +707,11 @@ public class ManageEventActivity extends AppCompatActivity {
                     for (QueryDocumentSnapshot doc : querySnapshot) {
                         Entrant entrant = doc.toObject(Entrant.class);
                         entrant.setId(doc.getId());
-                        String entrantId = safe(entrant.getEntrantId());
-                        if (entrantId.isEmpty()) continue;
+                        String entId = safe(entrant.getEntrantId());
+                        if (entId.isEmpty()) continue;
 
                         com.google.android.gms.tasks.Task<EntrantCandidate> candidateTask =
-                                repository.hasPendingCoOrganizerInvitation(entrantId, eventId)
+                                repository.hasPendingCoOrganizerInvitation(entId, eventId)
                                         .continueWith(task -> new EntrantCandidate(entrant, task.isSuccessful() && task.getResult() != null && task.getResult()));
                         candidateTasks.add(candidateTask);
                     }

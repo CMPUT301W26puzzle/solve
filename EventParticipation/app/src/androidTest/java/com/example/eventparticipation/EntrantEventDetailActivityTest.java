@@ -10,8 +10,12 @@ import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import android.content.Context;
+import androidx.test.core.app.ApplicationProvider;
 
 /**
  * UI tests for EntrantEventDetailActivity using ActivityScenario only.
@@ -19,6 +23,18 @@ import org.junit.runner.RunWith;
  */
 @RunWith(AndroidJUnit4.class)
 public class EntrantEventDetailActivityTest {
+
+    @Before
+    public void setUp() {
+        Context context = ApplicationProvider.getApplicationContext();
+        SessionManager.getInstance(context).saveSession("test_entrant_id", "entrant");
+    }
+
+    @After
+    public void tearDown() {
+        Context context = ApplicationProvider.getApplicationContext();
+        SessionManager.getInstance(context).clearSession();
+    }
 
     private Intent makeTestIntent() {
         Intent intent = new Intent(

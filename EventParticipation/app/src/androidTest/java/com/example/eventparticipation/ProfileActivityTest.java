@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.SystemClock;
 
@@ -19,6 +20,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,6 +45,10 @@ public class ProfileActivityTest {
 
     @Before
     public void setUp() throws Exception {
+        // MOCK THE SESSION SO PROFILE ACTIVITY DOESN'T REDIRECT TO LOGIN
+        Context context = ApplicationProvider.getApplicationContext();
+        SessionManager.getInstance(context).saveSession(TEST_ENTRANT_ID, "entrant");
+
         db = FirebaseFirestore.getInstance();
 
         Map<String, Object> event = new HashMap<>();
@@ -50,6 +56,13 @@ public class ProfileActivityTest {
 
         Tasks.await(db.collection("events").document(TEST_EVENT_1).set(event), 10, TimeUnit.SECONDS);
         Tasks.await(db.collection("events").document(TEST_EVENT_2).set(event), 10, TimeUnit.SECONDS);
+    }
+
+    @After
+    public void tearDown() {
+        // CLEAR THE SESSION AFTER THE TEST
+        Context context = ApplicationProvider.getApplicationContext();
+        SessionManager.getInstance(context).clearSession();
     }
 
     /**
