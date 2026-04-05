@@ -57,6 +57,7 @@ dependencies {
     // Android Test dependencies using TOML aliases
     androidTestImplementation(libs.core)
     androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.appcompat:appcompat:1.6.1")
     androidTestImplementation(libs.test.rules)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

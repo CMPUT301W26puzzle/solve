@@ -85,11 +85,11 @@ public class EntrantListActivityCancelInvitationTest {
     @Before
     public void setUp() throws Exception {
         db = FirebaseFirestore.getInstance();
-
         Map<String, Object> event = new HashMap<>();
         event.put("id", TEST_EVENT_ID);
+        event.put("organizerId", TEST_ORGANIZER_ID); // Matches the ID in the intent
+        Tasks.await(db.collection("events").document(TEST_EVENT_ID).set(event), 15, TimeUnit.SECONDS);
         event.put("name", "Cancel Invitation Test Event");
-        event.put("organizerId", TEST_ORGANIZER_ID);
         event.put("capacity", 100);
         event.put("coOrganizerIds", new java.util.ArrayList<String>());
         event.put("posterUrl", "");

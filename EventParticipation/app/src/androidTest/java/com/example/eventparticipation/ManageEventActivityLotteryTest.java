@@ -6,6 +6,7 @@ import static androidx.test.espresso.action.ViewActions.closeSoftKeyboard;
 import static androidx.test.espresso.action.ViewActions.replaceText;
 import static androidx.test.espresso.action.ViewActions.scrollTo;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
+import static androidx.test.espresso.matcher.RootMatchers.isDialog;
 import static androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
@@ -58,7 +59,7 @@ public class ManageEventActivityLotteryTest {
                 db.collection("events")
                         .document(EVENT_ID)
                         .set(dummyEvent, SetOptions.merge()),
-                5,
+                15,
                 TimeUnit.SECONDS
         );
 
@@ -75,7 +76,7 @@ public class ManageEventActivityLotteryTest {
     }
 
     @Test
-    public void testRunLotteryDialogAppears() {
+    public void testRunLotteryDialogAppears() throws Exception {
         Intent intent = new Intent(
                 ApplicationProvider.getApplicationContext(),
                 ManageEventActivity.class
@@ -84,19 +85,28 @@ public class ManageEventActivityLotteryTest {
         intent.putExtra("ORGANIZER_ID", ORG_ID);
 
         try (ActivityScenario<ManageEventActivity> scenario = ActivityScenario.launch(intent)) {
+            Thread.sleep(2000); // Wait for Firestore permissions to load
+
             onView(withId(R.id.btnRunLottery)).perform(scrollTo(), click());
-            onView(withText("Run Lottery")).check(matches(isDisplayed()));
+
+            Thread.sleep(1000); // Wait for dialog animation
+
+            onView(withText("Run Lottery"))
+                    .inRoot(isDialog())
+                    .check(matches(isDisplayed()));
             onView(withId(android.R.id.button1))
+                    .inRoot(isDialog())
                     .check(matches(withText("Run")))
                     .check(matches(isDisplayed()));
             onView(withId(android.R.id.button2))
+                    .inRoot(isDialog())
                     .check(matches(withText("Cancel")))
                     .check(matches(isDisplayed()));
         }
     }
 
     @Test
-    public void testRunLotteryDialog_WithInput() {
+    public void testRunLotteryDialog_WithInput() throws Exception {
         Intent intent = new Intent(
                 ApplicationProvider.getApplicationContext(),
                 ManageEventActivity.class
@@ -105,19 +115,30 @@ public class ManageEventActivityLotteryTest {
         intent.putExtra("ORGANIZER_ID", ORG_ID);
 
         try (ActivityScenario<ManageEventActivity> scenario = ActivityScenario.launch(intent)) {
+            Thread.sleep(2000); // Wait for Firestore permissions to load
+
             onView(withId(R.id.btnRunLottery)).perform(scrollTo(), click());
 
+            Thread.sleep(1000); // Wait for dialog animation
+
+            // Target the EditText inside the Dialog root
             onView(isAssignableFrom(EditText.class))
+                    .inRoot(isDialog())
                     .perform(replaceText("5"), closeSoftKeyboard());
 
-            onView(withId(android.R.id.button1)).perform(click());
+            // Target the Run button inside the Dialog root
+            onView(withId(android.R.id.button1))
+                    .inRoot(isDialog())
+                    .perform(click());
+
+            Thread.sleep(1500); // Wait for Dialog to close and Firestore write
 
             onView(withId(R.id.btnRunLottery)).check(matches(isDisplayed()));
         }
     }
 
     @Test
-    public void testDrawReplacementButtonExists() {
+    public void testDrawReplacementButtonExists() throws Exception {
         Intent intent = new Intent(
                 ApplicationProvider.getApplicationContext(),
                 ManageEventActivity.class
@@ -126,6 +147,8 @@ public class ManageEventActivityLotteryTest {
         intent.putExtra("ORGANIZER_ID", ORG_ID);
 
         try (ActivityScenario<ManageEventActivity> scenario = ActivityScenario.launch(intent)) {
+            Thread.sleep(2000); // Wait for Firestore permissions to load
+
             onView(withId(R.id.btnDrawReplacement))
                     .perform(scrollTo())
                     .check(matches(isDisplayed()));
