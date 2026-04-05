@@ -111,9 +111,9 @@ public class ManageEventActivityMassNotificationTest {
 
             // Verify options for all 3 user stories exist
             onView(withText("Send Mass Notification")).inRoot(isDialog()).check(matches(isDisplayed()));
-            onView(withText("Waiting List")).inRoot(isDialog()).check(matches(isDisplayed())); // US 02.07.01
-            onView(withText("Selected Entrants")).inRoot(isDialog()).check(matches(isDisplayed())); // US 02.07.02
-            onView(withText("Cancelled Entrants")).inRoot(isDialog()).check(matches(isDisplayed())); // US 02.07.03
+            onView(withText("All Waiting")).inRoot(isDialog()).check(matches(isDisplayed()));
+            onView(withText("All Selected")).inRoot(isDialog()).check(matches(isDisplayed()));
+            onView(withText("All Cancelled")).inRoot(isDialog()).check(matches(isDisplayed()));
         }
     }
 
@@ -128,10 +128,11 @@ public class ManageEventActivityMassNotificationTest {
             onView(withId(R.id.btnMassNotification)).perform(scrollTo(), click());
             Thread.sleep(1000);
 
-            // Select ONLY "Waiting List"
-            onView(withText("Waiting List")).inRoot(isDialog()).perform(click());
-            onView(withText("Next")).inRoot(isDialog()).perform(click());
-            Thread.sleep(1000);
+            // Select ONLY "All Waiting"
+            onView(withText("All Waiting")).inRoot(isDialog()).perform(click());
+
+            // REMOVED: onView(withText("Next")).inRoot(isDialog()).perform(click());
+            // Thread.sleep(1000); // You can likely remove this sleep as well
 
             // Type Message and Send
             onView(isAssignableFrom(EditText.class))

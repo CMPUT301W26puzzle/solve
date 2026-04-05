@@ -33,23 +33,19 @@ public class OrganizerDashboardIntentTest {
     /** Fixed test organizer id used across all dashboard intent tests. */
     private static final String ORGANIZER_ID = "organizer_demo_001";
 
-    private ActivityScenario<CreateEventActivity> scenario;
-
     @Before
     public void setUp() {
         Intents.init();
 
         android.content.Context context = androidx.test.core.app.ApplicationProvider.getApplicationContext();
         SessionManager.getInstance(context).saveSession("test_organizer_id", "organizer");
-        scenario = ActivityScenario.launch(CreateEventActivity.class);
+
+        // REMOVED: scenario = ActivityScenario.launch(CreateEventActivity.class);
+        // Let the individual tests launch the activity they actually need to test.
     }
 
     @After
     public void tearDown() {
-        if (scenario != null) {
-            scenario.close();
-        }
-
         Intents.release();
 
         android.content.Context context = androidx.test.core.app.ApplicationProvider.getApplicationContext();
