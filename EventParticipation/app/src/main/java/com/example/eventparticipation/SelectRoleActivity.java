@@ -2,243 +2,93 @@ package com.example.eventparticipation;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
-import android.widget.ProgressBar;
-import android.widget.RadioButton;
-import android.widget.Toast;
-
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
 
 /**
- * Role selection screen shown on app launch.
- *
- * <p>User taps Entrant, Organizer, or Admin card and presses Continue
- * to be routed to the appropriate dashboard.</p>
+ * Entry point Activity where users select their intended app role.
+ * Entrants use passwordless Device ID authentication, while Organizers
+ * and Admins use standard Email/Password authentication.
  */
 public class SelectRoleActivity extends AppCompatActivity {
-
-    private CardView cardEntrant, cardOrganizer, cardAdmin;
-    private RadioButton rbEntrant, rbOrganizer, rbAdmin;
-    private Button btnContinue;
-    private ProgressBar btnProgress;
-
-
-    /** Currently selected role: "entrant", "organizer", or "admin". Null if none selected. */
-    private String selectedRole = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // 1. Check if user is already logged in!
+        SessionManager session = SessionManager.getInstance(this);
+        if (session.isLoggedIn()) {
+            routeToDashboard(session.getRole());
+            return;
+        }
+
+        // 2. If not logged in, show the role selection screen
         setContentView(R.layout.activity_select_role);
 
-        cardEntrant  = findViewById(R.id.cardEntrant);
-        cardOrganizer = findViewById(R.id.cardOrganizer);
-        cardAdmin    = findViewById(R.id.cardAdmin);
-        rbEntrant    = findViewById(R.id.rbEntrant);
-        rbOrganizer  = findViewById(R.id.rbOrganizer);
-        rbAdmin      = findViewById(R.id.rbAdmin);
-        btnContinue  = findViewById(R.id.btnContinue);
-        btnProgress  = findViewById(R.id.btnProgress);
+        android.view.View btnEntrant = findViewById(R.id.btnEntrant);
+        android.view.View btnOrganizer = findViewById(R.id.btnOrganizer);
+        android.view.View btnAdmin = findViewById(R.id.btnAdmin);
 
+        // 3. Entrants use passwordless Device ID login. Organizers/Admins use Auth.
+        btnEntrant.setOnClickListener(v -> handleEntrantLogin());
+        btnOrganizer.setOnClickListener(v -> goToAuth("organizer"));
+        btnAdmin.setOnClickListener(v -> goToAuth("admin"));
+    }
 
-        cardEntrant.setOnClickListener(v -> selectRole("entrant"));
-        cardOrganizer.setOnClickListener(v -> selectRole("organizer"));
-        cardAdmin.setOnClickListener(v -> selectRole("admin"));
+    /**
+     * Executes the passwordless device ID flow for Entrants.
+     * Checks if their hardware ID exists in Firestore. If yes, it logs them in directly.
+     * If no, it routes them to the Profile Setup screen to collect their basic info.
+     */
+    private void handleEntrantLogin() {
+        String deviceId = DeviceIdProvider.getId(this);
 
-        btnContinue.setOnClickListener(v -> {
-            if (selectedRole == null) {
-                Toast.makeText(this, "Please select a role", Toast.LENGTH_SHORT).show();
-                return;
+        if (!DeviceIdProvider.isValidId(deviceId)) {
+            android.widget.Toast.makeText(this, "Failed to get Device ID", android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ProfileInitializer initializer = new ProfileInitializer();
+        initializer.checkEntrantProfileExists(deviceId, new ProfileInitializer.ExistsCallback() {
+            @Override
+            public void onResult(boolean exists) {
+                if (exists) {
+                    // Profile exists! Save session and go straight to dashboard.
+                    SessionManager.getInstance(SelectRoleActivity.this).saveSession(deviceId, "entrant");
+                    routeToDashboard("entrant");
+                } else {
+                    // First time user. Send to Profile Setup.
+                    Intent intent = new Intent(SelectRoleActivity.this, ProfileSetupActivity.class);
+                    intent.putExtra(ProfileSetupActivity.EXTRA_ROLE, "entrant");
+                    intent.putExtra(ProfileSetupActivity.EXTRA_PROFILE_ID, deviceId);
+                    startActivity(intent);
+                    finish();
+                }
             }
 
-            switch (selectedRole) {
-                case "organizer":
-                    openOrganizerFlow();
-                    break;
-                case "entrant":
-                    openEntrantFlow();
-                    break;
-                case "admin":
-                    openAdminFlow();
-                    break;
+            @Override
+            public void onError(Exception e) {
+                android.widget.Toast.makeText(SelectRoleActivity.this, "Network error. Try again.", android.widget.Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    /**
-     * Updates the selected role and toggles the radio button visuals accordingly.
-     *
-     * @param role one of "entrant", "organizer", or "admin"
-     */
-    private void selectRole(String role) {
-        selectedRole = role;
-
-        // Uncheck all
-        rbEntrant.setChecked(false);
-        rbOrganizer.setChecked(false);
-        rbAdmin.setChecked(false);
-
-        // Reset card strokes
-        cardEntrant.setCardBackgroundColor(0xFFFFFFFF);
-        cardOrganizer.setCardBackgroundColor(0xFFFFFFFF);
-        cardAdmin.setCardBackgroundColor(0xFFFFFFFF);
-
-        // Check selected
-        switch (role) {
-            case "entrant":
-                rbEntrant.setChecked(true);
-                cardEntrant.setCardBackgroundColor(0xFFEEF2FF);
-                break;
-            case "organizer":
-                rbOrganizer.setChecked(true);
-                cardOrganizer.setCardBackgroundColor(0xFFEEF2FF);
-                break;
-            case "admin":
-                rbAdmin.setChecked(true);
-                cardAdmin.setCardBackgroundColor(0xFFEEF2FF);
-                break;
-        }
-    }
-
-    /**
-     * Starts the entrant flow.
-     *
-     * <p>This method gets the device ID, validates it, checks whether
-     * the entrant profile already exists in Firestore, and either routes
-     * the user to onboarding or directly to the dashboard.</p>
-     */
-    private void openEntrantFlow() {
-        String entrantId = DeviceIdProvider.getId(this);
-
-        if (!DeviceIdProvider.isValidId(entrantId)) {
-            Toast.makeText(this, "Failed to get device ID", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        setLoading(true);
-
-        new ProfileInitializer().checkEntrantProfileExists(
-                entrantId,
-                new ProfileInitializer.ExistsCallback() {
-                    @Override
-                    public void onResult(boolean exists) {
-                        setLoading(false);
-                        if (exists) {
-                            startActivity(new Intent(SelectRoleActivity.this, EntrantDashboardActivity.class));
-                        } else {
-                            openProfileSetup("entrant", entrantId);
-                        }
-                    }
-
-                    @Override
-                    public void onError(Exception e) {
-                        setLoading(false);
-                        Toast.makeText(SelectRoleActivity.this,
-                                "Failed to check entrant profile",
-                                Toast.LENGTH_SHORT).show();
-                    }
-                }
-        );
-    }
-
-    /**
-     * Starts the organizer flow.
-     *
-     * <p>This method gets the device ID, validates it, checks whether
-     * the organizer profile already exists in Firestore, and either routes
-     * the user to onboarding or directly to the dashboard.</p>
-     */
-    private void openOrganizerFlow() {
-        String organizerId = DeviceIdProvider.getId(this);
-
-        if (!DeviceIdProvider.isValidId(organizerId)) {
-            Toast.makeText(this, "Failed to get device ID", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        setLoading(true);
-
-        new ProfileInitializer().checkOrganizerProfileExists(
-                organizerId,
-                new ProfileInitializer.ExistsCallback() {
-                    @Override
-                    public void onResult(boolean exists) {
-                        setLoading(false);
-                        if (exists) {
-                            startActivity(new Intent(SelectRoleActivity.this, OrganizerDashboardActivity.class));
-                        } else {
-                            openProfileSetup("organizer", organizerId);
-                        }
-                    }
-
-                    @Override
-                    public void onError(Exception e) {
-                        setLoading(false);
-                        Toast.makeText(SelectRoleActivity.this,
-                                "Failed to check organizer profile",
-                                Toast.LENGTH_SHORT).show();
-                    }
-                }
-        );
-    }
-
-    /**
-     * Starts the admin flow.
-     *
-     * <p>This method gets the device ID, validates it, checks whether
-     * the admin profile already exists in Firestore, and either routes
-     * the user to onboarding or shows the placeholder admin state.</p>
-     */
-    private void openAdminFlow() {
-        String adminId = DeviceIdProvider.getId(this);
-
-        if (!DeviceIdProvider.isValidId(adminId)) {
-            Toast.makeText(this, "Failed to get device ID", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        setLoading(true);
-
-        new ProfileInitializer().checkAdminProfileExists(
-                adminId,
-                new ProfileInitializer.ExistsCallback() {
-                    @Override
-                    public void onResult(boolean exists) {
-                        setLoading(false);
-                        if (exists) {
-                            startActivity(new Intent(SelectRoleActivity.this, AdminDashboardActivity.class));
-                        } else {
-                            openProfileSetup("admin", adminId);
-                        }
-                    }
-
-                    @Override
-                    public void onError(Exception e) {
-                        setLoading(false);
-                        Toast.makeText(SelectRoleActivity.this,
-                                "Failed to check admin profile",
-                                Toast.LENGTH_SHORT).show();
-                    }
-                }
-        );
-    }
-
-    private void openProfileSetup(String role, String profileId) {
-        Intent intent = new Intent(this, ProfileSetupActivity.class);
-        intent.putExtra(ProfileSetupActivity.EXTRA_ROLE, role);
-        intent.putExtra(ProfileSetupActivity.EXTRA_PROFILE_ID, profileId);
+    private void goToAuth(String role) {
+        Intent intent = new Intent(this, AuthActivity.class);
+        intent.putExtra("ROLE", role);
         startActivity(intent);
     }
 
-    private void setLoading(boolean isLoading) {
-        btnContinue.setEnabled(!isLoading);
-        btnContinue.setText(isLoading ? "" : "Continue");
-        btnProgress.setVisibility(isLoading ? View.VISIBLE : View.GONE);
-
-        cardEntrant.setEnabled(!isLoading);
-        cardOrganizer.setEnabled(!isLoading);
-        cardAdmin.setEnabled(!isLoading);
+    private void routeToDashboard(String role) {
+        Intent intent;
+        if ("organizer".equals(role)) {
+            intent = new Intent(this, OrganizerDashboardActivity.class);
+        } else if ("admin".equals(role)) {
+            intent = new Intent(this, AdminDashboardActivity.class);
+        } else {
+            intent = new Intent(this, EntrantDashboardActivity.class);
+        }
+        startActivity(intent);
+        finish();
     }
 }

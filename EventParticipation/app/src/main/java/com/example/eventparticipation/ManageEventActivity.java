@@ -15,7 +15,6 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.FileProvider;
@@ -24,7 +23,6 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.bumptech.glide.Glide;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -41,12 +39,10 @@ import com.google.firebase.storage.StorageReference;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -543,6 +539,8 @@ public class ManageEventActivity extends AppCompatActivity {
                             .addOnSuccessListener(q -> {
                                 if (!q.isEmpty()) {
                                     cancelPendingEntrant(q.getDocuments().get(0).getId());
+                                } else {
+                                    Toast.makeText(this, "Entrant not found.", Toast.LENGTH_SHORT).show();
                                 }
                             });
                 })
@@ -602,7 +600,6 @@ public class ManageEventActivity extends AppCompatActivity {
                         writer.append("Entrant ID,Name,Status\n");
 
                         for (QueryDocumentSnapshot doc : querySnapshot) {
-                            // extract denormalized data
                             String name = doc.contains("entrantName") ? safe(doc.getString("entrantName")) : "Unknown";
                             writer.append(doc.getId()).append(",").append(name).append(",Enrolled\n");
                         }
@@ -754,7 +751,7 @@ public class ManageEventActivity extends AppCompatActivity {
         NotificationRepository repository = new NotificationRepository(db);
         repository.sendCoOrganizerInvitation(entrant.getEntrantId(), eventId, safe(tvEventName.getText().toString()))
                 .addOnSuccessListener(result -> {
-                    // forcefully remove the new co-organizer from the lottery pool
+                    // Forcefully remove the new co-organizer from the lottery pool
                     db.collection("events").document(eventId).collection("waitlist")
                             .whereEqualTo("entrantId", entrant.getEntrantId())
                             .get()
@@ -779,7 +776,6 @@ public class ManageEventActivity extends AppCompatActivity {
         try {
             android.graphics.Bitmap bmp;
 
-            // Use modern ImageDecoder for API 28+ (Required for SDK 36 targeting)
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
                 android.graphics.ImageDecoder.Source source = android.graphics.ImageDecoder.createSource(getContentResolver(), imageUri);
                 bmp = android.graphics.ImageDecoder.decodeBitmap(source);
@@ -797,12 +793,21 @@ public class ManageEventActivity extends AppCompatActivity {
                 db.collection("events").document(eventId).update("posterUrl", downloadUri.toString());
                 Glide.with(this).load(downloadUri.toString()).into(imgEventPoster);
                 hasPoster = true;
-                currentPosterUrl = downloadUri.toString(); // Ensure current URL is tracked
+                currentPosterUrl = downloadUri.toString();
                 updatePosterUI();
             });
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Swaps layout visibility states based on whether a poster is presently assigned.
+     */
+    private void updatePosterUI() {
+        imgEventPoster.setVisibility(hasPoster ? View.VISIBLE : View.GONE);
+        layoutPosterPlaceholder.setVisibility(hasPoster ? View.GONE : View.VISIBLE);
+        fabRemovePoster.setVisibility(hasPoster ? View.VISIBLE : View.GONE);
     }
 
     /**
@@ -812,7 +817,7 @@ public class ManageEventActivity extends AppCompatActivity {
     private void removePoster() {
         if (hasPoster && !currentPosterUrl.isEmpty()) {
             try {
-                // delete the existing file from cloud storage
+                // Delete the existing file from cloud storage
                 StorageReference oldRef = storage.getReferenceFromUrl(currentPosterUrl);
                 oldRef.delete();
             } catch (Exception e) {
@@ -824,15 +829,6 @@ public class ManageEventActivity extends AppCompatActivity {
         hasPoster = false;
         currentPosterUrl = "";
         updatePosterUI();
-    }
-
-    /**
-     * Swaps layout visibility states based on whether a poster is presently assigned.
-     */
-    private void updatePosterUI() {
-        imgEventPoster.setVisibility(hasPoster ? View.VISIBLE : View.GONE);
-        layoutPosterPlaceholder.setVisibility(hasPoster ? View.GONE : View.VISIBLE);
-        fabRemovePoster.setVisibility(hasPoster ? View.VISIBLE : View.GONE);
     }
 
     /**

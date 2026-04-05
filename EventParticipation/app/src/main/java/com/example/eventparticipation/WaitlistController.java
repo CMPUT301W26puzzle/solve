@@ -1,4 +1,3 @@
-
 package com.example.eventparticipation;
 
 import com.google.android.gms.tasks.Task;
@@ -20,23 +19,23 @@ import java.util.List;
  *
  * <p>This class is responsible for:
  * <ul>
- *     <li>Running the lottery to move entrants from waiting to selected</li>
- *     <li>Drawing a replacement entrant when a spot becomes available</li>
- *     <li>Synchronizing derived event counts back to the top-level event document</li>
+ * <li>Running the lottery to move entrants from waiting to selected</li>
+ * <li>Drawing a replacement entrant when a spot becomes available</li>
+ * <li>Synchronizing derived event counts back to the top-level event document</li>
  * </ul>
  *
  * <p>Status model used in waitlist documents:
  * <ul>
- *     <li>selectionStatus: waiting / selected / cancelled</li>
- *     <li>responseStatus: pending / accepted / declined</li>
- *     <li>finalStatus: enrolled</li>
+ * <li>selectionStatus: waiting / selected / cancelled</li>
+ * <li>responseStatus: pending / accepted / declined</li>
+ * <li>finalStatus: enrolled</li>
  * </ul>
  *
  * <p>Count model used in the top-level event document:
  * <ul>
- *     <li>waitingCount: number of waitlist docs with selectionStatus == waiting</li>
- *     <li>selectedCount: number of waitlist docs with selectionStatus == selected and finalStatus != enrolled</li>
- *     <li>enrolledCount: number of waitlist docs with finalStatus == enrolled</li>
+ * <li>waitingCount: number of waitlist docs with selectionStatus == waiting</li>
+ * <li>selectedCount: number of waitlist docs with selectionStatus == selected and finalStatus != enrolled</li>
+ * <li>enrolledCount: number of waitlist docs with finalStatus == enrolled</li>
  * </ul>
  */
 public class WaitlistController {
@@ -65,11 +64,11 @@ public class WaitlistController {
      *
      * <p>The method:
      * <ol>
-     *     <li>Loads all entrants currently marked as {@code waiting}</li>
-     *     <li>Randomly selects up to {@code sampleSize} winners</li>
-     *     <li>Marks winners as {@code selected} with {@code responseStatus = pending}</li>
-     *     <li>Sends notifications where applicable</li>
-     *     <li>Recomputes and persists accurate event counts</li>
+     * <li>Loads all entrants currently marked as {@code waiting}</li>
+     * <li>Randomly selects up to {@code sampleSize} winners</li>
+     * <li>Marks winners as {@code selected} with {@code responseStatus = pending}</li>
+     * <li>Sends notifications where applicable</li>
+     * <li>Recomputes and persists accurate event counts</li>
      * </ol>
      *
      * @param eventId the Firestore ID of the event
@@ -163,9 +162,9 @@ public class WaitlistController {
      *
      * <p>The replacement entrant is moved to:
      * <ul>
-     *     <li>{@code selectionStatus = selected}</li>
-     *     <li>{@code responseStatus = pending}</li>
-     *     <li>{@code finalStatus = null}</li>
+     * <li>{@code selectionStatus = selected}</li>
+     * <li>{@code responseStatus = pending}</li>
+     * <li>{@code finalStatus = null}</li>
      * </ul>
      *
      * <p>After the update, this method recomputes and persists the top-level event counts.
@@ -254,19 +253,19 @@ public class WaitlistController {
      * <p>This method scans all documents under {@code events/{eventId}/waitlist} and writes
      * the following values back to the top-level event document:
      * <ul>
-     *     <li>{@code waitingCount}</li>
-     *     <li>{@code selectedCount}</li>
-     *     <li>{@code enrolledCount}</li>
+     * <li>{@code waitingCount}</li>
+     * <li>{@code selectedCount}</li>
+     * <li>{@code enrolledCount}</li>
      * </ul>
      *
      * <p>This should be called after any operation that changes waitlist status, including:
      * <ul>
-     *     <li>lottery runs</li>
-     *     <li>replacement draws</li>
-     *     <li>accepting an invitation</li>
-     *     <li>declining an invitation</li>
-     *     <li>leaving the waitlist</li>
-     *     <li>promoting an entrant to co-organizer and removing them from waitlist</li>
+     * <li>lottery runs</li>
+     * <li>replacement draws</li>
+     * <li>accepting an invitation</li>
+     * <li>declining an invitation</li>
+     * <li>leaving the waitlist</li>
+     * <li>promoting an entrant to co-organizer and removing them from waitlist</li>
      * </ul>
      *
      * @param eventId the Firestore ID of the event
@@ -318,9 +317,9 @@ public class WaitlistController {
      *
      * <p>The method tries multiple fields in order:
      * <ol>
-     *     <li>{@code entrantId}</li>
-     *     <li>{@code deviceId}</li>
-     *     <li>document ID</li>
+     * <li>{@code entrantId}</li>
+     * <li>{@code deviceId}</li>
+     * <li>document ID</li>
      * </ol>
      *
      * @param entrantSnapshot the waitlist document snapshot
