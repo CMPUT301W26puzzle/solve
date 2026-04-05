@@ -192,9 +192,11 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
 //    }
 
     /**
-     * Loads all events from the top-level Firestore "events" collection.
-     * Also loads this entrant's waitlist status for each event so participation
-     * filters can be applied locally.
+     * Loads all public events from the top-level Firestore "events" collection.
+     * * <p>This method iterates through all global events and explicitly skips any events
+     * marked as private (where {@code isPrivate == true}) to ensure they do not leak onto
+     * the public event listing dashboard. It also concurrently loads this entrant's waitlist
+     * status for each displayed event so participation filters can be applied locally.</p>
      */
     private void loadEvents() {
         progressBar.setVisibility(View.VISIBLE);
@@ -220,12 +222,19 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
 
                     for (QueryDocumentSnapshot doc : querySnapshot) {
                         final String eventId = doc.getId();
+
+                        // filter out private events
+                        Boolean isPrivate = doc.getBoolean("isPrivate");
+                        if (isPrivate != null && isPrivate) {
+                            remaining[0]--;
+                            if (remaining[0] == 0) refreshVisibleEvents();
+                            continue;
+                        }
+
                         Event event = doc.toObject(Event.class);
                         if (event == null) {
                             remaining[0]--;
-                            if (remaining[0] == 0) {
-                                refreshVisibleEvents();
-                            }
+                            if (remaining[0] == 0) refreshVisibleEvents();
                             continue;
                         }
 

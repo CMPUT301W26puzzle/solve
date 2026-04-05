@@ -131,7 +131,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:weightSum="4">
+                android:weightSum="3">
 
                 <!-- Entrants -->
                 <LinearLayout
@@ -185,35 +185,6 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Lottery"
-                        android:textSize="12sp"
-                        android:textColor="@color/gray_700"
-                        android:layout_marginTop="4dp"/>
-
-                </LinearLayout>
-
-                <!-- QR Code -->
-                <LinearLayout
-                    android:id="@+id/btnShowQR"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center"
-                    android:padding="8dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true">
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_refresh"
-                        app:tint="@color/purple_600"/>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="QR Code"
                         android:textSize="12sp"
                         android:textColor="@color/gray_700"
                         android:layout_marginTop="4dp"/>

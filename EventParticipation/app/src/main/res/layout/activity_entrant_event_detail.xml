@@ -339,6 +339,14 @@
                 android:layout_marginBottom="24dp"
                 android:text="N/A" />
 
+            <TextView
+                android:id="@+id/tvLotteryGuidelines"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Lottery Guidelines will appear here."
+                android:visibility="gone" />
+
             <!-- Join / Leave Waiting List Button (US 01.01.01 / 01.01.02) -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnJoinLeave"

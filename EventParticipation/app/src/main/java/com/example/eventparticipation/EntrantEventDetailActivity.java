@@ -2,6 +2,7 @@ package com.example.eventparticipation;
 
 import android.content.res.ColorStateList;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -52,6 +53,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
     private TextView tvEnrolledWaiting;
     private TextView tvRegistrationDeadline;
     private TextView tvAbout;
+    private TextView tvLotteryGuidelines;
     private MaterialButton btnJoinLeave;
 
     private FirebaseFirestore db;
@@ -96,17 +98,71 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         tvEnrolledWaiting = findViewById(R.id.tvEnrolledWaiting);
         tvRegistrationDeadline = findViewById(R.id.tvRegistrationDeadline);
         tvAbout = findViewById(R.id.tvAbout);
+        tvLotteryGuidelines = findViewById(R.id.tvLotteryGuidelines);
         btnJoinLeave = findViewById(R.id.btnJoinLeave);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
         btnJoinLeave.setOnClickListener(v -> {
-            if (isOnWaitingList) {
+            if ("Respond to Invitation".equals(btnJoinLeave.getText().toString())) {
+                showResponseDialog();
+            } else if (isOnWaitingList) {
                 leaveWaitingList();
             } else {
                 joinWaitingList();
             }
         });
+    }
+
+    /**
+     * Displays an alert dialog to the entrant when they have been selected in the lottery.
+     * * <p>This dialog prompts the user to either accept or decline the invitation to enroll
+     * in the event. Accepting triggers {@link #acceptInvitation()}, while declining
+     * triggers {@link #declineSelectedInvitation(DocumentReference, DocumentReference)}.</p>
+     */
+    private void showResponseDialog() {
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("You Won the Lottery!")
+                .setMessage("Do you want to accept this invitation and enroll in the event?")
+                .setPositiveButton("Accept", (dialog, which) -> acceptInvitation())
+                .setNegativeButton("Decline", (dialog, which) -> {
+                    if (eventId != null) {
+                        DocumentReference eventRef = db.collection("events").document(eventId);
+                        DocumentReference waitRef = eventRef.collection("waitlist").document(entrantId);
+                        declineSelectedInvitation(eventRef, waitRef);
+                    }
+                })
+                .show();
+    }
+
+    /**
+     * Processes the entrant's acceptance of an event invitation.
+     * * <p>Updates the entrant's waitlist document in Firestore to mark their response status
+     * as "accepted" and their final status as "enrolled". It also safely increments the event's
+     * total enrolled count and decrements the selected count to ensure dashboard statistics
+     * remain accurate.</p>
+     */
+    private void acceptInvitation() {
+        if (eventId == null) return;
+        DocumentReference eventRef = db.collection("events").document(eventId);
+        DocumentReference waitRef = eventRef.collection("waitlist").document(entrantId);
+
+        waitRef.update(
+                "responseStatus", "accepted",
+                "finalStatus", "enrolled",
+                "respondedAt", FieldValue.serverTimestamp()
+        ).addOnSuccessListener(unused -> {
+            // increment enrolled, decrement selected
+            eventRef.update(
+                    "enrolledCount", FieldValue.increment(1),
+                    "selectedCount", FieldValue.increment(-1)
+            );
+            isOnWaitingList = true;
+            updateButton();
+            Toast.makeText(this, "Successfully enrolled!", Toast.LENGTH_SHORT).show();
+        }).addOnFailureListener(e ->
+                Toast.makeText(this, "Failed to accept invitation", Toast.LENGTH_SHORT).show()
+        );
     }
 
     /**
@@ -182,6 +238,12 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                         );
                     }
 
+                    String guidelines = doc.getString("lotteryGuidelines");
+                    if (guidelines != null && !guidelines.isEmpty()) {
+                        tvLotteryGuidelines.setText("Lottery Guidelines:\n" + guidelines);
+                        tvLotteryGuidelines.setVisibility(View.VISIBLE);
+                    }
+
                     if (event.getPosterUrl() != null && !event.getPosterUrl().isEmpty()) {
                         Glide.with(this)
                                 .load(event.getPosterUrl())
@@ -218,7 +280,13 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * Adds this entrant to the event waitlist unless they are a co-organizer.
+     * Adds this entrant to the event waitlist, enforcing capacity limits and role restrictions.
+     * * <p>Before joining, this method queries the main event document to ensure:
+     * <ul>
+     * <li>The current user is not assigned as a co-organizer for the event.</li>
+     * <li>The waitlist has not exceeded its optional maximum limit (if one is set).</li>
+     * </ul>
+     * Upon passing these checks, a new waitlist entry is created with a "waiting" selection status.</p>
      */
     private void joinWaitingList() {
         if (eventId == null) {
@@ -232,11 +300,16 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
             List<String> coOrganizerIds = (List<String>) eventDoc.get("coOrganizerIds");
 
             if (coOrganizerIds != null && coOrganizerIds.contains(entrantId)) {
-                Toast.makeText(
-                        this,
-                        "Co-organizers cannot join the entrant pool for this event",
-                        Toast.LENGTH_LONG
-                ).show();
+                Toast.makeText(this, "Co-organizers cannot join the entrant pool.", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            // enforce waitlist limit
+            Long limit = eventDoc.getLong("waitlistLimit");
+            Long currentWaiting = eventDoc.getLong("waitingCount");
+
+            if (limit != null && currentWaiting != null && currentWaiting >= limit) {
+                Toast.makeText(this, "The waiting list is currently full.", Toast.LENGTH_LONG).show();
                 return;
             }
 
@@ -245,7 +318,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
             waitlistEntry.put("entrantId", entrantId);
             waitlistEntry.put("joinedAt", new Date());
 
-            // New status model
             waitlistEntry.put("selectionStatus", "waiting");
             waitlistEntry.put("responseStatus", null);
             waitlistEntry.put("finalStatus", null);
@@ -376,11 +448,10 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                             btnJoinLeave.setText("Enrolled");
                             btnJoinLeave.setEnabled(false);
                             btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF6B7280));
-                        } else if ("selected".equals(selectionStatus)
-                                && "pending".equals(responseStatus)) {
-                            btnJoinLeave.setText("Decline Invitation");
+                        } else if ("selected".equals(selectionStatus) && "pending".equals(responseStatus)) {
+                            btnJoinLeave.setText("Respond to Invitation");
                             btnJoinLeave.setEnabled(true);
-                            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFFCC0000));
+                            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF4CAF50)); // make it green
                         } else {
                             btnJoinLeave.setText("Leave Waiting List");
                             btnJoinLeave.setEnabled(true);

@@ -154,15 +154,6 @@ public class OrganizerDashboardActivity extends BaseOrganizerActivity {
             }
 
             @Override
-            public void onQRCodeClick(Event event) {
-                Toast.makeText(
-                        OrganizerDashboardActivity.this,
-                        "QR Code feature coming soon",
-                        Toast.LENGTH_SHORT
-                ).show();
-            }
-
-            @Override
             public void onViewClick(Event event) {
                 Toast.makeText(
                         OrganizerDashboardActivity.this,

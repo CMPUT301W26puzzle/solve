@@ -281,8 +281,7 @@ public class ManageEventActivity extends AppCompatActivity {
         btnDrawReplacement.setOnClickListener(v -> drawReplacementApplicant());
         btnAssignCoOrganizer.setOnClickListener(v -> showAssignCoOrganizerDialog());
 
-        btnShowQRCode.setOnClickListener(v ->
-                Toast.makeText(this, "QR code feature coming soon", Toast.LENGTH_SHORT).show());
+        btnShowQRCode.setOnClickListener(v -> showQRCodeDialog());
 
         btnEditEvent.setOnClickListener(v ->
                 Toast.makeText(this, "Edit event feature coming soon", Toast.LENGTH_SHORT).show());
@@ -964,6 +963,36 @@ public class ManageEventActivity extends AppCompatActivity {
             this.waiting = waiting;
             this.selected = selected;
             this.enrolled = enrolled;
+        }
+    }
+
+    /**
+     * Generates and displays the promotional QR code for the event using the QRCodeGenerator.
+     */
+    private void showQRCodeDialog() {
+        try {
+            // Generate a 512x512 QR code bitmap using the eventId[cite: 1, 2]
+            int width = 512;
+            android.graphics.Bitmap qrBitmap = QRCodeGenerator.generateQRCode(eventId, width);
+
+            // Create an ImageView to display the generated QR code
+            ImageView imageView = new ImageView(this);
+            imageView.setImageBitmap(qrBitmap);
+
+            // Add some padding so the QR code doesn't touch the dialog edges
+            int padding = (int) (16 * getResources().getDisplayMetrics().density);
+            imageView.setPadding(padding, padding, padding, padding);
+
+            // Display the QR code in a Material dialog[cite: 1]
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle("Promotional QR Code")
+                    .setView(imageView)
+                    .setPositiveButton("Close", null)
+                    .show();
+
+        } catch (com.google.zxing.WriterException e) {
+            // Handle the exception if the encoding process fails[cite: 2]
+            Toast.makeText(this, "Failed to generate QR code: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 }
