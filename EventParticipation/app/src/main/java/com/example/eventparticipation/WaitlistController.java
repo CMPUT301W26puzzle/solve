@@ -142,12 +142,6 @@ public class WaitlistController {
                                 batch, db, entrantId, eventId, eventName
                         );
                     }
-                } else {
-                    if (!isOptedOut) {
-                        NotificationRepository.addNotSelectedNotificationToBatch(
-                                batch, db, entrantId, eventId, eventName
-                        );
-                    }
                 }
             }
 

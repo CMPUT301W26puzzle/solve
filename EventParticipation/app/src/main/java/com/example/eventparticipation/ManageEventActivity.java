@@ -418,21 +418,21 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Prompts the organizer for a target email and forces a user onto the waitlist.
+     * Prompts the organizer for an identifying query (name, email, or phone) and forces a user onto the waitlist.
      */
     private void showInviteUserDialog() {
         EditText input = new EditText(this);
-        input.setHint("Enter user's exact email");
-        input.setInputType(InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
+        input.setHint("Enter user's name, email, or phone number");
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
 
         new MaterialAlertDialogBuilder(this)
                 .setTitle("Private Invite")
-                .setMessage("Search for an entrant by email to add them directly to the waitlist.")
+                .setMessage("Search for an entrant by name or contact info to add them directly to the waitlist.")
                 .setView(input)
                 .setPositiveButton("Invite", (dialog, which) -> {
-                    String email = input.getText().toString().trim();
-                    if (!email.isEmpty()) {
-                        inviteUserByEmail(email);
+                    String query = input.getText().toString().trim();
+                    if (!query.isEmpty()) {
+                        inviteUserBySearchTerm(query);
                     }
                 })
                 .setNegativeButton("Cancel", null)
@@ -440,12 +440,18 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Locates a user document by email and generates a waitlist entity for them.
+     * Locates a user document by matching their name, email, or phone number and generates a waitlist entity for them.
      *
-     * @param email The target user's email address.
+     * @param searchTerm The target user's identifying information.
      */
-    private void inviteUserByEmail(String email) {
-        db.collection("entrants").whereEqualTo("email", email).limit(1).get()
+    private void inviteUserBySearchTerm(String searchTerm) {
+        db.collection("entrants")
+                .where(com.google.firebase.firestore.Filter.or(
+                        com.google.firebase.firestore.Filter.equalTo("email", searchTerm),
+                        com.google.firebase.firestore.Filter.equalTo("name", searchTerm),
+                        com.google.firebase.firestore.Filter.equalTo("phoneNumber", searchTerm)
+                ))
+                .limit(1).get()
                 .addOnSuccessListener(querySnapshot -> {
                     if (querySnapshot.isEmpty()) {
                         Toast.makeText(this, "User not found", Toast.LENGTH_SHORT).show();
@@ -546,13 +552,23 @@ public class ManageEventActivity extends AppCompatActivity {
 
     /**
      * Updates an entrant's state to cancelled, functionally ejecting them from the event.
+     * Executes a query to locate the correct waitlist document safely.
      *
      * @param targetUserId The ID of the document to be terminated.
      */
     private void cancelPendingEntrant(String targetUserId) {
-        db.collection("events").document(eventId).collection("waitlist").document(targetUserId)
-                .update("selectionStatus", "cancelled", "responseStatus", "declined", "finalStatus", "cancelled")
-                .addOnSuccessListener(unused -> loadWaitlistCounts());
+        db.collection("events").document(eventId).collection("waitlist")
+                .whereEqualTo("entrantId", targetUserId).limit(1).get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!querySnapshot.isEmpty()) {
+                        DocumentSnapshot waitlistDoc = querySnapshot.getDocuments().get(0);
+                        waitlistDoc.getReference()
+                                .update("selectionStatus", "cancelled", "responseStatus", "declined", "finalStatus", "cancelled")
+                                .addOnSuccessListener(unused -> loadWaitlistCounts());
+                    } else {
+                        Toast.makeText(this, "Entrant not found on waitlist.", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     /**
@@ -583,10 +599,12 @@ public class ManageEventActivity extends AppCompatActivity {
                     try {
                         File file = new File(getExternalFilesDir(null), "export_" + System.currentTimeMillis() + ".csv");
                         OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(file));
-                        writer.append("Entrant ID,Status\n");
+                        writer.append("Entrant ID,Name,Status\n");
 
                         for (QueryDocumentSnapshot doc : querySnapshot) {
-                            writer.append(doc.getId()).append(",Enrolled\n");
+                            // extract denormalized data
+                            String name = doc.contains("entrantName") ? safe(doc.getString("entrantName")) : "Unknown";
+                            writer.append(doc.getId()).append(",").append(name).append(",Enrolled\n");
                         }
 
                         writer.flush();
@@ -725,7 +743,8 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Commits a co-organizer invitation to the target entrant's notification array.
+     * Commits a co-organizer invitation to the target entrant's notification array,
+     * and strictly purges them from the event's waiting list to prevent lottery conflict.
      *
      * @param entrant The individual slated for promotion.
      */
@@ -734,18 +753,40 @@ public class ManageEventActivity extends AppCompatActivity {
 
         NotificationRepository repository = new NotificationRepository(db);
         repository.sendCoOrganizerInvitation(entrant.getEntrantId(), eventId, safe(tvEventName.getText().toString()))
-                .addOnSuccessListener(result -> loadWaitlistCounts());
+                .addOnSuccessListener(result -> {
+                    // forcefully remove the new co-organizer from the lottery pool
+                    db.collection("events").document(eventId).collection("waitlist")
+                            .whereEqualTo("entrantId", entrant.getEntrantId())
+                            .get()
+                            .addOnSuccessListener(querySnapshot -> {
+                                WriteBatch batch = db.batch();
+                                for (QueryDocumentSnapshot doc : querySnapshot) {
+                                    batch.delete(doc.getReference());
+                                }
+                                batch.commit().addOnSuccessListener(v -> loadWaitlistCounts());
+                            });
+                });
     }
 
     /**
      * Compresses the selected image URI into a smaller JPEG before committing it
      * to Firebase Storage to optimize data usage and prevent out-of-memory errors.
+     * Uses modern ImageDecoder API for SDK 36 targeting.
      *
      * @param imageUri The local device location of the selected image.
      */
     private void uploadPosterToFirebase(Uri imageUri) {
         try {
-            android.graphics.Bitmap bmp = android.provider.MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+            android.graphics.Bitmap bmp;
+
+            // Use modern ImageDecoder for API 28+ (Required for SDK 36 targeting)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                android.graphics.ImageDecoder.Source source = android.graphics.ImageDecoder.createSource(getContentResolver(), imageUri);
+                bmp = android.graphics.ImageDecoder.decodeBitmap(source);
+            } else {
+                bmp = android.provider.MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+            }
+
             java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
             bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 50, baos);
             byte[] data = baos.toByteArray();
@@ -756,11 +797,33 @@ public class ManageEventActivity extends AppCompatActivity {
                 db.collection("events").document(eventId).update("posterUrl", downloadUri.toString());
                 Glide.with(this).load(downloadUri.toString()).into(imgEventPoster);
                 hasPoster = true;
+                currentPosterUrl = downloadUri.toString(); // Ensure current URL is tracked
                 updatePosterUI();
             });
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Detaches the poster URL from the event entity, deletes the physical file from
+     * Firebase Storage to prevent memory leaks, and resets the placeholder interface.
+     */
+    private void removePoster() {
+        if (hasPoster && !currentPosterUrl.isEmpty()) {
+            try {
+                // delete the existing file from cloud storage
+                StorageReference oldRef = storage.getReferenceFromUrl(currentPosterUrl);
+                oldRef.delete();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        db.collection("events").document(eventId).update("posterUrl", "");
+        hasPoster = false;
+        currentPosterUrl = "";
+        updatePosterUI();
     }
 
     /**
@@ -770,15 +833,6 @@ public class ManageEventActivity extends AppCompatActivity {
         imgEventPoster.setVisibility(hasPoster ? View.VISIBLE : View.GONE);
         layoutPosterPlaceholder.setVisibility(hasPoster ? View.GONE : View.VISIBLE);
         fabRemovePoster.setVisibility(hasPoster ? View.VISIBLE : View.GONE);
-    }
-
-    /**
-     * Detaches the poster URL from the event entity and resets the placeholder interface.
-     */
-    private void removePoster() {
-        db.collection("events").document(eventId).update("posterUrl", "");
-        hasPoster = false;
-        updatePosterUI();
     }
 
     /**

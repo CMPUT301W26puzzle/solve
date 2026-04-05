@@ -284,6 +284,11 @@ public class CreateEventActivity extends AppCompatActivity {
             Integer waitlistLimit,
             Boolean isPrivate) {
 
+        if (registrationStart == null || registrationEnd == null) {
+            Toast.makeText(this, "Please select a valid registration date range", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         Map<String, Object> map = new HashMap<>();
 
         map.put("name", name != null ? name : "");
