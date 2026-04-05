@@ -132,9 +132,7 @@ public class ProfileSetupActivity extends AppCompatActivity {
         if ("organizer".equals(role)) {
             intent = new Intent(this, OrganizerDashboardActivity.class);
         } else if ("admin".equals(role)) {
-            Toast.makeText(this, "Admin dashboard coming soon", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
+            intent = new Intent(this, AdminDashboardActivity.class);
         } else {
             intent = new Intent(this, EntrantDashboardActivity.class);
         }

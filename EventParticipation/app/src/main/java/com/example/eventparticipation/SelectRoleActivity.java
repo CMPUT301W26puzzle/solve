@@ -208,9 +208,7 @@ public class SelectRoleActivity extends AppCompatActivity {
                     public void onResult(boolean exists) {
                         setLoading(false);
                         if (exists) {
-                            Toast.makeText(SelectRoleActivity.this,
-                                    "Admin dashboard coming soon",
-                                    Toast.LENGTH_SHORT).show();
+                            startActivity(new Intent(SelectRoleActivity.this, AdminDashboardActivity.class));
                         } else {
                             openProfileSetup("admin", adminId);
                         }
