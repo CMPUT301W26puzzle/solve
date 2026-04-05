@@ -7,6 +7,7 @@ import android.text.InputType;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -199,6 +200,11 @@ public class ManageEventActivity extends AppCompatActivity {
             return;
         }
 
+        Button btnMassNotification = findViewById(R.id.btnMassNotification);
+        if (btnMassNotification != null) {
+            btnMassNotification.setOnClickListener(v -> showMassNotificationGroupDialog());
+        }
+
         db = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
 
@@ -208,6 +214,128 @@ public class ManageEventActivity extends AppCompatActivity {
         setupClickListeners();
         updatePosterUI();
         checkManageAccessAndLoad();
+    }
+
+    /**
+     * Opens a Multi-Choice dialog allowing the Organizer to select which
+     * entrant groups should receive the mass notification.
+     */
+    private void showMassNotificationGroupDialog() {
+        String[] options = {"Waiting List", "Selected Entrants", "Cancelled Entrants"};
+        boolean[] checkedItems = {false, false, false};
+
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("Send Mass Notification")
+                .setMultiChoiceItems(options, checkedItems, (dialog, which, isChecked) -> {
+                    checkedItems[which] = isChecked;
+                })
+                .setPositiveButton("Next", (dialog, which) -> {
+                    // Check if at least one group was selected
+                    if (!checkedItems[0] && !checkedItems[1] && !checkedItems[2]) {
+                        Toast.makeText(this, "Please select at least one group.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    showMassNotificationMessageDialog(checkedItems);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /**
+     * Opens an Input dialog allowing the Organizer to type the message
+     * that will be sent to the groups selected in the previous step.
+     */
+    private void showMassNotificationMessageDialog(boolean[] selectedGroups) {
+        final android.widget.EditText input = new android.widget.EditText(this);
+        input.setHint("Enter notification message...");
+
+        // Add a bit of margin for a cleaner look
+        android.widget.FrameLayout container = new android.widget.FrameLayout(this);
+        android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        params.setMargins(50, 20, 50, 20);
+        input.setLayoutParams(params);
+        container.addView(input);
+
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("Notification Message")
+                .setView(container)
+                .setPositiveButton("Send", (dialog, which) -> {
+                    String message = input.getText().toString().trim();
+                    if (!message.isEmpty()) {
+                        executeMassNotification(selectedGroups, message);
+                    } else {
+                        Toast.makeText(this, "Message cannot be empty.", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /**
+     * Queries Firestore for entrants matching the selected groups and creates
+     * a notification document for each using a WriteBatch.
+     */
+    private void executeMassNotification(boolean[] selectedGroups, String message) {
+        List<String> targetStatuses = new java.util.ArrayList<>();
+
+        if (selectedGroups[0]) targetStatuses.add("waiting");
+        if (selectedGroups[1]) targetStatuses.add("selected");
+        if (selectedGroups[2]) targetStatuses.add("cancelled");
+
+        if (targetStatuses.isEmpty() || eventId == null) return;
+
+        FirebaseFirestore.getInstance()
+                .collection("events")
+                .document(eventId)
+                .collection("waitlist")
+                .whereIn("selectionStatus", targetStatuses)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    WriteBatch batch = FirebaseFirestore.getInstance().batch();
+                    int sentCount = 0;
+
+                    // Safely extract event name from the UI
+                    String currentEventName = tvEventName != null ? tvEventName.getText().toString() : "Event";
+
+                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                        String entrantId = doc.getString("entrantId");
+                        if (entrantId != null && !entrantId.isEmpty()) {
+                            DocumentReference notifRef = FirebaseFirestore.getInstance()
+                                    .collection("entrants")
+                                    .document(entrantId)
+                                    .collection("notifications")
+                                    .document();
+
+                            // Build the custom notification data
+                            Map<String, Object> notification = new HashMap<>();
+                            notification.put("entrantId", entrantId);
+                            notification.put("eventId", eventId);
+                            notification.put("eventName", currentEventName);
+                            notification.put("type", "organizer_message");
+                            notification.put("message", message);
+                            notification.put("unread", true);
+                            notification.put("actionRequired", false);
+                            notification.put("actionStatus", "none");
+                            notification.put("createdAt", FieldValue.serverTimestamp());
+
+                            batch.set(notifRef, notification);
+                            sentCount++;
+                        }
+                    }
+
+                    final int finalSentCount = sentCount;
+                    batch.commit().addOnSuccessListener(aVoid -> {
+                        Toast.makeText(this, "Notification sent to " + finalSentCount + " entrants.", Toast.LENGTH_SHORT).show();
+                    }).addOnFailureListener(e -> {
+                        Toast.makeText(this, "Failed to send notifications.", Toast.LENGTH_SHORT).show();
+                    });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to retrieve waitlist.", Toast.LENGTH_SHORT).show();
+                });
     }
 
     /**
@@ -654,15 +782,31 @@ public class ManageEventActivity extends AppCompatActivity {
     /**
      * Displays a numeric input prompt to execute the event lottery against the waiting queue.
      */
+    /**
+     * Displays a numeric input prompt to execute the event lottery against the waiting queue.
+     */
     private void showRunLotteryDialog() {
-        EditText input = new EditText(this);
+        final android.widget.EditText input = new android.widget.EditText(this);
         input.setHint("Number of entrants to select");
         input.setInputType(InputType.TYPE_CLASS_NUMBER);
+
+        // Give the EditText a recognizable ID for testing
+        input.setId(android.R.id.edit);
+
+        // Add a bit of margin for a cleaner look
+        android.widget.FrameLayout container = new android.widget.FrameLayout(this);
+        android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        params.setMargins(50, 20, 50, 20);
+        input.setLayoutParams(params);
+        container.addView(input);
 
         new MaterialAlertDialogBuilder(this)
                 .setTitle("Run Lottery")
                 .setMessage("Select how many entrants should receive invitations.")
-                .setView(input)
+                .setView(container)
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Run", (dialog, which) -> {
                     String value = input.getText() == null ? "" : input.getText().toString().trim();
