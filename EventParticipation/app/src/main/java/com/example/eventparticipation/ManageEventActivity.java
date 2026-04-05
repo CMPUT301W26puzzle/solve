@@ -818,6 +818,9 @@ public class ManageEventActivity extends AppCompatActivity {
         imgEventPoster.setVisibility(hasPoster ? View.VISIBLE : View.GONE);
         layoutPosterPlaceholder.setVisibility(hasPoster ? View.GONE : View.VISIBLE);
         fabRemovePoster.setVisibility(hasPoster ? View.VISIBLE : View.GONE);
+
+        btnUploadPoster.setEnabled(!hasPoster);
+        btnUpdatePoster.setEnabled(hasPoster);
     }
 
     /**

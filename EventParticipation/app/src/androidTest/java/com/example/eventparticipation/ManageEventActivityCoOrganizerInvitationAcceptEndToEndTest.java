@@ -102,14 +102,22 @@ public class ManageEventActivityCoOrganizerInvitationAcceptEndToEndTest {
         Context context = ApplicationProvider.getApplicationContext();
         db = FirebaseFirestore.getInstance();
         testEntrantId = DeviceIdProvider.getId(context);
-        expectedNotificationId =
-                NotificationRepository.buildCoOrganizerInvitationNotificationId(TEST_EVENT_ID);
+        expectedNotificationId = NotificationRepository.buildCoOrganizerInvitationNotificationId(TEST_EVENT_ID);
 
+        // SEED THE MAIN EVENT DOCUMENT (Required for isOwner check)
+        Map<String, Object> eventData = new HashMap<>();
+        eventData.put("id", TEST_EVENT_ID);
+        eventData.put("name", EXPECTED_EVENT_NAME);
+        eventData.put("organizerId", TEST_ORGANIZER_ID);
+        Tasks.await(db.collection("events").document(TEST_EVENT_ID).set(eventData), 5, TimeUnit.SECONDS);
+
+        // Seed the waitlist
         Map<String, Object> entrant = new HashMap<>();
         entrant.put("entrantId", testEntrantId);
         entrant.put("entrantName", TEST_ENTRANT_NAME);
         entrant.put("entrantEmail", TEST_ENTRANT_EMAIL);
         entrant.put("selectionStatus", "waiting");
+        Tasks.await(db.collection("events").document(TEST_EVENT_ID).collection("waitlist").document(testEntrantId).set(entrant), 5, TimeUnit.SECONDS);
         entrant.put("responseStatus", "");
         entrant.put("finalStatus", "");
         entrant.put("joinedAt", new Timestamp(new Date(1704067200000L)));
