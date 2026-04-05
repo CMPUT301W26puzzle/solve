@@ -49,17 +49,6 @@ import java.util.Map;
  */
 public class EntrantDashboardActivity extends BaseEntrantActivity {
 
-    private static final String REGISTRATION_FILTER_ALL = "all";
-    private static final String REGISTRATION_FILTER_UPCOMING = "upcoming";
-    private static final String REGISTRATION_FILTER_OPEN = "open";
-    private static final String REGISTRATION_FILTER_CLOSED = "closed";
-
-    private static final String PARTICIPATION_FILTER_ALL = "all";
-    private static final String PARTICIPATION_FILTER_NOT_JOINED = "not_joined";
-    private static final String PARTICIPATION_FILTER_WAITING = "waiting";
-    private static final String PARTICIPATION_FILTER_SELECTED = "selected";
-    private static final String PARTICIPATION_FILTER_ENROLLED = "enrolled";
-
     private RecyclerView rvEntrantEvents;
     private EntrantEventAdapter eventAdapter;
     private List<Event> allEvents;
@@ -75,8 +64,8 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
 
     private FirebaseFirestore db;
     private String entrantId;
-    private String registrationFilter = REGISTRATION_FILTER_ALL;
-    private String participationFilter = PARTICIPATION_FILTER_ALL;
+    private String registrationFilter = EntrantDashboardFilterLogic.REGISTRATION_FILTER_ALL;
+    private String participationFilter = EntrantDashboardFilterLogic.PARTICIPATION_FILTER_ALL;
     private boolean onlyAvailableSpots = false;
 
     @Override
@@ -162,34 +151,6 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
             @Override public void afterTextChanged(Editable s) {}
         });
     }
-
-    /**
-     * Wires the bottom navigation bar.
-     */
-//    private void setupBottomNav() {
-//        BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
-//        bottomNav.setSelectedItemId(R.id.nav_home);
-//
-//        bottomNav.setOnItemSelectedListener(item -> {
-//            int id = item.getItemId();
-//            if (id == R.id.nav_home) {
-//                return true;
-//            } else if (id == R.id.nav_my_events) {
-//                startActivity(new Intent(this, EntrantMyEventsActivity.class));
-//                return true;
-//            } else if (id == R.id.nav_scan) {
-//                Toast.makeText(this, "Scan coming soon", Toast.LENGTH_SHORT).show();
-//                return true;
-//            } else if (id == R.id.nav_notifications) {
-//                Toast.makeText(this, "Notifications coming soon", Toast.LENGTH_SHORT).show();
-//                return true;
-//            } else if (id == R.id.nav_profile) {
-//                startActivity(new Intent(this, ProfileActivity.class));
-//                return true;
-//            }
-//            return false;
-//        });
-//    }
 
     /**
      * Loads all events from the top-level Firestore "events" collection.
@@ -278,18 +239,7 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
                 continue;
             }
 
-            if (lower.isEmpty()) {
-                filteredEvents.add(event);
-                continue;
-            }
-
-            // TODO: include event description in keyword search if a description field is going to be added
-            String name = event.getName() != null ? event.getName().toLowerCase() : "";
-            String venueAddress = event.getVenueAddress() != null
-                    ? event.getVenueAddress().toLowerCase()
-                    : "";
-
-            if (name.contains(lower) || venueAddress.contains(lower)) {
+            if (EntrantDashboardFilterLogic.matchesKeyword(event, lower)) {
                 filteredEvents.add(event);
             }
         }
@@ -311,86 +261,48 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
         filterEvents(query);
     }
 
+    /**
+     * Applies the active registration, availability, and participation filters.
+     *
+     * @param event event to evaluate
+     * @return true if the event passes all active filters
+     */
     private boolean matchesActiveFilters(Event event) {
-        return matchesRegistrationFilter(event)
-                && matchesAvailabilityFilter(event)
-                && matchesParticipationFilter(event);
+        return EntrantDashboardFilterLogic.matchesRegistrationFilter(
+                event,
+                registrationFilter,
+                new Date()
+        ) && EntrantDashboardFilterLogic.matchesAvailabilityFilter(
+                event,
+                registrationFilter,
+                onlyAvailableSpots
+        ) && EntrantDashboardFilterLogic.matchesParticipationFilter(
+                participationStatusByEventId.get(event.getId()),
+                participationFilter
+        );
     }
 
-    private boolean matchesRegistrationFilter(Event event) {
-        Date now = new Date();
-        Date registrationStart = event.getRegistrationStart();
-        Date registrationEnd = event.getRegistrationEnd();
-
-        switch (registrationFilter) {
-            case REGISTRATION_FILTER_UPCOMING:
-                return registrationStart != null && now.before(registrationStart);
-            case REGISTRATION_FILTER_OPEN:
-                return (registrationStart == null || !now.before(registrationStart))
-                        && (registrationEnd == null || !now.after(registrationEnd));
-            case REGISTRATION_FILTER_CLOSED:
-                return registrationEnd != null && now.after(registrationEnd);
-            case REGISTRATION_FILTER_ALL:
-            default:
-                return true;
-        }
-    }
-
-    private boolean matchesAvailabilityFilter(Event event) {
-        if (!onlyAvailableSpots || !REGISTRATION_FILTER_OPEN.equals(registrationFilter)) {
-            return true;
-        }
-
-        Integer waitlistLimit = event.getWaitlistLimit();
-        return waitlistLimit == null || event.getWaitingCount() < waitlistLimit;
-    }
-
-    private boolean matchesParticipationFilter(Event event) {
-        String status = participationStatusByEventId.get(event.getId());
-
-        switch (participationFilter) {
-            case PARTICIPATION_FILTER_NOT_JOINED:
-                return PARTICIPATION_FILTER_NOT_JOINED.equals(status);
-            case PARTICIPATION_FILTER_WAITING:
-                return PARTICIPATION_FILTER_WAITING.equals(status);
-            case PARTICIPATION_FILTER_SELECTED:
-                return PARTICIPATION_FILTER_SELECTED.equals(status);
-            case PARTICIPATION_FILTER_ENROLLED:
-                return PARTICIPATION_FILTER_ENROLLED.equals(status);
-            case PARTICIPATION_FILTER_ALL:
-            default:
-                return true;
-        }
-    }
-
+    /**
+     * Resolves this entrant's dashboard status for one waitlist document.
+     *
+     * @param waitDoc waitlist document for the current entrant
+     * @return normalized dashboard participation status
+     */
     private String resolveParticipationStatus(DocumentSnapshot waitDoc) {
         if (!waitDoc.exists()) {
-            return PARTICIPATION_FILTER_NOT_JOINED;
+            return EntrantDashboardFilterLogic.PARTICIPATION_FILTER_NOT_JOINED;
         }
 
-        String selectionStatus = waitDoc.getString("selectionStatus");
-        String responseStatus = waitDoc.getString("responseStatus");
-        String finalStatus = waitDoc.getString("finalStatus");
-
-        if ("enrolled".equals(finalStatus)) {
-            return PARTICIPATION_FILTER_ENROLLED;
-        }
-
-        if ("waiting".equals(selectionStatus)) {
-            return PARTICIPATION_FILTER_WAITING;
-        }
-
-        if ("selected".equals(selectionStatus) && "pending".equals(responseStatus)) {
-            return PARTICIPATION_FILTER_SELECTED;
-        }
-
-        if ("cancelled".equals(selectionStatus) || "declined".equals(responseStatus)) {
-            return PARTICIPATION_FILTER_NOT_JOINED;
-        }
-
-        return PARTICIPATION_FILTER_NOT_JOINED;
+        return EntrantDashboardFilterLogic.resolveParticipationStatus(
+                waitDoc.getString("selectionStatus"),
+                waitDoc.getString("responseStatus"),
+                waitDoc.getString("finalStatus")
+        );
     }
 
+    /**
+     * Shows the filter dialog for discover events.
+     */
     private void showFilterDialog() {
         View dialogView = LayoutInflater.from(this)
                 .inflate(R.layout.dialog_entrant_event_filters, null, false);
@@ -433,66 +345,100 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
         dialog.show();
     }
 
+    /**
+     * Binds the current filter state into the dialog controls.
+     *
+     * @param chipGroupRegistration registration filter chips
+     * @param chipGroupParticipation participation filter chips
+     * @param cbOnlyAvailableSpots availability checkbox
+     */
     private void syncDialogState(ChipGroup chipGroupRegistration,
                                  ChipGroup chipGroupParticipation,
                                  MaterialCheckBox cbOnlyAvailableSpots) {
         chipGroupRegistration.check(getRegistrationChipId(registrationFilter));
         chipGroupParticipation.check(getParticipationChipId(participationFilter));
         cbOnlyAvailableSpots.setChecked(
-                onlyAvailableSpots && REGISTRATION_FILTER_OPEN.equals(registrationFilter)
+                onlyAvailableSpots
+                        && EntrantDashboardFilterLogic.REGISTRATION_FILTER_OPEN.equals(registrationFilter)
         );
-        cbOnlyAvailableSpots.setEnabled(REGISTRATION_FILTER_OPEN.equals(registrationFilter));
+        cbOnlyAvailableSpots.setEnabled(
+                EntrantDashboardFilterLogic.REGISTRATION_FILTER_OPEN.equals(registrationFilter)
+        );
     }
 
+    /**
+     * Maps the selected registration chip to a filter key.
+     *
+     * @param checkedChipId selected registration chip id
+     * @return registration filter key
+     */
     private String resolveRegistrationFilter(int checkedChipId) {
         if (checkedChipId == R.id.chipRegistrationUpcoming) {
-            return REGISTRATION_FILTER_UPCOMING;
+            return EntrantDashboardFilterLogic.REGISTRATION_FILTER_UPCOMING;
         } else if (checkedChipId == R.id.chipRegistrationOpen) {
-            return REGISTRATION_FILTER_OPEN;
+            return EntrantDashboardFilterLogic.REGISTRATION_FILTER_OPEN;
         } else if (checkedChipId == R.id.chipRegistrationClosed) {
-            return REGISTRATION_FILTER_CLOSED;
+            return EntrantDashboardFilterLogic.REGISTRATION_FILTER_CLOSED;
         }
-        return REGISTRATION_FILTER_ALL;
+        return EntrantDashboardFilterLogic.REGISTRATION_FILTER_ALL;
     }
 
+    /**
+     * Maps the selected participation chip to a filter key.
+     *
+     * @param checkedChipId selected participation chip id
+     * @return participation filter key
+     */
     private String resolveParticipationFilter(int checkedChipId) {
         if (checkedChipId == R.id.chipParticipationNotJoined) {
-            return PARTICIPATION_FILTER_NOT_JOINED;
+            return EntrantDashboardFilterLogic.PARTICIPATION_FILTER_NOT_JOINED;
         } else if (checkedChipId == R.id.chipParticipationWaiting) {
-            return PARTICIPATION_FILTER_WAITING;
+            return EntrantDashboardFilterLogic.PARTICIPATION_FILTER_WAITING;
         } else if (checkedChipId == R.id.chipParticipationSelected) {
-            return PARTICIPATION_FILTER_SELECTED;
+            return EntrantDashboardFilterLogic.PARTICIPATION_FILTER_SELECTED;
         } else if (checkedChipId == R.id.chipParticipationEnrolled) {
-            return PARTICIPATION_FILTER_ENROLLED;
+            return EntrantDashboardFilterLogic.PARTICIPATION_FILTER_ENROLLED;
         }
-        return PARTICIPATION_FILTER_ALL;
+        return EntrantDashboardFilterLogic.PARTICIPATION_FILTER_ALL;
     }
 
+    /**
+     * Returns the chip id for the current registration filter.
+     *
+     * @param filter current registration filter key
+     * @return chip id matching the filter
+     */
     private int getRegistrationChipId(String filter) {
         switch (filter) {
-            case REGISTRATION_FILTER_UPCOMING:
+            case EntrantDashboardFilterLogic.REGISTRATION_FILTER_UPCOMING:
                 return R.id.chipRegistrationUpcoming;
-            case REGISTRATION_FILTER_OPEN:
+            case EntrantDashboardFilterLogic.REGISTRATION_FILTER_OPEN:
                 return R.id.chipRegistrationOpen;
-            case REGISTRATION_FILTER_CLOSED:
+            case EntrantDashboardFilterLogic.REGISTRATION_FILTER_CLOSED:
                 return R.id.chipRegistrationClosed;
-            case REGISTRATION_FILTER_ALL:
+            case EntrantDashboardFilterLogic.REGISTRATION_FILTER_ALL:
             default:
                 return R.id.chipRegistrationAll;
         }
     }
 
+    /**
+     * Returns the chip id for the current participation filter.
+     *
+     * @param filter current participation filter key
+     * @return chip id matching the filter
+     */
     private int getParticipationChipId(String filter) {
         switch (filter) {
-            case PARTICIPATION_FILTER_NOT_JOINED:
+            case EntrantDashboardFilterLogic.PARTICIPATION_FILTER_NOT_JOINED:
                 return R.id.chipParticipationNotJoined;
-            case PARTICIPATION_FILTER_WAITING:
+            case EntrantDashboardFilterLogic.PARTICIPATION_FILTER_WAITING:
                 return R.id.chipParticipationWaiting;
-            case PARTICIPATION_FILTER_SELECTED:
+            case EntrantDashboardFilterLogic.PARTICIPATION_FILTER_SELECTED:
                 return R.id.chipParticipationSelected;
-            case PARTICIPATION_FILTER_ENROLLED:
+            case EntrantDashboardFilterLogic.PARTICIPATION_FILTER_ENROLLED:
                 return R.id.chipParticipationEnrolled;
-            case PARTICIPATION_FILTER_ALL:
+            case EntrantDashboardFilterLogic.PARTICIPATION_FILTER_ALL:
             default:
                 return R.id.chipParticipationAll;
         }
