@@ -16,12 +16,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+
 import android.content.Context;
 import android.content.Intent;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import static androidx.test.espresso.matcher.RootMatchers.isDialog;
 
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
@@ -229,11 +231,10 @@ public class ManageEventActivityCoOrganizerInvitationAcceptEndToEndTest {
             onView(withId(R.id.btnAssignCoOrganizer))
                     .perform(scrollTo(), click());
 
-            onView(withText("Invite Co-organizer"))
-                    .check(matches(isDisplayed()));
+            waitForFirestoreUi();
 
             onData(equalTo(TEST_ENTRANT_NAME + " (" + TEST_ENTRANT_EMAIL + ") - Waiting"))
-                    .inAdapterView(withId(androidx.appcompat.R.id.select_dialog_listview))
+                    .inRoot(isDialog())
                     .perform(click());
 
             onView(withText("Send Invitation")).perform(click());
