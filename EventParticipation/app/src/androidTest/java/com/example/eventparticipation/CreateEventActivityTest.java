@@ -48,11 +48,17 @@ public class CreateEventActivityTest {
     @Before
     public void setUp() {
         Intents.init();
+
+        android.content.Context context = androidx.test.core.app.ApplicationProvider.getApplicationContext();
+        SessionManager.getInstance(context).saveSession("test_organizer_id", "organizer");
     }
 
     @After
     public void tearDown() {
         Intents.release();
+
+        android.content.Context context = androidx.test.core.app.ApplicationProvider.getApplicationContext();
+        SessionManager.getInstance(context).clearSession();
     }
 
     /**

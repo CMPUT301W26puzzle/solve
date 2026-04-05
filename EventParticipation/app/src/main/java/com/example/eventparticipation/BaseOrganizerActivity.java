@@ -41,8 +41,9 @@ public abstract class BaseOrganizerActivity extends BaseEntrantActivity {
                 return true;
             } else if (id == R.id.nav_profile) {
                 Intent intent = new Intent(this, ProfileActivity.class);
-                intent.putExtra(ProfileActivity.EXTRA_ROLE, "organizer");
-                intent.putExtra(ProfileActivity.EXTRA_PROFILE_ID, DeviceIdProvider.getId(this));
+                // Fix: Access constants from ProfileSetupActivity where they are defined
+                intent.putExtra(ProfileSetupActivity.EXTRA_ROLE, "organizer");
+                intent.putExtra(ProfileSetupActivity.EXTRA_PROFILE_ID, DeviceIdProvider.getId(this));
                 startActivity(intent);
                 finish();
                 return true;

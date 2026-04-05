@@ -33,6 +33,14 @@ public class SessionManager {
         prefs.edit().clear().apply();
     }
 
+    /**
+     * Helper method to clear the session. Functionally identical to logout().
+     * Crucial for test teardowns!
+     */
+    public void clearSession() {
+        logout();
+    }
+
     public String getUserId() {
         return prefs.getString(KEY_USER_ID, null);
     }
@@ -44,4 +52,5 @@ public class SessionManager {
     public boolean isLoggedIn() {
         return getUserId() != null;
     }
+
 }

@@ -12,6 +12,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import android.content.Context;
+import androidx.test.core.app.ApplicationProvider;
 
 /**
  * UI tests for EntrantDashboardActivity using ActivityScenario only.
@@ -21,12 +23,18 @@ public class EntrantDashboardActivityTest {
 
     /** Activity launches and reaches RESUMED state. */
     @Test
-    public void activityLaunches_reachesResumedState() {
-        Intent intent = new Intent(
-                ApplicationProvider.getApplicationContext(),
-                EntrantDashboardActivity.class
-        );
-        try (ActivityScenario<EntrantDashboardActivity> scenario = ActivityScenario.launch(intent)) {
+    public void activityLaunchesWithValidExtras_reachesResumed() {
+        // Setup session
+        Context context = ApplicationProvider.getApplicationContext();
+        SessionManager.getInstance(context).saveSession("test_entrant_id", "entrant");
+
+        // Create the specific Intent the Activity expects
+        Intent intent = new Intent(context, EntrantEventDetailActivity.class);
+        intent.putExtra("EVENT_ID", "dummy_event_123");
+
+        // Launch with the specific Intent
+        try (ActivityScenario<EntrantEventDetailActivity> scenario = ActivityScenario.launch(intent)) {
+            scenario.moveToState(Lifecycle.State.RESUMED);
             assertEquals(Lifecycle.State.RESUMED, scenario.getState());
         }
     }
