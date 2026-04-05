@@ -8,7 +8,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -416,6 +415,11 @@ public class ProfileActivity extends BaseOrganizerActivity {
         finish();
     }
 
+    /**
+     * Resolves the active profile role from the launch intent.
+     *
+     * @return normalized role value
+     */
     private String resolveRole() {
         String requestedRole = getIntent().getStringExtra(EXTRA_ROLE);
         if ("organizer".equals(requestedRole) || "admin".equals(requestedRole) || "entrant".equals(requestedRole)) {
@@ -424,6 +428,12 @@ public class ProfileActivity extends BaseOrganizerActivity {
         return "entrant";
     }
 
+    /**
+     * Resolves the current profile id.
+     *
+     * @param testEntrantId optional test override id
+     * @return resolved profile id
+     */
     private String resolveProfileId(String testEntrantId) {
         if (testEntrantId != null) {
             return testEntrantId;
@@ -437,10 +447,20 @@ public class ProfileActivity extends BaseOrganizerActivity {
         return DeviceIdProvider.getId(this);
     }
 
+    /**
+     * Checks whether the current profile is an entrant.
+     *
+     * @return true if the role is entrant
+     */
     private boolean isEntrantRole() {
         return "entrant".equals(role);
     }
 
+    /**
+     * Returns the Firestore collection for the current role.
+     *
+     * @return collection name
+     */
     private String getCollectionName() {
         switch (role) {
             case "organizer":
@@ -453,6 +473,11 @@ public class ProfileActivity extends BaseOrganizerActivity {
         }
     }
 
+    /**
+     * Returns the id field name for the current role.
+     *
+     * @return Firestore id field name
+     */
     private String getIdFieldName() {
         switch (role) {
             case "organizer":
