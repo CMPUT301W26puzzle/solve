@@ -447,6 +447,14 @@ public class ManageEventActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        MaterialButton btnViewComments = findViewById(R.id.btnViewComments);
+        btnViewComments.setOnClickListener(v -> {
+            Intent intent = new Intent(this, EventCommentsActivity.class);
+            intent.putExtra("EVENT_ID", eventId);
+            intent.putExtra("IS_ORGANIZER", isOwner || isCoOrganizer);
+            startActivity(intent);
+        });
+
         btnRunLottery.setOnClickListener(v -> showRunLotteryDialog());
         btnDrawReplacement.setOnClickListener(v -> drawReplacementApplicant());
         btnAssignCoOrganizer.setOnClickListener(v -> showAssignCoOrganizerDialog());

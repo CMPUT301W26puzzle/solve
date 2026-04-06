@@ -5,6 +5,7 @@ import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.closeSoftKeyboard;
 import static androidx.test.espresso.action.ViewActions.replaceText;
+import static androidx.test.espresso.action.ViewActions.scrollTo;
 import static androidx.test.espresso.action.ViewActions.typeText;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.intent.Intents.intending;
@@ -190,5 +191,17 @@ public class CreateEventActivityTest {
 
         onView(withContentDescription(containsString(tomorrow)))
                 .perform(click());
+    }
+
+    /**
+     * US 02.01.02: Create a private event.
+     * Verifies that the organizer can toggle the private event switch.
+     */
+    @Test
+    public void testTogglePrivateEvent() {
+        // Find the switch, scroll to it to ensure it's on screen, click it, and verify it's checked
+        onView(withId(R.id.switchPrivateEvent))
+                .perform(scrollTo(), click())
+                .check(matches(isChecked()));
     }
 }
