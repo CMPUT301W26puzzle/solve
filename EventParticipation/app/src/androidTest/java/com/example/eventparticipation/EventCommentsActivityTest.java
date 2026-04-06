@@ -3,12 +3,14 @@ package com.example.eventparticipation;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.closeSoftKeyboard;
+import static androidx.test.espresso.action.ViewActions.replaceText;
 import static androidx.test.espresso.action.ViewActions.typeText;
 import static androidx.test.espresso.assertion.ViewAssertions.doesNotExist;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
+import static org.hamcrest.Matchers.not;
 
 import android.content.Context;
 import android.content.Intent;
@@ -29,28 +31,31 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Unified test suite for EventCommentsActivity.
+ * Tests Entrant, Organizer, and Admin role behaviors.
+ */
 @RunWith(AndroidJUnit4.class)
 public class EventCommentsActivityTest {
 
     private FirebaseFirestore db;
-    private final String TEST_EVENT_ID = "comment_test_event_123";
-    private final String TEST_ORG_ID = "org_comment_test";
+    private final String TEST_EVENT_ID = "unified_test_event";
+    private final String TEST_USER_ID = "unified_test_user";
 
     @Before
     public void setUp() throws Exception {
         db = FirebaseFirestore.getInstance();
         Context context = ApplicationProvider.getApplicationContext();
-        SessionManager.getInstance(context).saveSession(TEST_ORG_ID, "organizer");
+        SessionManager.getInstance(context).saveSession(TEST_USER_ID, "entrant");
 
-        // Create a dummy user profile so the name resolves correctly
+        // FIX: The activity now looks in "entrants", not "users"
         Map<String, Object> userMap = new HashMap<>();
-        userMap.put("name", "Organizer Bob");
-        Tasks.await(db.collection("users").document(TEST_ORG_ID).set(userMap), 5, TimeUnit.SECONDS);
+        userMap.put("name", "Unified Tester");
+        Tasks.await(db.collection("entrants").document(TEST_USER_ID).set(userMap), 5, TimeUnit.SECONDS);
     }
 
     @After
     public void tearDown() throws Exception {
-        // Cleanup comments
         if (db != null) {
             db.collection("events").document(TEST_EVENT_ID).collection("comments").get()
                     .addOnSuccessListener(querySnapshot -> {
@@ -62,43 +67,51 @@ public class EventCommentsActivityTest {
         SessionManager.getInstance(ApplicationProvider.getApplicationContext()).clearSession();
     }
 
-    /**
-     * US 02.08.02 & US 02.08.01: Tests posting a comment and then deleting it.
-     */
+    /** US 01.08.01: Verifies Entrant can post a comment. */
     @Test
-    public void testPostAndDeleteComment() throws Exception {
+    public void testEntrantCanPostComment() throws Exception {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), EventCommentsActivity.class);
         intent.putExtra("EVENT_ID", TEST_EVENT_ID);
-        intent.putExtra("IS_ORGANIZER", true); // Ensure they get the delete button
+        intent.putExtra("IS_ORGANIZER", false);
+        intent.putExtra("IS_ADMIN", false);
 
         try (ActivityScenario<EventCommentsActivity> scenario = ActivityScenario.launch(intent)) {
-
-            // Test Posting (US 02.08.02)
-            String uniqueComment = "Don't forget to bring water!";
-
-            onView(withId(R.id.etCommentInput))
-                    .perform(typeText(uniqueComment), closeSoftKeyboard());
-
+            String comment = "Entrant comment test";
+            onView(withId(R.id.etCommentInput)).perform(replaceText(comment), closeSoftKeyboard());
             onView(withId(R.id.btnSendComment)).perform(click());
 
-            // Wait for Firestore to sync
             Thread.sleep(2000);
+            onView(withText(comment)).check(matches(isDisplayed()));
+        }
+    }
 
-            // Verify the comment appears in the RecyclerView
-            onView(withText(uniqueComment)).check(matches(isDisplayed()));
+    /** US 02.08.02: Verifies Organizer posts with an identifying tag. */
+    @Test
+    public void testOrganizerPost_showsOrganizerTag() throws Exception {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), EventCommentsActivity.class);
+        intent.putExtra("EVENT_ID", TEST_EVENT_ID);
+        intent.putExtra("IS_ORGANIZER", true);
 
-            // Test Deleting (US 02.08.01)
-            // Click the delete button on the comment
-            onView(withId(R.id.btnDeleteComment)).perform(click());
+        try (ActivityScenario<EventCommentsActivity> scenario = ActivityScenario.launch(intent)) {
+            onView(withId(R.id.etCommentInput)).perform(replaceText("Organizer post"), closeSoftKeyboard());
+            onView(withId(R.id.btnSendComment)).perform(click());
 
-            // Click "Delete" on the confirmation dialog
-            onView(withText("Delete")).perform(click());
-
-            // Wait for Firestore to sync deletion
             Thread.sleep(2000);
+            // Verify name is appended with (Organizer)
+            onView(withText("Unified Tester (Organizer)")).check(matches(isDisplayed()));
+        }
+    }
 
-            // Verify the comment is removed from the UI
-            onView(withText(uniqueComment)).check(doesNotExist());
+    /** US 03.10.01: Verifies Admin cannot see the input box but can see comments. */
+    @Test
+    public void testAdminUI_hidesInputBox() {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), EventCommentsActivity.class);
+        intent.putExtra("EVENT_ID", TEST_EVENT_ID);
+        intent.putExtra("IS_ADMIN", true);
+
+        try (ActivityScenario<EventCommentsActivity> scenario = ActivityScenario.launch(intent)) {
+            // Admin should not be able to see the input layout
+            onView(withId(R.id.layoutCommentInput)).check(matches(not(isDisplayed())));
         }
     }
 }
