@@ -38,7 +38,7 @@ import java.util.Locale;
 public class EntrantMyEventsActivity extends BaseEntrantActivity {
 
     /** Current entrant id for Firestore queries. */
-    private  String entrantId;
+    private String entrantId;
 
     private TextView tabWaiting, tabSelected, tabEnrolled, tabPast;
     private TextView tvTotalRegistrations, tvEnrolledCount;
@@ -63,6 +63,12 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
         Event event;
         String status; // "waiting", "selected", "enrolled", "past"
 
+        /**
+         * Creates one My Events row item.
+         *
+         * @param event event data
+         * @param status entrant status for the event
+         */
         MyEventItem(Event event, String status) {
             this.event = event;
             this.status = status;
@@ -83,6 +89,9 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
         setupBottomNav(R.id.nav_my_events);
     }
 
+    /**
+     * Binds layout views.
+     */
     private void initViews() {
         tabWaiting           = findViewById(R.id.tabWaiting);
         tabSelected          = findViewById(R.id.tabSelected);
@@ -96,6 +105,9 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
         rvMyEvents           = findViewById(R.id.rvMyEvents);
     }
 
+    /**
+     * Sets click listeners for the status tabs.
+     */
     private void setupTabs() {
         tabWaiting.setOnClickListener(v -> switchTab("waiting"));
         tabSelected.setOnClickListener(v -> switchTab("selected"));
@@ -103,6 +115,9 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
         tabPast.setOnClickListener(v -> switchTab("past"));
     }
 
+    /**
+     * Configures the My Events RecyclerView.
+     */
     private void setupRecyclerView() {
         adapter = new MyEventAdapter(new ArrayList<>());
         rvMyEvents.setLayoutManager(new LinearLayoutManager(this));
@@ -276,12 +291,23 @@ public class EntrantMyEventsActivity extends BaseEntrantActivity {
         }
     }
 
+    /**
+     * Shows the empty state for the current tab.
+     *
+     * @param message empty-state message to display
+     */
     private void showEmpty(String message) {
         tvEmptyMessage.setText(message);
         layoutEmptyState.setVisibility(View.VISIBLE);
         rvMyEvents.setVisibility(View.GONE);
     }
 
+    /**
+     * Maps waitlist fields to a My Events status bucket.
+     *
+     * @param waitDoc waitlist document for the current entrant
+     * @return normalized My Events status
+     */
     private String resolveMyEventStatus(DocumentSnapshot waitDoc) {
         String selectionStatus = waitDoc.getString("selectionStatus");
         String responseStatus = waitDoc.getString("responseStatus");
