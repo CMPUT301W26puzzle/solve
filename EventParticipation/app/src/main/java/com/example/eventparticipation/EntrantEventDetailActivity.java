@@ -1,8 +1,19 @@
 package com.example.eventparticipation;
 
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.res.ColorStateList;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Typeface;
+import android.graphics.pdf.PdfDocument;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -17,6 +28,10 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -40,6 +55,10 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
     private String eventId;
     private String entrantId;
 
+    // Stored for PDF Ticket generation
+    private Event currentEvent;
+    private String currentEntrantName = "Attendee";
+
     private ImageView ivEventPoster;
     private TextView tvEventName;
     private TextView tvEventPrice;
@@ -56,6 +75,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
     private TextView tvAbout;
     private TextView tvLotteryGuidelines;
     private MaterialButton btnJoinLeave;
+    private MaterialButton btnDownloadTicket; // New PDF Button
 
     private FirebaseFirestore db;
     private boolean isOnWaitingList = false;
@@ -84,8 +104,20 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         eventId = getIntent().getStringExtra("EVENT_ID");
 
         initViews();
+        fetchEntrantName(); // Fetch user's name for the ticket
         loadEventFromIntent();
         checkWaitingListStatus();
+    }
+
+    /**
+     * Fetches the current user's name from Firestore for the PDF Ticket.
+     */
+    private void fetchEntrantName() {
+        db.collection("entrants").document(entrantId).get().addOnSuccessListener(doc -> {
+            if (doc.exists() && doc.contains("name")) {
+                currentEntrantName = doc.getString("name");
+            }
+        });
     }
 
     /**
@@ -109,6 +141,11 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         tvLotteryGuidelines = findViewById(R.id.tvLotteryGuidelines);
         btnJoinLeave = findViewById(R.id.btnJoinLeave);
 
+        // Initialize PDF Ticket Button
+        btnDownloadTicket = findViewById(R.id.btnDownloadTicket);
+        btnDownloadTicket.setVisibility(View.GONE); // Hidden by default
+        btnDownloadTicket.setOnClickListener(v -> generateAndSavePdfTicket());
+
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
         btnJoinLeave.setOnClickListener(v -> {
@@ -122,12 +159,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * Displays an alert dialog to the entrant when they have been selected in the lottery.
-     * * <p>This dialog prompts the user to either accept or decline the invitation to enroll
-     * in the event. Accepting triggers {@link #acceptInvitation()}, while declining
-     * triggers {@link #declineSelectedInvitation(DocumentReference, DocumentReference)}.</p>
-     */
     private void showResponseDialog() {
         new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
                 .setTitle("You Won the Lottery!")
@@ -143,13 +174,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                 .show();
     }
 
-    /**
-     * Processes the entrant's acceptance of an event invitation.
-     * * <p>Updates the entrant's waitlist document in Firestore to mark their response status
-     * as "accepted" and their final status as "enrolled". It also safely increments the event's
-     * total enrolled count and decrements the selected count to ensure dashboard statistics
-     * remain accurate.</p>
-     */
     private void acceptInvitation() {
         if (eventId == null) return;
         DocumentReference eventRef = db.collection("events").document(eventId);
@@ -160,7 +184,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                 "finalStatus", "enrolled",
                 "respondedAt", FieldValue.serverTimestamp()
         ).addOnSuccessListener(unused -> {
-            // increment enrolled, decrement selected
             eventRef.update(
                     "enrolledCount", FieldValue.increment(1),
                     "selectedCount", FieldValue.increment(-1)
@@ -173,10 +196,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         );
     }
 
-    /**
-     * Populates the UI using Event passed via Intent extras.
-     * Falls back to Firestore fetch if no extras are present.
-     */
     private void loadEventFromIntent() {
         tvEventName.setText(getIntent().getStringExtra("EVENT_NAME") != null
                 ? getIntent().getStringExtra("EVENT_NAME")
@@ -205,22 +224,18 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Loads full event data from Firestore.
-     */
     private void loadEventFromFirestore(String eventId) {
         db.collection("events")
                 .document(eventId)
                 .get()
                 .addOnSuccessListener(doc -> {
-                    if (!doc.exists()) {
-                        return;
-                    }
+                    if (!doc.exists()) return;
 
                     Event event = doc.toObject(Event.class);
-                    if (event == null) {
-                        return;
-                    }
+                    if (event == null) return;
+
+                    event.setId(doc.getId()); // Ensure ID is set
+                    currentEvent = event;     // Store locally for PDF generation
 
                     tvEventName.setText(event.getName());
 
@@ -261,13 +276,8 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                 });
     }
 
-    /**
-     * Checks Firestore to see whether this entrant currently has an active waitlist entry.
-     */
     private void checkWaitingListStatus() {
-        if (eventId == null) {
-            return;
-        }
+        if (eventId == null) return;
 
         db.collection("events")
                 .document(eventId)
@@ -287,15 +297,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> updateButton());
     }
 
-    /**
-     * Adds this entrant to the event waitlist, enforcing capacity limits and role restrictions.
-     * * <p>Before joining, this method queries the main event document to ensure:
-     * <ul>
-     * <li>The current user is not assigned as a co-organizer for the event.</li>
-     * <li>The waitlist has not exceeded its optional maximum limit (if one is set).</li>
-     * </ul>
-     * Upon passing these checks, a new waitlist entry is created with a "waiting" selection status.</p>
-     */
     private void joinWaitingList() {
         if (eventId == null) {
             Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
@@ -312,7 +313,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                 return;
             }
 
-            // enforce waitlist limit
             Long limit = eventDoc.getLong("waitlistLimit");
             Long currentWaiting = eventDoc.getLong("waitingCount");
 
@@ -347,13 +347,8 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         );
     }
 
-    /**
-     * Removes this entrant from the waitlist, or declines a pending invitation if selected.
-     */
     private void leaveWaitingList() {
-        if (eventId == null) {
-            return;
-        }
+        if (eventId == null) return;
 
         DocumentReference eventRef = db.collection("events").document(eventId);
         DocumentReference waitRef = eventRef.collection("waitlist").document(entrantId);
@@ -376,13 +371,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * Declines a selected invitation.
-     *
-     * Manual replacement flow:
-     * - mark this entrant declined
-     * - organizer later decides whether to draw a replacement
-     */
     private void declineSelectedInvitation(DocumentReference eventRef, DocumentReference waitRef) {
         waitRef.update(
                         "selectionStatus", "selected",
@@ -402,9 +390,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                 );
     }
 
-    /**
-     * Marks pending selected notifications as declined.
-     */
     private void markInvitationNotificationsDeclined() {
         db.collection("entrants")
                 .document(entrantId)
@@ -414,9 +399,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                 .whereEqualTo("actionStatus", NotificationItem.ACTION_PENDING)
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
-                    if (querySnapshot.isEmpty()) {
-                        return;
-                    }
+                    if (querySnapshot.isEmpty()) return;
 
                     com.google.firebase.firestore.WriteBatch batch = db.batch();
                     for (DocumentSnapshot notificationDoc : querySnapshot.getDocuments()) {
@@ -430,14 +413,12 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                 });
     }
 
-    /**
-     * Updates the button label and color based on entrant status for this event.
-     */
     private void updateButton() {
         if (eventId == null) {
             btnJoinLeave.setText("Join Waiting List");
             btnJoinLeave.setEnabled(true);
             btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF000000));
+            if (btnDownloadTicket != null) btnDownloadTicket.setVisibility(View.GONE);
             return;
         }
 
@@ -456,14 +437,20 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                             btnJoinLeave.setText("Enrolled");
                             btnJoinLeave.setEnabled(false);
                             btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF6B7280));
+
+                            // Show the PDF Ticket download button!
+                            if (btnDownloadTicket != null) btnDownloadTicket.setVisibility(View.VISIBLE);
+
                         } else if ("selected".equals(selectionStatus) && "pending".equals(responseStatus)) {
                             btnJoinLeave.setText("Respond to Invitation");
                             btnJoinLeave.setEnabled(true);
-                            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF4CAF50)); // make it green
+                            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF4CAF50)); // Green
+                            if (btnDownloadTicket != null) btnDownloadTicket.setVisibility(View.GONE);
                         } else {
                             btnJoinLeave.setText("Leave Waiting List");
                             btnJoinLeave.setEnabled(true);
                             btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFFCC0000));
+                            if (btnDownloadTicket != null) btnDownloadTicket.setVisibility(View.GONE);
                         }
                     })
                     .addOnFailureListener(e -> {
@@ -472,9 +459,144 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                         btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFFCC0000));
                     });
         } else {
+            // They are not on the waiting list (or declined, etc.)
             btnJoinLeave.setText("Join Waiting List");
             btnJoinLeave.setEnabled(true);
             btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF000000));
+            if (btnDownloadTicket != null) btnDownloadTicket.setVisibility(View.GONE);
+        }
+    }
+
+    /**
+     * Generates a PDF ticket using the Android Canvas API and saves it to the Downloads folder.
+     */
+    private void generateAndSavePdfTicket() {
+        if (currentEvent == null) {
+            Toast.makeText(this, "Event data not fully loaded yet.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 1. Create the PdfDocument and PageInfo (A4 approx size)
+        PdfDocument pdfDocument = new PdfDocument();
+        int pageHeight = 842;
+        int pageWidth = 595;
+        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create();
+        PdfDocument.Page page = pdfDocument.startPage(pageInfo);
+
+        // 2. Setup Canvas and Paint
+        Canvas canvas = page.getCanvas();
+        Paint paint = new Paint();
+
+        // Draw White Background
+        paint.setColor(Color.WHITE);
+        canvas.drawRect(0, 0, pageWidth, pageHeight, paint);
+
+        // Draw a decorative border
+        paint.setColor(Color.parseColor("#3F51B5")); // Primary Color
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(10);
+        canvas.drawRect(20, 20, pageWidth - 20, pageHeight - 20, paint);
+
+        // Draw Header Text
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.BLACK);
+        paint.setTextSize(40f);
+        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        paint.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText("OFFICIAL EVENT TICKET", pageWidth / 2f, 100, paint);
+
+        // Draw Event Details
+        paint.setTextSize(24f);
+        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
+        paint.setTextAlign(Paint.Align.LEFT);
+
+        int startX = 60;
+        int startY = 200;
+        int lineSpacing = 40;
+
+        String safeEventName = currentEvent.getName() != null ? currentEvent.getName() : "Unnamed Event";
+        String safeEventId = currentEvent.getId() != null ? currentEvent.getId() : eventId;
+
+        canvas.drawText("Event Name: " + safeEventName, startX, startY, paint);
+        canvas.drawText("Attendee: " + currentEntrantName, startX, startY + lineSpacing, paint);
+        canvas.drawText("Status: ADMIT ONE (Enrolled)", startX, startY + (lineSpacing * 2), paint);
+        canvas.drawText("Ticket ID: " + safeEventId.substring(0, Math.min(8, safeEventId.length())).toUpperCase(), startX, startY + (lineSpacing * 3), paint);
+
+        // 3. Draw the QR Code using your existing QRCodeGenerator class
+        try {
+            // Generate a QR code linking to the event
+            String qrData = "https://eventparticipation.com/event?id=" + safeEventId;
+            Bitmap qrBitmap = QRCodeGenerator.generateQRCode(qrData, 250);
+
+            if (qrBitmap != null) {
+                // Draw the Bitmap onto the PDF Canvas
+                int qrX = (pageWidth - 250) / 2; // Center horizontally
+                int qrY = startY + (lineSpacing * 5);
+                canvas.drawBitmap(qrBitmap, qrX, qrY, null);
+
+                paint.setTextAlign(Paint.Align.CENTER);
+                paint.setTextSize(16f);
+                paint.setColor(Color.DKGRAY);
+                canvas.drawText("Scan at the door for entry", pageWidth / 2f, qrY + 280, paint);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // 4. Finish the page
+        pdfDocument.finishPage(page);
+
+        // 5. Save the PDF to the device's Downloads folder
+        String fileName = "Ticket_" + safeEventName.replaceAll("[^a-zA-Z0-9.-]", "_") + ".pdf";
+        savePdfToDownloads(pdfDocument, fileName);
+    }
+
+    /**
+     * Handles saving the file using Scoped Storage (MediaStore) for Android 10+
+     * or standard File I/O for older versions.
+     */
+    private void savePdfToDownloads(PdfDocument pdfDocument, String fileName) {
+        OutputStream fos = null;
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Modern Android (API 29+): Use MediaStore
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.Downloads.DISPLAY_NAME, fileName);
+                values.put(MediaStore.Downloads.MIME_TYPE, "application/pdf");
+                values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+
+                Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                if (uri != null) {
+                    fos = getContentResolver().openOutputStream(uri);
+                }
+            } else {
+                // Older Android: Save directly to external storage Downloads folder
+                File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                if (!downloadsDir.exists()) downloadsDir.mkdirs();
+
+                File file = new File(downloadsDir, fileName);
+                fos = new FileOutputStream(file);
+            }
+
+            if (fos != null) {
+                pdfDocument.writeTo(fos);
+                Toast.makeText(this, "Ticket saved to Downloads folder!", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this, "Failed to create file.", Toast.LENGTH_SHORT).show();
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Error saving ticket: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        } finally {
+            pdfDocument.close();
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 }
