@@ -582,7 +582,12 @@ public class ManageEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Locates a user document by matching their name, email, or phone number and generates a waitlist entity for them.
+     * Locates a user document by matching their name, email, or phone number,
+     * then directly invites them to the event as a private invitee.
+     *
+     * <p>Uses {@link WaitlistController#inviteEntrantDirectly} so the entrant
+     * lands in {@code selected/pending} state and immediately receives a
+     * private-invite notification with Accept / Decline actions.</p>
      *
      * @param searchTerm The target user's identifying information.
      */
@@ -601,18 +606,21 @@ public class ManageEventActivity extends AppCompatActivity {
                     }
 
                     String targetUserId = querySnapshot.getDocuments().get(0).getId();
-                    Map<String, Object> waitlistEntry = new HashMap<>();
-                    waitlistEntry.put("deviceId", targetUserId);
-                    waitlistEntry.put("entrantId", targetUserId);
-                    waitlistEntry.put("joinedAt", new Date());
-                    waitlistEntry.put("selectionStatus", "waiting");
-
-                    db.collection("events").document(eventId).collection("waitlist").document(targetUserId)
-                            .set(waitlistEntry).addOnSuccessListener(aVoid -> {
-                                Toast.makeText(this, "User successfully invited!", Toast.LENGTH_SHORT).show();
+                    new WaitlistController(db)
+                            .inviteEntrantDirectly(eventId, targetUserId)
+                            .addOnSuccessListener(unused -> {
+                                Toast.makeText(this,
+                                        "Private invitation sent!",
+                                        Toast.LENGTH_SHORT).show();
                                 loadWaitlistCounts();
-                            });
-                });
+                            })
+                            .addOnFailureListener(e -> Toast.makeText(this,
+                                    e.getMessage() != null ? e.getMessage() : "Failed to send invite",
+                                    Toast.LENGTH_SHORT).show());
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to search for user", Toast.LENGTH_SHORT).show()
+                );
     }
 
     /**

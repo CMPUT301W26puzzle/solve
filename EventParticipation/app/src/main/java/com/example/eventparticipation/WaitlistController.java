@@ -248,6 +248,101 @@ public class WaitlistController {
     }
 
     /**
+     * Directly invites a specific entrant to a private event, bypassing the
+     * public lottery.
+     *
+     * <p>The method atomically:
+     * <ol>
+     * <li>Checks that a waitlist document does not already exist (or that the
+     *     entrant previously cancelled / declined) so duplicate invites are
+     *     blocked.</li>
+     * <li>Writes a waitlist document with
+     *     {@code selectionStatus = selected}, {@code responseStatus = pending}.</li>
+     * <li>Appends a private-invite notification to the entrant's notification
+     *     sub-collection using a fixed document id so the operation is
+     *     idempotent.</li>
+     * <li>Increments {@code selectedCount} on the event document.</li>
+     * </ol>
+     *
+     * <p>The entrant can then accept or decline through the normal
+     * {@link NotificationRepository#acceptInvitation} /
+     * {@link NotificationRepository#declineInvitation} flow.</p>
+     *
+     * @param eventId   the Firestore ID of the event
+     * @param entrantId the Firestore ID of the entrant to invite
+     * @return a task that completes when the invite is committed; the task
+     *         fails with {@link IllegalStateException} if the entrant is
+     *         already on the waitlist with an active status
+     */
+    public Task<Void> inviteEntrantDirectly(String eventId, String entrantId) {
+        if (eventId == null || eventId.trim().isEmpty()) {
+            return Tasks.forException(new IllegalArgumentException("Missing event id"));
+        }
+        if (entrantId == null || entrantId.trim().isEmpty()) {
+            return Tasks.forException(new IllegalArgumentException("Missing entrant id"));
+        }
+
+        DocumentReference eventRef   = db.collection("events").document(eventId);
+        DocumentReference waitRef    = eventRef.collection("waitlist").document(entrantId);
+
+        // Fetch the event name and any existing waitlist doc in parallel
+        Task<DocumentSnapshot> eventTask = eventRef.get();
+        Task<DocumentSnapshot> waitTask  = waitRef.get();
+
+        return Tasks.whenAllSuccess(eventTask, waitTask).continueWithTask(done -> {
+            if (!done.isSuccessful()) {
+                Exception e = done.getException();
+                if (e != null) throw e;
+                throw new IllegalStateException("Failed to load invite data");
+            }
+
+            DocumentSnapshot eventSnap = eventTask.getResult();
+            DocumentSnapshot waitSnap  = waitTask.getResult();
+            String eventName = eventSnap != null ? safe(eventSnap.getString("name")) : "";
+
+            // Block if the entrant is already active on the waitlist
+            if (waitSnap != null && waitSnap.exists()) {
+                String selectionStatus = safe(waitSnap.getString("selectionStatus"));
+                String finalStatus     = safe(waitSnap.getString("finalStatus"));
+                boolean alreadyActive  = "waiting".equals(selectionStatus)
+                        || "selected".equals(selectionStatus)
+                        || "enrolled".equals(finalStatus);
+                if (alreadyActive) {
+                    throw new IllegalStateException(
+                            "Entrant is already on the waitlist for this event");
+                }
+            }
+
+            // Build the waitlist entry
+            java.util.Map<String, Object> waitlistEntry = new java.util.HashMap<>();
+            waitlistEntry.put("entrantId",       entrantId);
+            waitlistEntry.put("deviceId",        entrantId);
+            waitlistEntry.put("selectionStatus", "selected");
+            waitlistEntry.put("responseStatus",  "pending");
+            waitlistEntry.put("finalStatus",     null);
+            waitlistEntry.put("privateInvite",   true);
+            waitlistEntry.put("invitedAt",       com.google.firebase.firestore.FieldValue.serverTimestamp());
+
+            WriteBatch batch = db.batch();
+            batch.set(waitRef, waitlistEntry);
+            batch.update(eventRef, "selectedCount",
+                    com.google.firebase.firestore.FieldValue.increment(1));
+
+            // Opt-out check
+            Boolean optOut  = waitSnap != null ? waitSnap.getBoolean("optOutNotifications") : null;
+            boolean optedOut = optOut != null && optOut;
+            if (!optedOut) {
+                NotificationRepository.addPrivateInviteNotificationToBatch(
+                        batch, db, entrantId, eventId, eventName);
+            }
+
+            return batch.commit();
+        });
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
      * Recomputes the derived counts for an event from the authoritative waitlist subcollection.
      *
      * <p>This method scans all documents under {@code events/{eventId}/waitlist} and writes

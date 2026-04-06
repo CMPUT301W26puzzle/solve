@@ -31,6 +31,7 @@ import java.util.List;
  * <p>Supported actionable invitation types:
  * <ul>
  *     <li>{@link NotificationItem#TYPE_SELECTED}</li>
+ *     <li>{@link NotificationItem#TYPE_PRIVATE_INVITE}</li>
  *     <li>{@link NotificationItem#TYPE_COORGANIZER_INVITATION}</li>
  * </ul>
  *
@@ -251,6 +252,7 @@ public class NotificationAdapter
         }
 
         return NotificationItem.TYPE_SELECTED.equals(item.getType())
+                || NotificationItem.TYPE_PRIVATE_INVITE.equals(item.getType())
                 || NotificationItem.TYPE_COORGANIZER_INVITATION.equals(item.getType());
     }
 
