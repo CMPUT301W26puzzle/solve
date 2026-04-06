@@ -759,6 +759,137 @@ public class NotificationRepository {
         batch.set(ref, buildCoOrganizerInvitationNotificationData(entrantId, eventId, eventName));
     }
 
+    // -------------------------------------------------------------------------
+    // Private event invitations
+    // -------------------------------------------------------------------------
+
+    /**
+     * Builds the fixed notification document id used for one private invite
+     * per entrant per event, preventing duplicate pending notifications.
+     *
+     * @param eventId event id
+     * @return fixed notification document id
+     */
+    public static String buildPrivateInviteNotificationId(String eventId) {
+        return "private_invite_" + safe(eventId);
+    }
+
+    /**
+     * Returns the fixed notification document reference for a private invite.
+     *
+     * @param entrantId entrant id
+     * @param eventId   event id
+     * @return fixed document reference
+     */
+    public DocumentReference getPrivateInviteNotificationRef(String entrantId, String eventId) {
+        return getNotificationCollection(entrantId)
+                .document(buildPrivateInviteNotificationId(eventId));
+    }
+
+    /**
+     * Builds the Firestore map for a private event invitation notification.
+     * The notification requires an action (accept / decline) by the entrant.
+     *
+     * @param entrantId entrant id
+     * @param eventId   event id
+     * @param eventName event display name
+     * @return notification data map
+     */
+    public static Map<String, Object> buildPrivateInviteNotificationData(String entrantId,
+                                                                         String eventId,
+                                                                         String eventName) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("entrantId", entrantId);
+        data.put("eventId", eventId);
+        data.put("eventName", eventName != null ? eventName : "");
+        data.put("type", NotificationItem.TYPE_PRIVATE_INVITE);
+        data.put("message", "You have been personally invited to \""
+                + (eventName != null ? eventName : "an event")
+                + "\". Please accept or decline.");
+        data.put("unread", true);
+        data.put("actionRequired", true);
+        data.put("actionStatus", NotificationItem.ACTION_PENDING);
+        data.put("createdAt", FieldValue.serverTimestamp());
+        return data;
+    }
+
+    /**
+     * Sends a private event invitation notification if no pending invitation
+     * already exists for this entrant and event.
+     *
+     * <p>Behaviour mirrors {@link #sendCoOrganizerInvitation}: if a pending
+     * invite already exists it is left untouched; if an old accepted / declined
+     * invite exists it is overwritten with a fresh pending one.</p>
+     *
+     * @param entrantId entrant receiving the invite
+     * @param eventId   target event id
+     * @param eventName target event name
+     * @return task containing the send result
+     */
+    public Task<CoOrganizerInvitationResult> sendPrivateInvitation(String entrantId,
+                                                                   String eventId,
+                                                                   String eventName) {
+        if (entrantId == null || entrantId.trim().isEmpty()
+                || eventId == null || eventId.trim().isEmpty()) {
+            return Tasks.forException(new IllegalArgumentException("Missing invitation data"));
+        }
+
+        DocumentReference notificationRef = getPrivateInviteNotificationRef(entrantId, eventId);
+
+        return db.runTransaction((Transaction.Function<CoOrganizerInvitationResult>) transaction -> {
+            DocumentSnapshot existing = transaction.get(notificationRef);
+
+            if (existing.exists()) {
+                String existingType   = safe(existing.getString("type"));
+                String existingStatus = safe(existing.getString("actionStatus"));
+
+                if (NotificationItem.TYPE_PRIVATE_INVITE.equals(existingType)
+                        && NotificationItem.ACTION_PENDING.equals(existingStatus)) {
+                    return new CoOrganizerInvitationResult(
+                            CoOrganizerInvitationResult.STATUS_ALREADY_PENDING);
+                }
+            }
+
+            transaction.set(notificationRef,
+                    buildPrivateInviteNotificationData(entrantId, eventId, eventName));
+
+            return new CoOrganizerInvitationResult(CoOrganizerInvitationResult.STATUS_SENT);
+        });
+    }
+
+    /**
+     * Adds a private invite notification to an existing write batch using a
+     * fixed document id (idempotent within the batch).
+     *
+     * <p>For full duplicate-safe sending prefer
+     * {@link #sendPrivateInvitation(String, String, String)}.</p>
+     *
+     * @param batch     write batch to add the operation to
+     * @param db        firestore instance
+     * @param entrantId entrant receiving the invite
+     * @param eventId   target event id
+     * @param eventName target event name
+     */
+    public static void addPrivateInviteNotificationToBatch(WriteBatch batch,
+                                                           FirebaseFirestore db,
+                                                           String entrantId,
+                                                           String eventId,
+                                                           String eventName) {
+        if (entrantId == null || entrantId.trim().isEmpty()
+                || eventId == null || eventId.trim().isEmpty()) {
+            return;
+        }
+
+        DocumentReference ref = db.collection("entrants")
+                .document(entrantId)
+                .collection("notifications")
+                .document(buildPrivateInviteNotificationId(eventId));
+
+        batch.set(ref, buildPrivateInviteNotificationData(entrantId, eventId, eventName));
+    }
+
+    // -------------------------------------------------------------------------
+
     /**
      * Returns a non-null string for null-safe comparisons.
      *

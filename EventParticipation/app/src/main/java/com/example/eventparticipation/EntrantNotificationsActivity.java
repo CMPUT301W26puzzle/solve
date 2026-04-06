@@ -174,7 +174,8 @@ public class EntrantNotificationsActivity extends BaseEntrantActivity implements
 
         String type = item.getType() == null ? "" : item.getType().trim();
 
-        if (NotificationItem.TYPE_SELECTED.equals(type)) {
+        if (NotificationItem.TYPE_SELECTED.equals(type)
+                || NotificationItem.TYPE_PRIVATE_INVITE.equals(type)) {
             notificationRepository.acceptInvitation(entrantId, item)
                     .addOnSuccessListener(unused -> Toast.makeText(this,
                             "Invitation accepted",
@@ -210,7 +211,8 @@ public class EntrantNotificationsActivity extends BaseEntrantActivity implements
 
         String type = item.getType() == null ? "" : item.getType().trim();
 
-        if (NotificationItem.TYPE_SELECTED.equals(type)) {
+        if (NotificationItem.TYPE_SELECTED.equals(type)
+                || NotificationItem.TYPE_PRIVATE_INVITE.equals(type)) {
             notificationRepository.declineInvitation(entrantId, item)
                     .addOnSuccessListener(unused -> Toast.makeText(this,
                             "Invitation declined",
