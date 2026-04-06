@@ -22,17 +22,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Dedicated activity for Organizers and Administrators to view, post, and moderate event comments.
+ * Unified discussion board for entrants, organizers, and administrators.
  *
- * <p><b>Purpose & Role:</b> Acts as the primary moderation hub for an event's discussion board.
- * Organizers use it to post official replies and delete spam. Admins use it strictly for
- * platform moderation (post-creation is disabled for Admins).</p>
+ * <p><b>Purpose & Role:</b> Acts as the central discussion hub. The UI
+ * dynamically adjusts permissions based on roles:</p>
+ * <ul>
+ * <li><b>Entrants:</b> Can view and post. Can only delete their own comments.</li>
+ * <li><b>Organizers:</b> Can view, post with a tag, and delete any comment for their event.</li>
+ * <li><b>Admins:</b> Can view and delete any comment, but the input field is hidden.</li>
+ * </ul>
  *
  * <p>Implemented user stories:</p>
  * <ul>
- * <li>US 02.08.01 As an organizer, I want to view and delete entrant comments on my event.</li>
+ * <li>US 01.08.01 As an entrant, I want to post a comment on an event.</li>
  * <li>US 02.08.02 As an organizer, I want to comment on my events.</li>
- * <li>US 03.10.01 As an administrator, I want to remove event comments that violate app policy.</li>
+ * <li>US 03.10.01 As an administrator, I want to remove event comments.</li>
  * </ul>
  */
 public class EventCommentsActivity extends AppCompatActivity {
@@ -56,6 +60,7 @@ public class EventCommentsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event_comments);
 
+        // Permissions logic
         eventId = getIntent().getStringExtra("EVENT_ID");
         isOrganizer = getIntent().getBooleanExtra("IS_ORGANIZER", false);
         isAdmin = getIntent().getBooleanExtra("IS_ADMIN", false);
@@ -73,12 +78,13 @@ public class EventCommentsActivity extends AppCompatActivity {
         btnSendComment = findViewById(R.id.btnSendComment);
         recyclerView = findViewById(R.id.recyclerViewComments);
 
-        // Admins are there to moderate, hide the input box
+        // Admin-specific UI rule: moderation only
         if (isAdmin && layoutCommentInput != null) {
             layoutCommentInput.setVisibility(View.GONE);
         }
 
         commentList = new ArrayList<>();
+        // CommentAdapter handles role-based delete button visibility
         adapter = new CommentAdapter(commentList, currentUserId, isOrganizer, isAdmin, this::confirmDeleteComment);
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
@@ -92,8 +98,7 @@ public class EventCommentsActivity extends AppCompatActivity {
     }
 
     /**
-     * Attaches a real-time Firestore listener to the event's comments sub-collection.
-     * Updates the RecyclerView automatically when comments are added or removed.
+     * Listens for real-time Firestore updates in the comments sub-collection.
      */
     private void loadComments() {
         if (eventId == null) return;
@@ -118,8 +123,8 @@ public class EventCommentsActivity extends AppCompatActivity {
     }
 
     /**
-     * Fetches the current user's profile to resolve their name, appends an "(Organizer)"
-     * tag if applicable, and pushes the new comment to Firestore.
+     * Validates input and pushes a new Comment object to Firestore.
+     * Appends an "(Organizer)" suffix if the user has organizer status.
      */
     private void postComment() {
         String text = etCommentInput.getText().toString().trim();
@@ -140,14 +145,13 @@ public class EventCommentsActivity extends AppCompatActivity {
     }
 
     /**
-     * Displays an alert dialog confirming the user's intent to delete a comment.
-     *
-     * @param comment The comment scheduled for deletion.
+     * Helper: Displays a confirmation dialog before deleting a comment.
+     * @param comment The comment instance to delete.
      */
     private void confirmDeleteComment(Comment comment) {
         new MaterialAlertDialogBuilder(this)
                 .setTitle("Delete Comment")
-                .setMessage("Are you sure you want to delete this comment? This action cannot be undone.")
+                .setMessage("Are you sure? This cannot be undone.")
                 .setPositiveButton("Delete", (dialog, which) -> {
                     db.collection("events").document(eventId).collection("comments").document(comment.getId())
                             .delete()

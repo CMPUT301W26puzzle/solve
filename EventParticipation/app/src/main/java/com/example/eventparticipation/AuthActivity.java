@@ -160,8 +160,7 @@ public class AuthActivity extends AppCompatActivity {
         if ("organizer".equals(role)) {
             intent = new Intent(this, OrganizerDashboardActivity.class);
         } else if ("admin".equals(role)) {
-            // Replace with your Admin Dashboard class
-            intent = new Intent(this, OrganizerDashboardActivity.class);
+            intent = new Intent(this, AdminDashboardActivity.class);
         } else {
             intent = new Intent(this, EntrantDashboardActivity.class);
         }
