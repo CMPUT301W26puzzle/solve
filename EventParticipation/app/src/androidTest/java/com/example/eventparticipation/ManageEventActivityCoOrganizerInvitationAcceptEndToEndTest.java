@@ -55,12 +55,12 @@ import java.util.concurrent.TimeUnit;
 @RunWith(AndroidJUnit4.class)
 public class ManageEventActivityCoOrganizerInvitationAcceptEndToEndTest {
 
-    private static final String TEST_EVENT_ID = "event_001";
+    private static final String TEST_EVENT_ID = "test_event_coorg_001";
     private static final String TEST_ORGANIZER_ID = "organizer_demo_001";
     private static final String TEST_ENTRANT_NAME = "Entrant Accept Test";
     private static final String TEST_ENTRANT_EMAIL = "entrant_accept_test@test.com";
 
-    private static final String EXPECTED_EVENT_NAME = "Tech Conference 2026";
+    private static final String EXPECTED_EVENT_NAME = "Test event co-organizer";
     private static final String EXPECTED_NOTIFICATION_TYPE =
             NotificationItem.TYPE_COORGANIZER_INVITATION;
     private static final String EXPECTED_NOTIFICATION_MESSAGE =
