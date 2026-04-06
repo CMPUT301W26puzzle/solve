@@ -31,26 +31,34 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         void onDeleteProfile(AdminProfileItem item, int position);
     }
 
+    public interface CommentActionListener {
+        void onDeleteComment(AdminCommentItem item, int position);
+    }
+
     private static final int TYPE_EVENT = 1;
     private static final int TYPE_PROFILE = 2;
     private static final int TYPE_IMAGE = 3;
     private static final int TYPE_LOG = 4;
+    private static final int TYPE_COMMENT = 5;
 
     private final List<Object> items;
     private final ImageClickListener imageClickListener;
     private final EventActionListener eventActionListener;
     private final ProfileActionListener profileActionListener;
+    private final CommentActionListener commentActionListener;
     private final SimpleDateFormat dateFormat =
             new SimpleDateFormat("M/d/yyyy, h:mm:ss a", Locale.getDefault());
 
     public AdminBrowseAdapter(List<Object> items,
                               ImageClickListener imageClickListener,
                               EventActionListener eventActionListener,
-                              ProfileActionListener profileActionListener) {
+                              ProfileActionListener profileActionListener,
+                              CommentActionListener commentActionListener) {
         this.items = items;
         this.imageClickListener = imageClickListener;
         this.eventActionListener = eventActionListener;
         this.profileActionListener = profileActionListener;
+        this.commentActionListener = commentActionListener;
     }
 
     @Override
@@ -59,6 +67,7 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         if (item instanceof AdminEventItem) return TYPE_EVENT;
         if (item instanceof AdminProfileItem) return TYPE_PROFILE;
         if (item instanceof AdminImageItem) return TYPE_IMAGE;
+        if (item instanceof AdminCommentItem) return TYPE_COMMENT;
         return TYPE_LOG;
     }
 
@@ -75,6 +84,9 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         if (viewType == TYPE_IMAGE) {
             return new ImageViewHolder(inflater.inflate(R.layout.item_admin_image, parent, false));
         }
+        if (viewType == TYPE_COMMENT) {
+            return new CommentViewHolder(inflater.inflate(R.layout.item_admin_profile, parent, false));
+        }
         return new LogViewHolder(inflater.inflate(R.layout.item_admin_log, parent, false));
     }
 
@@ -90,6 +102,8 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
             bindImage((ImageViewHolder) holder, (AdminImageItem) item);
         } else if (holder instanceof LogViewHolder) {
             bindLog((LogViewHolder) holder, (AdminNotificationLogItem) item);
+        } else if (holder instanceof CommentViewHolder) {
+            bindComment((CommentViewHolder) holder, (AdminCommentItem) item, position);
         }
     }
 
@@ -163,6 +177,21 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         holder.tvMessage.setText(valueOrFallback(item.getMessage(), "No message"));
     }
 
+    private void bindComment(CommentViewHolder holder, AdminCommentItem item, int position) {
+        holder.tvTitle.setText(valueOrFallback(item.getUserName(), "Anonymous"));
+        holder.tvMetaTwo.setText(valueOrFallback(item.getText(), ""));
+        holder.tvMetaThree.setText("Event ID: " + valueOrFallback(item.getEventId(), "N/A"));
+        holder.btnRemove.setVisibility(View.VISIBLE);
+
+        holder.btnRemove.setOnClickListener(v -> {
+            if (commentActionListener != null) {
+                commentActionListener.onDeleteComment(item, holder.getBindingAdapterPosition());
+            }
+        });
+
+        holder.divider.setVisibility(position == getItemCount() - 1 ? View.GONE : View.VISIBLE);
+    }
+
     private String valueOrFallback(String value, String fallback) {
         return value == null || value.trim().isEmpty() ? fallback : value;
     }
@@ -196,6 +225,23 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         View divider;
 
         ProfileViewHolder(@NonNull View itemView) {
+            super(itemView);
+            tvTitle = itemView.findViewById(R.id.tvTitle);
+            tvMetaTwo = itemView.findViewById(R.id.tvMetaTwo);
+            tvMetaThree = itemView.findViewById(R.id.tvMetaThree);
+            btnRemove = itemView.findViewById(R.id.btnRemove);
+            divider = itemView.findViewById(R.id.divider);
+        }
+    }
+
+    static class CommentViewHolder extends RecyclerView.ViewHolder {
+        TextView tvTitle;
+        TextView tvMetaTwo;
+        TextView tvMetaThree;
+        MaterialButton btnRemove;
+        View divider;
+
+        CommentViewHolder(@NonNull View itemView) {
             super(itemView);
             tvTitle = itemView.findViewById(R.id.tvTitle);
             tvMetaTwo = itemView.findViewById(R.id.tvMetaTwo);
