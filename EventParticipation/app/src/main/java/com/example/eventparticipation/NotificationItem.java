@@ -4,7 +4,10 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * Model representing a single entrant notification stored in Firestore.
+ * Model representing a single notification dispatched to a user, stored in Firestore.
+ *
+ * <p><b>Purpose & Role:</b> Acts as a DTO for the notification feed. It standardizes communication
+ * between the system/organizers and the entrants (e.g., lottery results, invitations, general alerts).</p>
  */
 public class NotificationItem implements Serializable {
 

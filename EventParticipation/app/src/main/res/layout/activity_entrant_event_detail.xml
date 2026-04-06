@@ -11,18 +11,15 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Header Image + Back Arrow -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <!-- White bar behind back arrow -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:background="#FFFFFF" />
 
-            <!-- Event Poster -->
             <ImageView
                 android:id="@+id/ivEventPoster"
                 android:layout_width="match_parent"
@@ -32,7 +29,6 @@
                 android:background="#CCCCCC"
                 android:contentDescription="Event poster" />
 
-            <!-- Back Button -->
             <ImageButton
                 android:id="@+id/btnBack"
                 android:layout_width="40dp"
@@ -44,14 +40,12 @@
 
         </FrameLayout>
 
-        <!-- Content below image -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Title + Price Badge -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -80,65 +74,25 @@
                     android:textStyle="bold"
                     android:textColor="#FFFFFF"
                     android:text="Free" />
-
             </LinearLayout>
 
-            <!-- Category Chips -->
             <LinearLayout
                 android:id="@+id/layoutTags"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:layout_marginBottom="20dp">
-
-                <TextView
-                    android:id="@+id/tvTag1"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="6dp"
-                    android:background="@drawable/tag_outline_bg"
-                    android:textSize="13sp"
-                    android:textColor="#333333"
-                    android:layout_marginEnd="8dp"
-                    android:visibility="gone"
-                    android:text="Tag" />
-
-                <TextView
-                    android:id="@+id/tvTag2"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="6dp"
-                    android:background="@drawable/tag_outline_bg"
-                    android:textSize="13sp"
-                    android:textColor="#333333"
-                    android:layout_marginEnd="8dp"
-                    android:visibility="gone"
-                    android:text="Tag" />
-
-                <TextView
-                    android:id="@+id/tvTag3"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="6dp"
-                    android:background="@drawable/tag_outline_bg"
-                    android:textSize="13sp"
-                    android:textColor="#333333"
-                    android:visibility="gone"
-                    android:text="Tag" />
-
+                <TextView android:id="@+id/tvTag1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone" android:text="Tag" android:background="@drawable/tag_outline_bg" android:paddingHorizontal="12dp" android:paddingVertical="6dp" android:layout_marginEnd="8dp"/>
+                <TextView android:id="@+id/tvTag2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone" android:text="Tag" android:background="@drawable/tag_outline_bg" android:paddingHorizontal="12dp" android:paddingVertical="6dp" android:layout_marginEnd="8dp"/>
+                <TextView android:id="@+id/tvTag3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone" android:text="Tag" android:background="@drawable/tag_outline_bg" android:paddingHorizontal="12dp" android:paddingVertical="6dp"/>
             </LinearLayout>
 
-            <!-- Info Card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:cardBackgroundColor="#FFFFFF">
+                app:cardElevation="2dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -146,315 +100,78 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <!-- Date Row -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="16dp">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/clocklogo"
-                            app:tint="#555555"
-                            android:layout_marginEnd="12dp" />
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:id="@+id/tvEventDate"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textSize="15sp"
-                                android:textStyle="bold"
-                                android:textColor="#000000"
-                                android:text="Date" />
-
-                            <TextView
-                                android:id="@+id/tvEventTime"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textSize="13sp"
-                                android:textColor="#666666"
-                                android:text="Time" />
-
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="16dp">
+                        <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/clocklogo" app:tint="#555555" android:layout_marginEnd="12dp" />
+                        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical">
+                            <TextView android:id="@+id/tvEventDate" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textStyle="bold" android:textColor="#000000" android:text="Date" />
+                            <TextView android:id="@+id/tvEventTime" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#666666" android:text="Time" />
                         </LinearLayout>
                     </LinearLayout>
 
-                    <!-- Divider -->
-                    <View android:layout_width="match_parent" android:layout_height="1dp"
-                        android:background="#EEEEEE" android:layout_marginBottom="16dp"/>
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEEEEE" android:layout_marginBottom="16dp"/>
 
-                    <!-- Location Row -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="16dp">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/pinlogo"
-                            app:tint="#555555"
-                            android:layout_marginEnd="12dp" />
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:id="@+id/tvVenueName"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textSize="15sp"
-                                android:textStyle="bold"
-                                android:textColor="#000000"
-                                android:text="Venue" />
-
-                            <TextView
-                                android:id="@+id/tvVenueAddress"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textSize="13sp"
-                                android:textColor="#666666"
-                                android:text="Address" />
-
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="16dp">
+                        <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/pinlogo" app:tint="#555555" android:layout_marginEnd="12dp" />
+                        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical">
+                            <TextView android:id="@+id/tvVenueName" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textStyle="bold" android:textColor="#000000" android:text="Venue" />
+                            <TextView android:id="@+id/tvVenueAddress" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#666666" android:text="Address" />
                         </LinearLayout>
                     </LinearLayout>
 
-                    <!-- Divider -->
-                    <View android:layout_width="match_parent" android:layout_height="1dp"
-                        android:background="#EEEEEE" android:layout_marginBottom="16dp"/>
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEEEEE" android:layout_marginBottom="16dp"/>
 
-                    <!-- Capacity Row -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="16dp">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/entrantlogo"
-                            app:tint="#555555"
-                            android:layout_marginEnd="12dp" />
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:id="@+id/tvCapacity"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textSize="15sp"
-                                android:textStyle="bold"
-                                android:textColor="#000000"
-                                android:text="Capacity: 0" />
-
-                            <!-- Enrolled + Waiting (US 01.05.04) -->
-                            <TextView
-                                android:id="@+id/tvEnrolledWaiting"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textSize="13sp"
-                                android:textColor="#666666"
-                                android:text="0 enrolled • 0 waiting" />
-
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginBottom="16dp">
+                        <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/entrantlogo" app:tint="#555555" android:layout_marginEnd="12dp" />
+                        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical">
+                            <TextView android:id="@+id/tvCapacity" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textStyle="bold" android:textColor="#000000" android:text="Capacity" />
+                            <TextView android:id="@+id/tvEnrolledWaiting" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#666666" android:text="Counts" />
                         </LinearLayout>
                     </LinearLayout>
 
-                    <!-- Divider -->
-                    <View android:layout_width="match_parent" android:layout_height="1dp"
-                        android:background="#EEEEEE" android:layout_marginBottom="16dp"/>
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEEEEE" android:layout_marginBottom="16dp"/>
 
-                    <!-- Registration Deadline Row -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/organizerlogo"
-                            app:tint="#555555"
-                            android:layout_marginEnd="12dp" />
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textSize="15sp"
-                                android:textStyle="bold"
-                                android:textColor="#000000"
-                                android:text="Registration Deadline" />
-
-                            <TextView
-                                android:id="@+id/tvRegistrationDeadline"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textSize="13sp"
-                                android:textColor="#666666"
-                                android:text="N/A" />
-
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
+                        <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/organizerlogo" app:tint="#555555" android:layout_marginEnd="12dp" />
+                        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical">
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:textStyle="bold" android:textColor="#000000" android:text="Registration Deadline" />
+                            <TextView android:id="@+id/tvRegistrationDeadline" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#666666" android:text="N/A" />
                         </LinearLayout>
                     </LinearLayout>
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- About Section -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="About this event"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="#000000"
-                android:layout_marginBottom="8dp" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="About this event" android:textSize="20sp" android:textStyle="bold" android:textColor="#000000" android:layout_marginBottom="8dp" />
+            <TextView android:id="@+id/tvAbout" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#666666" android:layout_marginBottom="24dp" android:text="N/A" />
+            <TextView android:id="@+id/tvLotteryGuidelines" android:layout_width="match_parent" android:layout_height="wrap_content" android:visibility="gone" />
 
-            <TextView
-                android:id="@+id/tvAbout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="14sp"
-                android:textColor="#666666"
-                android:layout_marginBottom="24dp"
-                android:text="N/A" />
-
-            <TextView
-                android:id="@+id/tvLotteryGuidelines"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Lottery Guidelines will appear here."
-                android:visibility="gone" />
-
-            <!-- Join / Leave Waiting List Button (US 01.01.01 / 01.01.02) -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnJoinLeave"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:text="Join Waiting List"
-                android:textSize="16sp"
-                android:textColor="#FFFFFF"
                 android:backgroundTint="#000000"
-                app:cornerRadius="12dp"
-                android:layout_marginBottom="24dp" />
+                app:cornerRadius="12dp" />
 
-            <!-- pdf download -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnViewComments"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="12dp"
+                android:text="View Event Discussion"
+                app:cornerRadius="12dp" />
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDownloadTicket"
-                style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="12dp"
                 android:text="Download PDF Ticket"
                 android:visibility="gone"
                 app:icon="@drawable/ic_download"
-                app:cornerRadius="8dp" />
-
-            <!-- Comments Section -->
-            <TextView
-                android:id="@+id/tvCommentsTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Comments"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="#000000"
-                android:layout_marginBottom="16dp" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="14dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="1dp"
-                app:cardBackgroundColor="#FFFFFF">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="bottom|center_vertical"
-                    android:padding="14dp">
-
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/layoutCommentInput"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:hint="Write a comment"
-                        app:boxBackgroundMode="outline"
-                        app:boxCornerRadiusBottomEnd="12dp"
-                        app:boxCornerRadiusBottomStart="12dp"
-                        app:boxCornerRadiusTopEnd="12dp"
-                        app:boxCornerRadiusTopStart="12dp">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etComment"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:minLines="2"
-                            android:maxLines="3"
-                            android:gravity="top|start"
-                            android:inputType="textCapSentences|textMultiLine"
-                            android:textColor="#111111"
-                            android:textColorHint="#888888" />
-
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <ImageButton
-                        android:id="@+id/btnPostComment"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:layout_marginStart="10dp"
-                        android:background="@drawable/badge_price_dark_bg"
-                        android:contentDescription="Post comment"
-                        android:padding="10dp"
-                        android:src="@android:drawable/ic_menu_send"
-                        android:tint="#FFFFFF" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <TextView
-                android:id="@+id/tvCommentsEmpty"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="No comments yet. Be the first to post."
-                android:textSize="14sp"
-                android:textColor="#888888"
-                android:gravity="center"
-                android:paddingVertical="20dp"
-                android:visibility="gone" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvComments"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"
-                android:clipToPadding="false"
-                android:paddingBottom="8dp" />
+                app:cornerRadius="12dp" />
 
         </LinearLayout>
     </LinearLayout>
-
 </androidx.core.widget.NestedScrollView>

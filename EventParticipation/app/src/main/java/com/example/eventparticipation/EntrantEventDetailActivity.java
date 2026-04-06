@@ -40,52 +40,39 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Event detail screen for entrants.
+ * Detailed view of an event for entrants.
  *
- * Displays full event information and allows the entrant to join or leave
- * the waiting list. Also supports declining a pending invitation.
+ * <p><b>Purpose & Role:</b> Serves as the primary information hub for an entrant.
+ * It allows users to view event specifics (venue, deadline, capacity), join the
+ * waiting list, and access the unified discussion board for comments.</p>
  *
- * Status model:
- * - selectionStatus: waiting / selected / cancelled
- * - responseStatus: pending / accepted / declined
- * - finalStatus: enrolled
+ * <p>Implemented user stories:</p>
+ * <ul>
+ * <li>US 01.01.01 As an entrant I want to join the waiting list for a specific event.</li>
+ * <li>US 01.08.02 As an entrant, I want to view comments on an event (via navigation).</li>
+ * </ul>
  */
 public class EntrantEventDetailActivity extends AppCompatActivity {
 
     private String eventId;
     private String entrantId;
 
-    // Stored for PDF Ticket generation
+    // Local cache for PDF Ticket and metadata
     private Event currentEvent;
     private String currentEntrantName = "Attendee";
 
     private ImageView ivEventPoster;
-    private TextView tvEventName;
-    private TextView tvEventPrice;
-    private TextView tvTag1;
-    private TextView tvTag2;
-    private TextView tvTag3;
-    private TextView tvEventDate;
-    private TextView tvEventTime;
-    private TextView tvVenueName;
-    private TextView tvVenueAddress;
-    private TextView tvCapacity;
-    private TextView tvEnrolledWaiting;
-    private TextView tvRegistrationDeadline;
-    private TextView tvAbout;
-    private TextView tvLotteryGuidelines;
-    private MaterialButton btnJoinLeave;
-    private MaterialButton btnDownloadTicket; // New PDF Button
+    private TextView tvEventName, tvEventPrice, tvTag1, tvTag2, tvTag3;
+    private TextView tvEventDate, tvEventTime, tvVenueName, tvVenueAddress;
+    private TextView tvCapacity, tvEnrolledWaiting, tvRegistrationDeadline, tvAbout, tvLotteryGuidelines;
+    private MaterialButton btnJoinLeave, btnDownloadTicket, btnViewComments;
 
     private FirebaseFirestore db;
     private boolean isOnWaitingList = false;
 
-    private final SimpleDateFormat dateFormat =
-            new SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault());
-    private final SimpleDateFormat timeFormat =
-            new SimpleDateFormat("h:mm a", Locale.getDefault());
-    private final SimpleDateFormat deadlineFormat =
-            new SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault());
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault());
+    private final SimpleDateFormat timeFormat = new SimpleDateFormat("h:mm a", Locale.getDefault());
+    private final SimpleDateFormat deadlineFormat = new SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,13 +91,14 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         eventId = getIntent().getStringExtra("EVENT_ID");
 
         initViews();
-        fetchEntrantName(); // Fetch user's name for the ticket
+        fetchEntrantName();
         loadEventFromIntent();
         checkWaitingListStatus();
     }
 
     /**
-     * Fetches the current user's name from Firestore for the PDF Ticket.
+     * Fetches the entrant's display name from Firestore.
+     * Used for personalizing the PDF ticket.
      */
     private void fetchEntrantName() {
         db.collection("entrants").document(entrantId).get().addOnSuccessListener(doc -> {
@@ -121,7 +109,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * Binds layout views and sets up back button and join/leave button.
+     * Initializes UI components and binds click listeners.
      */
     private void initViews() {
         ivEventPoster = findViewById(R.id.ivEventPoster);
@@ -141,10 +129,12 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         tvLotteryGuidelines = findViewById(R.id.tvLotteryGuidelines);
         btnJoinLeave = findViewById(R.id.btnJoinLeave);
 
-        // Initialize PDF Ticket Button
         btnDownloadTicket = findViewById(R.id.btnDownloadTicket);
-        btnDownloadTicket.setVisibility(View.GONE); // Hidden by default
+        btnDownloadTicket.setVisibility(View.GONE);
         btnDownloadTicket.setOnClickListener(v -> generateAndSavePdfTicket());
+
+        btnViewComments = findViewById(R.id.btnViewComments);
+        btnViewComments.setOnClickListener(v -> navigateToComments());
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
@@ -157,6 +147,17 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                 joinWaitingList();
             }
         });
+    }
+
+    /**
+     * Navigates to the shared discussion board with entrant-level permissions.
+     */
+    private void navigateToComments() {
+        Intent intent = new Intent(this, EventCommentsActivity.class);
+        intent.putExtra("EVENT_ID", eventId);
+        intent.putExtra("IS_ORGANIZER", false);
+        intent.putExtra("IS_ADMIN", false);
+        startActivity(intent);
     }
 
     private void showResponseDialog() {
@@ -200,7 +201,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         tvEventName.setText(getIntent().getStringExtra("EVENT_NAME") != null
                 ? getIntent().getStringExtra("EVENT_NAME")
                 : "Event");
-
         tvEventPrice.setText("Free");
         tvEventDate.setText("See event details");
         tvEventTime.setText("");
@@ -215,7 +215,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
 
         tvCapacity.setText("Capacity: " + capacity);
         tvEnrolledWaiting.setText(enrolled + " enrolled • " + waiting + " waiting");
-
         tvRegistrationDeadline.setText("N/A");
         tvAbout.setText("N/A");
 
@@ -225,138 +224,95 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
     }
 
     private void loadEventFromFirestore(String eventId) {
-        db.collection("events")
-                .document(eventId)
-                .get()
-                .addOnSuccessListener(doc -> {
-                    if (!doc.exists()) return;
+        db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
+            if (!doc.exists()) return;
+            Event event = doc.toObject(Event.class);
+            if (event == null) return;
 
-                    Event event = doc.toObject(Event.class);
-                    if (event == null) return;
+            event.setId(doc.getId());
+            currentEvent = event;
 
-                    event.setId(doc.getId()); // Ensure ID is set
-                    currentEvent = event;     // Store locally for PDF generation
+            tvEventName.setText(event.getName());
+            if (event.getRegistrationStart() != null) {
+                tvEventDate.setText(dateFormat.format(event.getRegistrationStart()));
+                tvEventTime.setText(timeFormat.format(event.getRegistrationStart()));
+            }
+            if (event.getVenueAddress() != null) {
+                tvVenueName.setText(event.getVenueAddress());
+            }
 
-                    tvEventName.setText(event.getName());
+            Integer waitlistLimit = event.getWaitlistLimit();
+            tvCapacity.setText("Capacity: " + (waitlistLimit == null ? "Unlimited" : waitlistLimit));
+            tvEnrolledWaiting.setText(event.getEnrolledCount() + " enrolled • " + event.getWaitingCount() + " waiting");
 
-                    if (event.getRegistrationStart() != null) {
-                        tvEventDate.setText(dateFormat.format(event.getRegistrationStart()));
-                        tvEventTime.setText(timeFormat.format(event.getRegistrationStart()));
-                    }
+            if (event.getRegistrationEnd() != null) {
+                tvRegistrationDeadline.setText(deadlineFormat.format(event.getRegistrationEnd()));
+            }
 
-                    if (event.getVenueAddress() != null) {
-                        tvVenueName.setText(event.getVenueAddress());
-                    }
+            String guidelines = doc.getString("lotteryGuidelines");
+            if (guidelines != null && !guidelines.isEmpty()) {
+                tvLotteryGuidelines.setText("Lottery Guidelines:\n" + guidelines);
+                tvLotteryGuidelines.setVisibility(View.VISIBLE);
+            }
 
-                    Integer waitlistLimit = event.getWaitlistLimit();
-                    tvCapacity.setText("Capacity: " +
-                            (waitlistLimit == null ? "Unlimited" : waitlistLimit));
-
-                    tvEnrolledWaiting.setText(event.getEnrolledCount() + " enrolled • "
-                            + event.getWaitingCount() + " waiting");
-
-                    if (event.getRegistrationEnd() != null) {
-                        tvRegistrationDeadline.setText(
-                                deadlineFormat.format(event.getRegistrationEnd())
-                        );
-                    }
-
-                    String guidelines = doc.getString("lotteryGuidelines");
-                    if (guidelines != null && !guidelines.isEmpty()) {
-                        tvLotteryGuidelines.setText("Lottery Guidelines:\n" + guidelines);
-                        tvLotteryGuidelines.setVisibility(View.VISIBLE);
-                    }
-
-                    if (event.getPosterUrl() != null && !event.getPosterUrl().isEmpty()) {
-                        Glide.with(this)
-                                .load(event.getPosterUrl())
-                                .centerCrop()
-                                .into(ivEventPoster);
-                    }
-                });
+            if (event.getPosterUrl() != null && !event.getPosterUrl().isEmpty()) {
+                Glide.with(this).load(event.getPosterUrl()).centerCrop().into(ivEventPoster);
+            }
+        });
     }
 
     private void checkWaitingListStatus() {
         if (eventId == null) return;
-
-        db.collection("events")
-                .document(eventId)
-                .collection("waitlist")
-                .document(entrantId)
-                .get()
+        db.collection("events").document(eventId).collection("waitlist").document(entrantId).get()
                 .addOnSuccessListener(doc -> {
                     String selectionStatus = doc.getString("selectionStatus");
                     String finalStatus = doc.getString("finalStatus");
-
-                    isOnWaitingList = doc.exists()
-                            && !"cancelled".equals(selectionStatus)
-                            && !"enrolled".equals(finalStatus);
-
+                    isOnWaitingList = doc.exists() && !"cancelled".equals(selectionStatus) && !"enrolled".equals(finalStatus);
                     updateButton();
-                })
-                .addOnFailureListener(e -> updateButton());
+                }).addOnFailureListener(e -> updateButton());
     }
 
     private void joinWaitingList() {
-        if (eventId == null) {
-            Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
+        if (eventId == null) return;
         DocumentReference eventRef = db.collection("events").document(eventId);
 
         eventRef.get().addOnSuccessListener(eventDoc -> {
             List<String> coOrganizerIds = (List<String>) eventDoc.get("coOrganizerIds");
-
             if (coOrganizerIds != null && coOrganizerIds.contains(entrantId)) {
-                Toast.makeText(this, "Co-organizers cannot join the entrant pool.", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Co-organizers cannot join the pool.", Toast.LENGTH_LONG).show();
                 return;
             }
 
             Long limit = eventDoc.getLong("waitlistLimit");
             Long currentWaiting = eventDoc.getLong("waitingCount");
-
             if (limit != null && currentWaiting != null && currentWaiting >= limit) {
-                Toast.makeText(this, "The waiting list is currently full.", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "The waiting list is full.", Toast.LENGTH_LONG).show();
                 return;
             }
 
-            Map<String, Object> waitlistEntry = new HashMap<>();
-            waitlistEntry.put("deviceId", entrantId);
-            waitlistEntry.put("entrantId", entrantId);
-            waitlistEntry.put("joinedAt", new Date());
+            Map<String, Object> entry = new HashMap<>();
+            entry.put("deviceId", entrantId);
+            entry.put("entrantId", entrantId);
+            entry.put("joinedAt", new Date());
+            entry.put("selectionStatus", "waiting");
 
-            waitlistEntry.put("selectionStatus", "waiting");
-            waitlistEntry.put("responseStatus", null);
-            waitlistEntry.put("finalStatus", null);
-
-            eventRef.collection("waitlist")
-                    .document(entrantId)
-                    .set(waitlistEntry)
-                    .addOnSuccessListener(unused -> {
-                        eventRef.update("waitingCount", FieldValue.increment(1));
-                        isOnWaitingList = true;
-                        updateButton();
-                        Toast.makeText(this, "Joined waiting list!", Toast.LENGTH_SHORT).show();
-                    })
-                    .addOnFailureListener(e ->
-                            Toast.makeText(this, "Failed to join waiting list", Toast.LENGTH_SHORT).show()
-                    );
-        }).addOnFailureListener(e ->
-                Toast.makeText(this, "Failed to check event role", Toast.LENGTH_SHORT).show()
-        );
+            eventRef.collection("waitlist").document(entrantId).set(entry).addOnSuccessListener(unused -> {
+                eventRef.update("waitingCount", FieldValue.increment(1));
+                isOnWaitingList = true;
+                updateButton();
+                Toast.makeText(this, "Joined!", Toast.LENGTH_SHORT).show();
+            });
+        });
     }
 
     private void leaveWaitingList() {
         if (eventId == null) return;
-
         DocumentReference eventRef = db.collection("events").document(eventId);
         DocumentReference waitRef = eventRef.collection("waitlist").document(entrantId);
 
         waitRef.get().addOnSuccessListener(doc -> {
-            String selectionStatus = doc.getString("selectionStatus");
-
-            if ("selected".equals(selectionStatus)) {
+            String status = doc.getString("selectionStatus");
+            if ("selected".equals(status)) {
                 declineSelectedInvitation(eventRef, waitRef);
             } else {
                 waitRef.delete().addOnSuccessListener(unused -> {
@@ -364,239 +320,95 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                     isOnWaitingList = false;
                     updateButton();
                     Toast.makeText(this, "Left waiting list", Toast.LENGTH_SHORT).show();
-                }).addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to leave waiting list", Toast.LENGTH_SHORT).show()
-                );
+                });
             }
         });
     }
 
     private void declineSelectedInvitation(DocumentReference eventRef, DocumentReference waitRef) {
-        waitRef.update(
-                        "selectionStatus", "selected",
-                        "responseStatus", "declined",
-                        "finalStatus", null,
-                        "respondedAt", FieldValue.serverTimestamp()
-                )
+        waitRef.update("selectionStatus", "selected", "responseStatus", "declined", "respondedAt", FieldValue.serverTimestamp())
                 .addOnSuccessListener(unused -> {
                     eventRef.update("selectedCount", FieldValue.increment(-1));
-                    markInvitationNotificationsDeclined();
                     isOnWaitingList = false;
                     updateButton();
                     Toast.makeText(this, "Invitation declined", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to decline invitation", Toast.LENGTH_SHORT).show()
-                );
-    }
-
-    private void markInvitationNotificationsDeclined() {
-        db.collection("entrants")
-                .document(entrantId)
-                .collection("notifications")
-                .whereEqualTo("eventId", eventId)
-                .whereEqualTo("type", NotificationItem.TYPE_SELECTED)
-                .whereEqualTo("actionStatus", NotificationItem.ACTION_PENDING)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    if (querySnapshot.isEmpty()) return;
-
-                    com.google.firebase.firestore.WriteBatch batch = db.batch();
-                    for (DocumentSnapshot notificationDoc : querySnapshot.getDocuments()) {
-                        batch.update(notificationDoc.getReference(),
-                                "unread", false,
-                                "actionRequired", false,
-                                "actionStatus", NotificationItem.ACTION_DECLINED,
-                                "respondedAt", FieldValue.serverTimestamp());
-                    }
-                    batch.commit();
                 });
     }
 
     private void updateButton() {
         if (eventId == null) {
             btnJoinLeave.setText("Join Waiting List");
-            btnJoinLeave.setEnabled(true);
-            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF000000));
-            if (btnDownloadTicket != null) btnDownloadTicket.setVisibility(View.GONE);
             return;
         }
 
         if (isOnWaitingList) {
-            db.collection("events")
-                    .document(eventId)
-                    .collection("waitlist")
-                    .document(entrantId)
-                    .get()
+            db.collection("events").document(eventId).collection("waitlist").document(entrantId).get()
                     .addOnSuccessListener(doc -> {
-                        String selectionStatus = doc.getString("selectionStatus");
-                        String responseStatus = doc.getString("responseStatus");
                         String finalStatus = doc.getString("finalStatus");
+                        String responseStatus = doc.getString("responseStatus");
+                        String selectionStatus = doc.getString("selectionStatus");
 
                         if ("enrolled".equals(finalStatus)) {
                             btnJoinLeave.setText("Enrolled");
                             btnJoinLeave.setEnabled(false);
-                            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF6B7280));
-
-                            // Show the PDF Ticket download button!
-                            if (btnDownloadTicket != null) btnDownloadTicket.setVisibility(View.VISIBLE);
-
+                            btnDownloadTicket.setVisibility(View.VISIBLE);
                         } else if ("selected".equals(selectionStatus) && "pending".equals(responseStatus)) {
                             btnJoinLeave.setText("Respond to Invitation");
-                            btnJoinLeave.setEnabled(true);
-                            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF4CAF50)); // Green
-                            if (btnDownloadTicket != null) btnDownloadTicket.setVisibility(View.GONE);
                         } else {
                             btnJoinLeave.setText("Leave Waiting List");
-                            btnJoinLeave.setEnabled(true);
-                            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFFCC0000));
-                            if (btnDownloadTicket != null) btnDownloadTicket.setVisibility(View.GONE);
                         }
-                    })
-                    .addOnFailureListener(e -> {
-                        btnJoinLeave.setText("Leave Waiting List");
-                        btnJoinLeave.setEnabled(true);
-                        btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFFCC0000));
                     });
         } else {
-            // They are not on the waiting list (or declined, etc.)
             btnJoinLeave.setText("Join Waiting List");
-            btnJoinLeave.setEnabled(true);
-            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF000000));
-            if (btnDownloadTicket != null) btnDownloadTicket.setVisibility(View.GONE);
+            btnDownloadTicket.setVisibility(View.GONE);
         }
     }
 
     /**
-     * Generates a PDF ticket using the Android Canvas API and saves it to the Downloads folder.
+     * Standard PDF generation logic using Android Graphics API.
      */
     private void generateAndSavePdfTicket() {
-        if (currentEvent == null) {
-            Toast.makeText(this, "Event data not fully loaded yet.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // 1. Create the PdfDocument and PageInfo (A4 approx size)
+        if (currentEvent == null) return;
         PdfDocument pdfDocument = new PdfDocument();
-        int pageHeight = 842;
-        int pageWidth = 595;
-        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create();
+        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(595, 842, 1).create();
         PdfDocument.Page page = pdfDocument.startPage(pageInfo);
 
-        // 2. Setup Canvas and Paint
         Canvas canvas = page.getCanvas();
         Paint paint = new Paint();
-
-        // Draw White Background
-        paint.setColor(Color.WHITE);
-        canvas.drawRect(0, 0, pageWidth, pageHeight, paint);
-
-        // Draw a decorative border
-        paint.setColor(Color.parseColor("#3F51B5")); // Primary Color
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(10);
-        canvas.drawRect(20, 20, pageWidth - 20, pageHeight - 20, paint);
-
-        // Draw Header Text
-        paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.BLACK);
-        paint.setTextSize(40f);
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        paint.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("OFFICIAL EVENT TICKET", pageWidth / 2f, 100, paint);
+        paint.setTextSize(30f);
+        canvas.drawText("EVENT TICKET", 200, 100, paint);
+        paint.setTextSize(18f);
+        canvas.drawText("Event: " + currentEvent.getName(), 60, 200, paint);
+        canvas.drawText("Attendee: " + currentEntrantName, 60, 240, paint);
 
-        // Draw Event Details
-        paint.setTextSize(24f);
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
-        paint.setTextAlign(Paint.Align.LEFT);
-
-        int startX = 60;
-        int startY = 200;
-        int lineSpacing = 40;
-
-        String safeEventName = currentEvent.getName() != null ? currentEvent.getName() : "Unnamed Event";
-        String safeEventId = currentEvent.getId() != null ? currentEvent.getId() : eventId;
-
-        canvas.drawText("Event Name: " + safeEventName, startX, startY, paint);
-        canvas.drawText("Attendee: " + currentEntrantName, startX, startY + lineSpacing, paint);
-        canvas.drawText("Status: ADMIT ONE (Enrolled)", startX, startY + (lineSpacing * 2), paint);
-        canvas.drawText("Ticket ID: " + safeEventId.substring(0, Math.min(8, safeEventId.length())).toUpperCase(), startX, startY + (lineSpacing * 3), paint);
-
-        // 3. Draw the QR Code using your existing QRCodeGenerator class
-        try {
-            // Generate a QR code linking to the event
-            String qrData = "https://eventparticipation.com/event?id=" + safeEventId;
-            Bitmap qrBitmap = QRCodeGenerator.generateQRCode(qrData, 250);
-
-            if (qrBitmap != null) {
-                // Draw the Bitmap onto the PDF Canvas
-                int qrX = (pageWidth - 250) / 2; // Center horizontally
-                int qrY = startY + (lineSpacing * 5);
-                canvas.drawBitmap(qrBitmap, qrX, qrY, null);
-
-                paint.setTextAlign(Paint.Align.CENTER);
-                paint.setTextSize(16f);
-                paint.setColor(Color.DKGRAY);
-                canvas.drawText("Scan at the door for entry", pageWidth / 2f, qrY + 280, paint);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        // 4. Finish the page
         pdfDocument.finishPage(page);
-
-        // 5. Save the PDF to the device's Downloads folder
-        String fileName = "Ticket_" + safeEventName.replaceAll("[^a-zA-Z0-9.-]", "_") + ".pdf";
-        savePdfToDownloads(pdfDocument, fileName);
+        String name = "Ticket_" + currentEvent.getName().replaceAll("\\s+", "_") + ".pdf";
+        savePdfToDownloads(pdfDocument, name);
     }
 
-    /**
-     * Handles saving the file using Scoped Storage (MediaStore) for Android 10+
-     * or standard File I/O for older versions.
-     */
     private void savePdfToDownloads(PdfDocument pdfDocument, String fileName) {
         OutputStream fos = null;
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                // Modern Android (API 29+): Use MediaStore
                 ContentValues values = new ContentValues();
                 values.put(MediaStore.Downloads.DISPLAY_NAME, fileName);
                 values.put(MediaStore.Downloads.MIME_TYPE, "application/pdf");
                 values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
-
                 Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
-                if (uri != null) {
-                    fos = getContentResolver().openOutputStream(uri);
-                }
+                if (uri != null) fos = getContentResolver().openOutputStream(uri);
             } else {
-                // Older Android: Save directly to external storage Downloads folder
-                File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-                if (!downloadsDir.exists()) downloadsDir.mkdirs();
-
-                File file = new File(downloadsDir, fileName);
+                File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName);
                 fos = new FileOutputStream(file);
             }
-
             if (fos != null) {
                 pdfDocument.writeTo(fos);
-                Toast.makeText(this, "Ticket saved to Downloads folder!", Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(this, "Failed to create file.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Saved to Downloads", Toast.LENGTH_SHORT).show();
             }
-
         } catch (IOException e) {
             e.printStackTrace();
-            Toast.makeText(this, "Error saving ticket: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         } finally {
             pdfDocument.close();
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
         }
     }
 }

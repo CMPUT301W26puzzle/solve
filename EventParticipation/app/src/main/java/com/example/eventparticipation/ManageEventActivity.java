@@ -28,6 +28,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
@@ -40,10 +41,12 @@ import com.google.firebase.storage.StorageReference;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -517,8 +520,26 @@ public class ManageEventActivity extends AppCompatActivity {
         String posterUrl = safe(documentSnapshot.getString("posterUrl"));
         Long limitLong = documentSnapshot.getLong("waitlistLimit");
 
+        Timestamp registrationStart = documentSnapshot.getTimestamp("registrationStart");
+        Timestamp registrationEnd = documentSnapshot.getTimestamp("registrationEnd");
+
         tvEventName.setText(name.isEmpty() ? "Unnamed Event" : name);
         tvEventCapacity.setText("Capacity: " + (limitLong == null ? "Unlimited" : limitLong));
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+
+        if (registrationStart != null && registrationEnd != null) {
+            String dateText = sdf.format(registrationStart.toDate()) +
+                    " ~ " +
+                    sdf.format(registrationEnd.toDate());
+            tvEventDate.setText(dateText);
+        } else if (registrationStart != null) {
+            tvEventDate.setText("Starts: " + sdf.format(registrationStart.toDate()));
+        } else if (registrationEnd != null) {
+            tvEventDate.setText("Ends: " + sdf.format(registrationEnd.toDate()));
+        } else {
+            tvEventDate.setText("No date available");
+        }
 
         currentPosterUrl = posterUrl;
         hasPoster = !currentPosterUrl.isEmpty();

@@ -17,6 +17,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Activity responsible for handling user authentication and registration.
+ * * <p>Supports login and registration workflows for different roles
+ * (Entrant, Organizer, Admin). It validates credentials against Firebase Firestore
+ * and routes authenticated users to their respective dashboards.</p>
+ */
 public class AuthActivity extends AppCompatActivity {
 
     private TextView tvAuthTitle, tvAuthSubtitle;
@@ -160,8 +166,7 @@ public class AuthActivity extends AppCompatActivity {
         if ("organizer".equals(role)) {
             intent = new Intent(this, OrganizerDashboardActivity.class);
         } else if ("admin".equals(role)) {
-            // Replace with your Admin Dashboard class
-            intent = new Intent(this, OrganizerDashboardActivity.class);
+            intent = new Intent(this, AdminDashboardActivity.class);
         } else {
             intent = new Intent(this, EntrantDashboardActivity.class);
         }
