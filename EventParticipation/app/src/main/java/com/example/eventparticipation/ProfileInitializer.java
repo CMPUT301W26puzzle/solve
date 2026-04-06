@@ -139,6 +139,21 @@ public class ProfileInitializer {
     }
 
     /**
+     * Deletes a profile from firestore collection.
+     *
+     * @param collection the Firestore collection name
+     * @param id the profile ID
+     * @param callback callback for success or failure
+     */
+    public void deleteProfile(String collection, String id, Callback callback) {
+        db.collection(collection)
+                .document(id)
+                .delete()
+                .addOnSuccessListener(unused -> callback.onSuccess())
+                .addOnFailureListener(callback::onError);
+    }
+
+    /**
      * Checks whether a profile document exists without creating it.
      *
      * @param collection the Firestore collection name

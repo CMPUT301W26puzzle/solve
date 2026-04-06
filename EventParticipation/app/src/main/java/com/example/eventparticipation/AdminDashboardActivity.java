@@ -179,6 +179,57 @@ public class AdminDashboardActivity extends AppCompatActivity {
         tvEmpty.setText("No events found");
     }
 
+    private void confirmDeleteProfile(AdminProfileItem item, int position) {
+        if (item == null || item.getProfileId() == null) {
+            Toast.makeText(this, "Profile unavailable", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Delete profile?")
+                .setMessage("This will permanently delete \"" + safe(item.getName()) + "\".")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Delete", (dialog, which) -> deleteProfile(item, position))
+                .show();
+    }
+
+    private void deleteProfile(AdminProfileItem item, int position) {
+        if (item == null || item.getProfileId() == null || item.getProfileId().trim().isEmpty()) {
+            Toast.makeText(this, "Invalid profile", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        showLoading(true);
+
+        String collection = item.getRole() + "s";
+        // "entrant" → "entrants", "organizer" → "organizers", etc.
+
+        db.collection(collection)
+                .document(item.getProfileId())
+                .delete()
+                .addOnSuccessListener(unused -> {
+                    removeProfileFromList(position);
+                    loadDashboardCounts();
+                    Toast.makeText(this, "Profile deleted", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    showLoading(false);
+                    Toast.makeText(this, "Failed to delete profile", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void removeProfileFromList(int position) {
+        if (position >= 0 && position < items.size()) {
+            items.remove(position);
+            adapter.notifyItemRemoved(position);
+            adapter.notifyItemRangeChanged(position, items.size() - position);
+        }
+
+        progressBar.setVisibility(View.GONE);
+        recyclerView.setVisibility(items.isEmpty() ? View.GONE : View.VISIBLE);
+        tvEmpty.setVisibility(items.isEmpty() ? View.VISIBLE : View.GONE);
+        tvEmpty.setText("No profiles found");
+    }
+
     private void bindViews() {
         btnEvents = findViewById(R.id.btnTabEvents);
         btnProfiles = findViewById(R.id.btnTabProfiles);
@@ -213,6 +264,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     @Override
                     public void onDeleteEvent(AdminEventItem item, int position) {
                         confirmDeleteEvent(item, position);
+                    }
+                },
+                new AdminBrowseAdapter.ProfileActionListener() {
+                    @Override
+                    public void onDeleteProfile(AdminProfileItem item, int position) {
+                        confirmDeleteProfile(item, position);
                     }
                 }
         );
