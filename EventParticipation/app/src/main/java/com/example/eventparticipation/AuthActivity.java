@@ -17,6 +17,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Activity responsible for handling user authentication and registration.
+ * * <p>Supports login and registration workflows for different roles
+ * (Entrant, Organizer, Admin). It validates credentials against Firebase Firestore
+ * and routes authenticated users to their respective dashboards.</p>
+ */
 public class AuthActivity extends AppCompatActivity {
 
     private TextView tvAuthTitle, tvAuthSubtitle;

@@ -27,6 +27,23 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Main control panel for Administrator users.
+ *
+ * <p>Provides a tabbed interface allowing admins to browse and moderate events,
+ * user profiles, uploaded images, and system notification logs.</p>
+ *
+ * <p>Relevant user stories:</p>
+ * <ul>
+ * <li>US 03.01.01 Remove events</li>
+ * <li>US 03.02.01 Remove profiles</li>
+ * <li>US 03.03.01 Remove uploaded images</li>
+ * <li>US 03.04.01 Browse events</li>
+ * <li>US 03.05.01 Browse profiles</li>
+ * <li>US 03.06.01 Browse uploaded images</li>
+ * <li>US 03.08.01 Review notification logs</li>
+ * </ul>
+ */
 public class AdminDashboardActivity extends AppCompatActivity {
 
     private TextView btnEvents;
