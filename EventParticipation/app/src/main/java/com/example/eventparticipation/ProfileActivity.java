@@ -146,7 +146,7 @@ public class ProfileActivity extends BaseOrganizerActivity {
         db.collection(getCollectionName()).document(profileId).get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (!documentSnapshot.exists()) {
-                        btnSaveChanges.setText("Save Changes");
+                        handleDeletedProfile();
                         return;
                     }
 
@@ -173,6 +173,20 @@ public class ProfileActivity extends BaseOrganizerActivity {
                 })
                 .addOnFailureListener(e -> Toast.makeText(this, "Failed to load profile", Toast.LENGTH_SHORT).show());
     }
+
+    private void handleDeletedProfile() {
+        Toast.makeText(this, "Your account has been removed", Toast.LENGTH_LONG).show();
+
+        // Clear session
+        SessionManager.getInstance(this).logout();
+
+        // Redirect to entry screen
+        Intent intent = new Intent(this, SelectRoleActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
+    }
+
 
     private void saveProfile() {
         String name = getInputText(etName);

@@ -27,6 +27,10 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         void onDeleteEvent(AdminEventItem item, int position);
     }
 
+    public interface ProfileActionListener {
+        void onDeleteProfile(AdminProfileItem item, int position);
+    }
+
     private static final int TYPE_EVENT = 1;
     private static final int TYPE_PROFILE = 2;
     private static final int TYPE_IMAGE = 3;
@@ -35,15 +39,18 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     private final List<Object> items;
     private final ImageClickListener imageClickListener;
     private final EventActionListener eventActionListener;
+    private final ProfileActionListener profileActionListener;
     private final SimpleDateFormat dateFormat =
             new SimpleDateFormat("M/d/yyyy, h:mm:ss a", Locale.getDefault());
 
     public AdminBrowseAdapter(List<Object> items,
                               ImageClickListener imageClickListener,
-                              EventActionListener eventActionListener) {
+                              EventActionListener eventActionListener,
+                              ProfileActionListener profileActionListener) {
         this.items = items;
         this.imageClickListener = imageClickListener;
         this.eventActionListener = eventActionListener;
+        this.profileActionListener = profileActionListener;
     }
 
     @Override
@@ -78,7 +85,7 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         if (holder instanceof EventViewHolder) {
             bindEvent((EventViewHolder) holder, (AdminEventItem) item, position);
         } else if (holder instanceof ProfileViewHolder) {
-            bindProfile((ProfileViewHolder) holder, (AdminProfileItem) item);
+            bindProfile((ProfileViewHolder) holder, (AdminProfileItem) item, position);
         } else if (holder instanceof ImageViewHolder) {
             bindImage((ImageViewHolder) holder, (AdminImageItem) item);
         } else if (holder instanceof LogViewHolder) {
@@ -118,11 +125,19 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         holder.divider.setVisibility(position == getItemCount() - 1 ? View.GONE : View.VISIBLE);
     }
 
-    private void bindProfile(ProfileViewHolder holder, AdminProfileItem item) {
+    private void bindProfile(ProfileViewHolder holder, AdminProfileItem item, int position) {
         holder.tvTitle.setText(valueOrFallback(item.getName(), "Unnamed user"));
         holder.tvMetaTwo.setText(valueOrFallback(item.getEmail(), "No email"));
         holder.tvMetaThree.setText("Joined: " + valueOrFallback(item.getProfileId(), "N/A"));
         holder.btnRemove.setVisibility(View.VISIBLE);
+
+        holder.btnRemove.setOnClickListener(v -> {
+            if (profileActionListener != null) {
+                profileActionListener.onDeleteProfile(item, holder.getBindingAdapterPosition());
+            }
+        });
+
+        holder.divider.setVisibility(position == getItemCount() - 1 ? View.GONE : View.VISIBLE);
     }
 
     private void bindImage(ImageViewHolder holder, AdminImageItem item) {
@@ -178,6 +193,7 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         TextView tvMetaTwo;
         TextView tvMetaThree;
         MaterialButton btnRemove;
+        View divider;
 
         ProfileViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -185,6 +201,7 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
             tvMetaTwo = itemView.findViewById(R.id.tvMetaTwo);
             tvMetaThree = itemView.findViewById(R.id.tvMetaThree);
             btnRemove = itemView.findViewById(R.id.btnRemove);
+            divider = itemView.findViewById(R.id.divider);
         }
     }
 
