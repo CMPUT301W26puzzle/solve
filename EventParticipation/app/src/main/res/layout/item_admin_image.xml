@@ -39,14 +39,34 @@
             android:textColor="#6B7280"
             android:textSize="13sp" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnViewImage"
-            android:layout_width="wrap_content"
-            android:layout_height="42dp"
-            android:layout_marginTop="12dp"
-            android:text="Open image"
-            android:textAllCaps="false"
-            app:backgroundTint="#EF233C"
-            app:cornerRadius="12dp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnViewImage"
+                android:layout_width="wrap_content"
+                android:layout_height="42dp"
+                android:layout_marginTop="12dp"
+                android:text="Open image"
+                android:textAllCaps="false"
+                app:backgroundTint="#EF233C"
+                app:cornerRadius="12dp" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDeleteImage"
+                android:layout_width="wrap_content"
+                android:layout_height="42dp"
+                android:layout_marginTop="12dp"
+                android:text="Delete image"
+                app:backgroundTint="#EF233C"
+                app:cornerRadius="12dp"/>
+        </LinearLayout>
+
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

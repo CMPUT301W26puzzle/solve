@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -203,12 +204,141 @@ public class AdminDashboardActivity extends AppCompatActivity {
             Toast.makeText(this, "Profile unavailable", Toast.LENGTH_SHORT).show();
             return;
         }
+
+        // Offer Ban vs Delete only for organizers
+        if ("organizer".equals(item.getRole())) {
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle("Action for \"" + safe(item.getName()) + "\"")
+                    .setMessage("Ban hides the organizer and their events. Delete permanently removes them.")
+                    .setNeutralButton("Cancel", null)
+                    .setNegativeButton("Delete", (dialog, which) -> deleteProfile(item, position))
+                    .setPositiveButton("Ban", (dialog, which) -> banOrganizer(item, position))
+                    .show();
+        } else {
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle("Delete profile?")
+                    .setMessage("This will permanently delete \"" + safe(item.getName()) + "\".")
+                    .setNegativeButton("Cancel", null)
+                    .setPositiveButton("Delete", (dialog, which) -> deleteProfile(item, position))
+                    .show();
+        }
+    }
+
+    private void banOrganizer(AdminProfileItem item, int position) {
+        showLoading(true);
+        String organizerId = item.getProfileId();
+
+        // Mark organizer as banned in Firestore
+        db.collection("organizers")
+                .document(organizerId)
+                .update("banned", true)
+                .addOnSuccessListener(unused -> hideOrganizerEvents(organizerId, () -> {
+                    removeProfileFromList(position);
+                    loadDashboardCounts();
+                    Toast.makeText(this, "Organizer banned and events hidden", Toast.LENGTH_SHORT).show();
+                }))
+                .addOnFailureListener(e -> {
+                    showLoading(false);
+                    Toast.makeText(this, "Failed to ban organizer", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void hideOrganizerEvents(String organizerId, Runnable onComplete) {
+        db.collection("events")
+                .whereEqualTo("organizerId", organizerId)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    if (snapshot.isEmpty()) {
+                        onComplete.run();
+                        return;
+                    }
+
+                    WriteBatch batch = db.batch();
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        batch.update(doc.getReference(), "hidden", true);
+                    }
+
+                    batch.commit()
+                            .addOnSuccessListener(unused -> onComplete.run())
+                            .addOnFailureListener(e -> {
+                                showLoading(false);
+                                Toast.makeText(this, "Organizer banned but events could not be hidden", Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    showLoading(false);
+                    Toast.makeText(this, "Failed to fetch organizer events", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void confirmDeleteImage(AdminImageItem item, int position) {
+        if (item == null || item.getImageUrl().isEmpty()) {
+            Toast.makeText(this, "Image unavailable", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         new MaterialAlertDialogBuilder(this)
-                .setTitle("Delete profile?")
-                .setMessage("This will permanently delete \"" + safe(item.getName()) + "\".")
+                .setTitle("Delete image?")
+                .setMessage("This will permanently delete the image for \"" + item.getTitle() + "\".")
                 .setNegativeButton("Cancel", null)
-                .setPositiveButton("Delete", (dialog, which) -> deleteProfile(item, position))
+                .setPositiveButton("Delete", (dialog, which) -> deleteImage(item, position))
                 .show();
+    }
+
+    private void deleteImage(AdminImageItem item, int position) {
+        showLoading(true);
+
+        try {
+            com.google.firebase.storage.FirebaseStorage.getInstance()
+                    .getReferenceFromUrl(item.getImageUrl())
+                    .delete()
+                    .addOnSuccessListener(unused -> clearImageReference(item, position))
+                    .addOnFailureListener(e -> {
+                        showLoading(false);
+                        Toast.makeText(this, "Failed to delete image from storage", Toast.LENGTH_SHORT).show();
+                    });
+        } catch (Exception e) {
+            showLoading(false);
+            Toast.makeText(this, "Invalid image URL", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void clearImageReference(AdminImageItem item, int position) {
+        String field;
+        if ("Event poster".equals(item.getImageType())) {
+            field = "posterUrl";
+        } else if ("Event QR code".equals(item.getImageType())) {
+            field = "qrCodeUrl";
+        } else {
+            // For profile images, adjust collection/field as needed
+            field = "profileImageUrl";
+        }
+
+        db.collection("events")
+                .document(item.getSourceId())
+                .update(field, "") // clear the URL
+                .addOnSuccessListener(unused -> {
+                    removeImageFromList(position);
+                    loadDashboardCounts();
+                    Toast.makeText(this, "Image deleted", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    showLoading(false);
+                    Toast.makeText(this, "Image deleted from storage but reference not cleared", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void removeImageFromList(int position) {
+        if (position >= 0 && position < items.size()) {
+            items.remove(position);
+            adapter.notifyItemRemoved(position);
+            adapter.notifyItemRangeChanged(position, items.size() - position);
+        }
+
+        progressBar.setVisibility(View.GONE);
+        recyclerView.setVisibility(items.isEmpty() ? View.GONE : View.VISIBLE);
+        tvEmpty.setVisibility(items.isEmpty() ? View.VISIBLE : View.GONE);
+        tvEmpty.setText("No uploaded images found");
     }
 
     private void deleteProfile(AdminProfileItem item, int position) {
@@ -218,20 +348,62 @@ public class AdminDashboardActivity extends AppCompatActivity {
         }
 
         showLoading(true);
-
+        String profileId = item.getProfileId();
         String collection = item.getRole() + "s";
 
-        db.collection(collection)
-                .document(item.getProfileId())
-                .delete()
-                .addOnSuccessListener(unused -> {
-                    removeProfileFromList(position);
-                    loadDashboardCounts();
-                    Toast.makeText(this, "Profile deleted", Toast.LENGTH_SHORT).show();
+        if ("organizer".equals(item.getRole())) {
+            deleteOrganizerAndEvents(item, position);
+        } else {
+            db.collection(collection)
+                    .document(profileId)
+                    .delete()
+                    .addOnSuccessListener(unused -> {
+                        removeProfileFromList(position);
+                        loadDashboardCounts();
+                        Toast.makeText(this, "Profile deleted", Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e -> {
+                        showLoading(false);
+                        Toast.makeText(this, "Failed to delete profile", Toast.LENGTH_SHORT).show();
+                    });
+        }
+    }
+
+    private void deleteOrganizerAndEvents(AdminProfileItem item, int position) {
+        String organizerId = item.getProfileId();
+
+        db.collection("events")
+                .whereEqualTo("organizerId", organizerId)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    WriteBatch batch = db.batch();
+
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        Event event = doc.toObject(Event.class);
+                        if (event != null) {
+                            event.setId(doc.getId());
+                            deleteEventStorageFiles(event);
+                        }
+                        batch.delete(doc.getReference());
+                    }
+
+                    // Delete the organizer document
+                    batch.delete(db.collection("organizers").document(organizerId));
+
+                    batch.commit()
+                            .addOnSuccessListener(unused -> {
+                                removeProfileFromList(position);
+                                loadDashboardCounts();
+                                Toast.makeText(this, "Organizer and their events deleted", Toast.LENGTH_SHORT).show();
+                            })
+                            .addOnFailureListener(e -> {
+                                showLoading(false);
+                                Toast.makeText(this, "Failed to complete deletion", Toast.LENGTH_SHORT).show();
+                            });
                 })
                 .addOnFailureListener(e -> {
                     showLoading(false);
-                    Toast.makeText(this, "Failed to delete profile", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Failed to fetch organizer events", Toast.LENGTH_SHORT).show();
                 });
     }
 
@@ -307,7 +479,17 @@ public class AdminDashboardActivity extends AppCompatActivity {
     private void setupRecycler() {
         adapter = new AdminBrowseAdapter(
                 items,
-                this::openImagePreview,
+                new AdminBrowseAdapter.ImageActionListener() {
+                    @Override
+                    public void onViewImage(AdminImageItem item) {
+                        openImagePreview(item);
+                    }
+
+                    @Override
+                    public void onDeleteImage(AdminImageItem item, int position) {
+                        confirmDeleteImage(item, position);
+                    }
+                },
                 new AdminBrowseAdapter.EventActionListener() {
                     @Override
                     public void onViewEvent(AdminEventItem item) {
@@ -323,6 +505,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     @Override
                     public void onDeleteProfile(AdminProfileItem item, int position) {
                         confirmDeleteProfile(item, position);
+                    }
+                    @Override
+                    public void onBanProfile(AdminProfileItem item, int position) {
+                        banOrganizer(item, position);
                     }
                 },
                 new AdminBrowseAdapter.CommentActionListener() {

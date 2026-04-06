@@ -6,7 +6,6 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
-    <!-- ✅ Your existing row -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -50,17 +49,38 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:visibility="gone" />
+
         </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnRemove"
-            android:layout_width="116dp"
-            android:layout_height="44dp"
-            android:text="Remove"
-            android:textAllCaps="false"
-            android:textColor="@android:color/white"
-            app:backgroundTint="#E11D48"
-            app:cornerRadius="12dp" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginStart="8dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRemove"
+                android:layout_width="wrap_content"
+                android:layout_height="42dp"
+                android:text="Delete"
+                android:layout_marginEnd="6dp"
+                android:textAllCaps="false"
+                app:backgroundTint="#EF233C"
+                app:cornerRadius="12dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnBan"
+                android:layout_width="wrap_content"
+                android:layout_height="42dp"
+                android:text="Ban"
+                android:textAllCaps="false"
+                app:backgroundTint="#EF233C"
+                app:cornerRadius="12dp"
+                android:layout_marginEnd="8dp"/>
+
+
+        </LinearLayout>
 
     </LinearLayout>
 
