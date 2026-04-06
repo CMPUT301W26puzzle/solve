@@ -109,12 +109,6 @@ public class OrganizerDashboardActivity extends BaseOrganizerActivity {
         layoutLoading = findViewById(R.id.layoutLoading);
         layoutEmptyState = findViewById(R.id.layoutEmptyState);
 
-        findViewById(R.id.btnBackToEntrant).setOnClickListener(v -> {
-            Intent intent = new Intent(this, SelectRoleActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            startActivity(intent);
-            finish();
-        });
     }
 
     /**
