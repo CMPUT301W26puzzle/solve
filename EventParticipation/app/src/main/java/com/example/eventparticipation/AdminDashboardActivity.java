@@ -455,7 +455,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
                     @Override
                     public void onBanProfile(AdminProfileItem item, int position) {
-                        banOrganizer(item, position);
+                        confirmDeleteProfile(item, position);
                     }
                 }
         );
