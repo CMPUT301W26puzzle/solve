@@ -1,7 +1,9 @@
 package com.example.eventparticipation;
 
-/** Wrapper used by the admin event browse list. */
-public class AdminEventItem {
+/**
+ * Data model representing an entity formatted for display and moderation
+ * within the Admin Dashboard.
+ */public class AdminEventItem {
     private final Event event;
 
     public AdminEventItem(Event event) {

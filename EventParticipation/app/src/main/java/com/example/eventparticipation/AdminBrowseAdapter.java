@@ -16,6 +16,13 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * A multi-purpose RecyclerView adapter for the Admin Dashboard.
+ *
+ * <p>Dynamically renders different UI layouts based on the type of admin item
+ * being displayed (Events, Profiles, Images, or Logs) and provides callbacks
+ * for moderation actions (e.g., deletion or viewing details).</p>
+ */
 public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     public interface ImageClickListener {

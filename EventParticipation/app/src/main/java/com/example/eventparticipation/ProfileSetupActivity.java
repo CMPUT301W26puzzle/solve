@@ -19,7 +19,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Onboarding screen shown when the current device has no profile in Firestore yet.
+ * Onboarding screen presented to new users connecting from an unregistered device.
+ *
+ * <p>Captures initial profile data (name, email, phone) required to participate
+ * in the system without forcing traditional password-based authentication.</p>
+ *
+ * <p>Relevant user stories:</p>
+ * <ul>
+ * <li>US 01.02.01 Provide personal information upon first app usage</li>
+ * <li>US 01.07.01 Identify by device ID (Profile linked to device)</li>
+ * </ul>
  */
 public class ProfileSetupActivity extends AppCompatActivity {
 
@@ -117,6 +126,10 @@ public class ProfileSetupActivity extends AppCompatActivity {
         profile.put("name", name);
         profile.put("email", email);
         profile.put("phone", phone);
+
+        if ("entrant".equals(role)) {
+            profile.put("optOutNotifications", false);
+        }
 
         db.collection(getCollection(role))
                 .document(profileId)
