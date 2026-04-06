@@ -40,6 +40,14 @@ public class CoOrganizerDashboardActivity extends AppCompatActivity {
     private final List<Event> eventList = new ArrayList<>();
     private CoOrganizerEventAdapter adapter;
 
+    /**
+     * Initializes the activity, sets up the system window insets, toolbar, UI views,
+     * RecyclerView, and triggers the loading of events associated with the co-organizer.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     * previously being shut down then this Bundle contains the data it most
+     * recently supplied.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -116,6 +124,11 @@ public class CoOrganizerDashboardActivity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(v -> finish());
     }
 
+    /**
+     * Responds to the user clicking the "Up" action button in the App Bar.
+     *
+     * @return True to indicate the navigation was successfully handled.
+     */
     @Override
     public boolean onSupportNavigateUp() {
         finish();

@@ -39,12 +39,12 @@ import java.util.Map;
  *
  * <p>Relevant user stories:</p>
  * <ul>
- *     <li>US 01.01.01 - Join waiting list (navigates to detail)</li>
- *     <li>US 01.01.02 - Leave waiting list (navigates to detail)</li>
- *     <li>US 01.01.04 As an entrant, I want to filter events based on my availability and event capacity.</li>
- *     <li>US 01.01.05 As an entrant, I want to search for events by keyword to find events based on my interests.</li>
- *     <li>US 01.01.06 As an entrant, I want to use keyword search with filtering to narrow my event search.</li>
- *     <li>US 01.05.04 - Waiting list count shown on each card</li>
+ * <li>US 01.01.01 - Join waiting list (navigates to detail)</li>
+ * <li>US 01.01.02 - Leave waiting list (navigates to detail)</li>
+ * <li>US 01.01.04 As an entrant, I want to filter events based on my availability and event capacity.</li>
+ * <li>US 01.01.05 As an entrant, I want to search for events by keyword to find events based on my interests.</li>
+ * <li>US 01.01.06 As an entrant, I want to use keyword search with filtering to narrow my event search.</li>
+ * <li>US 01.05.04 - Waiting list count shown on each card</li>
  * </ul>
  */
 public class EntrantDashboardActivity extends BaseEntrantActivity {
@@ -79,6 +79,12 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
     private String participationFilter = PARTICIPATION_FILTER_ALL;
     private boolean onlyAvailableSpots = false;
 
+    /**
+     * Initializes activity variables, performs a session login check, and triggers
+     * view bindings, RecyclerView configuration, and event loading pipelines.
+     *
+     * @param savedInstanceState Persisted instance data for recreation.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -101,6 +107,10 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
         setupBottomNav(R.id.nav_home);
     }
 
+    /**
+     * Refreshes the events loaded from Firestore anytime the activity regains focus
+     * to keep waitlist metrics and event availability completely up to date.
+     */
     @Override
     protected void onResume() {
         super.onResume();
@@ -108,7 +118,8 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
     }
 
     /**
-     * Binds layout views.
+     * Captures and binds structural view references matching the layout XML document.
+     * Sets base interaction behavior for top-level interactive icons.
      */
     private void initViews() {
         rvEntrantEvents  = findViewById(R.id.rvEntrantEvents);
@@ -130,7 +141,8 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
     }
 
     /**
-     * Sets up the RecyclerView and adapter.
+     * Prepares and attaches the event Adapter and LayoutManager to the RecyclerView,
+     * and maps user click-through intent behavior (pushing data to event detail views).
      */
     private void setupRecyclerView() {
         allEvents      = new ArrayList<>();
@@ -153,7 +165,8 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
     }
 
     /**
-     * Filters the event list as the user types in the search bar.
+     * Subscribes a TextWatcher listener to the search input allowing live
+     * text-matching adjustments to the event list whenever the search input changes.
      */
     private void setupSearch() {
         etSearch.addTextChangedListener(new TextWatcher() {
@@ -166,36 +179,8 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
     }
 
     /**
-     * Wires the bottom navigation bar.
-     */
-//    private void setupBottomNav() {
-//        BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
-//        bottomNav.setSelectedItemId(R.id.nav_home);
-//
-//        bottomNav.setOnItemSelectedListener(item -> {
-//            int id = item.getItemId();
-//            if (id == R.id.nav_home) {
-//                return true;
-//            } else if (id == R.id.nav_my_events) {
-//                startActivity(new Intent(this, EntrantMyEventsActivity.class));
-//                return true;
-//            } else if (id == R.id.nav_scan) {
-//                Toast.makeText(this, "Scan coming soon", Toast.LENGTH_SHORT).show();
-//                return true;
-//            } else if (id == R.id.nav_notifications) {
-//                Toast.makeText(this, "Notifications coming soon", Toast.LENGTH_SHORT).show();
-//                return true;
-//            } else if (id == R.id.nav_profile) {
-//                startActivity(new Intent(this, ProfileActivity.class));
-//                return true;
-//            }
-//            return false;
-//        });
-//    }
-
-    /**
      * Loads all public events from the top-level Firestore "events" collection.
-     * * <p>This method iterates through all global events and explicitly skips any events
+     * <p>This method iterates through all global events and explicitly skips any events
      * marked as private (where {@code isPrivate == true}) to ensure they do not leak onto
      * the public event listing dashboard. It also concurrently loads this entrant's waitlist
      * status for each displayed event so participation filters can be applied locally.</p>
@@ -275,9 +260,10 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
     }
 
     /**
-     * Filters the displayed events by name or venue address matching the search query.
+     * Core filtration logic executed against the user's specific typed query.
+     * Evaluates active menu constraints alongside the text search.
      *
-     * @param query search text
+     * @param query The specific search terminology typed by the user.
      */
     private void filterEvents(String query) {
         filteredEvents.clear();
@@ -294,7 +280,6 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
                 continue;
             }
 
-            // TODO: include event description in keyword search if a description field is going to be added
             String name = event.getName() != null ? event.getName().toLowerCase() : "";
             String venueAddress = event.getVenueAddress() != null
                     ? event.getVenueAddress().toLowerCase()
@@ -316,18 +301,33 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
         }
     }
 
+    /**
+     * Immediately applies and renders any adjustments forced onto the event array.
+     */
     private void refreshVisibleEvents() {
         progressBar.setVisibility(View.GONE);
         String query = etSearch.getText() == null ? "" : etSearch.getText().toString();
         filterEvents(query);
     }
 
+    /**
+     * Determines if a single event correctly aligns with every currently active user constraint.
+     *
+     * @param event The Event block undergoing verification.
+     * @return boolean True if the event matches all three distinct filter systems.
+     */
     private boolean matchesActiveFilters(Event event) {
         return matchesRegistrationFilter(event)
                 && matchesAvailabilityFilter(event)
                 && matchesParticipationFilter(event);
     }
 
+    /**
+     * Deciphers if an Event passes time-based constraint checks based on its opening/closing boundaries.
+     *
+     * @param event The target Event checking for date validity.
+     * @return boolean Validation metric matching registration parameters.
+     */
     private boolean matchesRegistrationFilter(Event event) {
         Date now = new Date();
         Date registrationStart = event.getRegistrationStart();
@@ -347,6 +347,12 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
         }
     }
 
+    /**
+     * Checks if the event conforms to user-specified waitlist capacity limitations.
+     *
+     * @param event The Event entity being evaluated.
+     * @return boolean Result validating that spaces remain (if forced open filter is active).
+     */
     private boolean matchesAvailabilityFilter(Event event) {
         if (!onlyAvailableSpots || !REGISTRATION_FILTER_OPEN.equals(registrationFilter)) {
             return true;
@@ -356,6 +362,12 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
         return waitlistLimit == null || event.getWaitingCount() < waitlistLimit;
     }
 
+    /**
+     * Verifies that the event matches the expected user participation/waitlist criteria.
+     *
+     * @param event Evaluating logic specific to this event.
+     * @return boolean Validation state for participation limits.
+     */
     private boolean matchesParticipationFilter(Event event) {
         String status = participationStatusByEventId.get(event.getId());
 
@@ -374,6 +386,13 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
         }
     }
 
+    /**
+     * Interprets and converts complex three-tiered Firestore state mappings
+     * into a simplified single-layer demographic filter representation.
+     *
+     * @param waitDoc The specific snapshot data mapping to this Entrant and Event.
+     * @return String Translated constant resolving user position.
+     */
     private String resolveParticipationStatus(DocumentSnapshot waitDoc) {
         if (!waitDoc.exists()) {
             return PARTICIPATION_FILTER_NOT_JOINED;
@@ -402,6 +421,10 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
         return PARTICIPATION_FILTER_NOT_JOINED;
     }
 
+    /**
+     * Presents an expansive Material UI dialog panel enabling deep refinement of the Event list.
+     * Employs synchronous interaction rules to avoid logically incompatible filter combinations.
+     */
     private void showFilterDialog() {
         View dialogView = LayoutInflater.from(this)
                 .inflate(R.layout.dialog_entrant_event_filters, null, false);
@@ -444,6 +467,13 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
         dialog.show();
     }
 
+    /**
+     * Mounts pre-existing active logic arrays into the visual constraints of the filter dialog.
+     *
+     * @param chipGroupRegistration  The layout mapping representing Date constraints.
+     * @param chipGroupParticipation The layout grouping addressing Entrant history constraints.
+     * @param cbOnlyAvailableSpots   The checkbox strictly tracking event waitlist limit rules.
+     */
     private void syncDialogState(ChipGroup chipGroupRegistration,
                                  ChipGroup chipGroupParticipation,
                                  MaterialCheckBox cbOnlyAvailableSpots) {
@@ -455,6 +485,13 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
         cbOnlyAvailableSpots.setEnabled(REGISTRATION_FILTER_OPEN.equals(registrationFilter));
     }
 
+    /**
+     * Reads numerical View ID integers generated by the filter dialogue and transforms them
+     * into readable system constants addressing Registration criteria.
+     *
+     * @param checkedChipId Int ID retrieved natively from the View block.
+     * @return String Constant equivalent mapped globally for parsing limits.
+     */
     private String resolveRegistrationFilter(int checkedChipId) {
         if (checkedChipId == R.id.chipRegistrationUpcoming) {
             return REGISTRATION_FILTER_UPCOMING;
@@ -466,6 +503,12 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
         return REGISTRATION_FILTER_ALL;
     }
 
+    /**
+     * Translates interface View IDs into core Participant constraint mapping commands.
+     *
+     * @param checkedChipId Formative int assigned by the system build index.
+     * @return String Identifiable instruction limit for the search block.
+     */
     private String resolveParticipationFilter(int checkedChipId) {
         if (checkedChipId == R.id.chipParticipationNotJoined) {
             return PARTICIPATION_FILTER_NOT_JOINED;
@@ -479,6 +522,12 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
         return PARTICIPATION_FILTER_ALL;
     }
 
+    /**
+     * Locates the precise UI layer ID mapped to the currently defined registration constraint string.
+     *
+     * @param filter Internal system string flag declaring boundaries.
+     * @return int Mapped resource ID targeting the required view block.
+     */
     private int getRegistrationChipId(String filter) {
         switch (filter) {
             case REGISTRATION_FILTER_UPCOMING:
@@ -493,6 +542,12 @@ public class EntrantDashboardActivity extends BaseEntrantActivity {
         }
     }
 
+    /**
+     * Parses the current backend Participation constraint string and outputs the linked visual interface ID.
+     *
+     * @param filter Target behavior filter requirement string.
+     * @return int Equivalent resource ID associated with the front-end layout group.
+     */
     private int getParticipationChipId(String filter) {
         switch (filter) {
             case PARTICIPATION_FILTER_NOT_JOINED:

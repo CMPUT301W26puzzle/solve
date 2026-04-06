@@ -68,6 +68,14 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
     private String activeTab = "profiles";
 
+    /**
+     * Initializes the activity, binds views, sets up the RecyclerView,
+     * and loads initial dashboard data.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     * previously being shut down then this Bundle contains the data it most
+     * recently supplied.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,6 +90,11 @@ public class AdminDashboardActivity extends AppCompatActivity {
         selectTab("profiles");
     }
 
+    /**
+     * Navigates to the ManageEventActivity for a specified event item.
+     *
+     * @param item The selected admin event item.
+     */
     private void openEvent(AdminEventItem item) {
         if (item == null || item.getEvent() == null) {
             Toast.makeText(this, "Event unavailable", Toast.LENGTH_SHORT).show();
@@ -96,6 +109,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    /**
+     * Displays a confirmation dialog before permanently deleting an event.
+     *
+     * @param item     The event item slated for deletion.
+     * @param position The position of the event in the RecyclerView.
+     */
     private void confirmDeleteEvent(AdminEventItem item, int position) {
         if (item == null || item.getEvent() == null) {
             Toast.makeText(this, "Event unavailable", Toast.LENGTH_SHORT).show();
@@ -112,6 +131,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 .show();
     }
 
+    /**
+     * Permanently removes an event and its waitlist dependencies from Firestore.
+     *
+     * @param item     The event item to delete.
+     * @param position The position of the item in the adapter list.
+     */
     private void deleteEvent(AdminEventItem item, int position) {
         Event event = item.getEvent();
         if (event == null || event.getId() == null || event.getId().trim().isEmpty()) {
@@ -164,6 +189,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Cleans up orphaned images (poster, QR code) from Firebase Storage
+     * when an event is deleted.
+     *
+     * @param event The event being deleted.
+     */
     private void deleteEventStorageFiles(Event event) {
         if (event == null) return;
 
@@ -186,6 +217,11 @@ public class AdminDashboardActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Removes a deleted event from the UI lists and handles empty states.
+     *
+     * @param position The position of the deleted event in the RecyclerView.
+     */
     private void removeEventFromList(int position) {
         if (position >= 0 && position < items.size()) {
             items.remove(position);
@@ -199,6 +235,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
         tvEmpty.setText("No events found");
     }
 
+    /**
+     * Displays a confirmation dialog before deleting or banning a user profile.
+     *
+     * @param item     The profile item selected for deletion/banning.
+     * @param position The position of the profile in the RecyclerView.
+     */
     private void confirmDeleteProfile(AdminProfileItem item, int position) {
         if (item == null || item.getProfileId() == null) {
             Toast.makeText(this, "Profile unavailable", Toast.LENGTH_SHORT).show();
@@ -224,6 +266,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Flags an organizer profile as banned in Firestore and hides their active events.
+     *
+     * @param item     The organizer profile to be banned.
+     * @param position The position of the profile in the RecyclerView.
+     */
     private void banOrganizer(AdminProfileItem item, int position) {
         showLoading(true);
         String organizerId = item.getProfileId();
@@ -243,6 +291,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Updates all events belonging to a specific organizer to be hidden from public view.
+     *
+     * @param organizerId The ID of the targeted organizer.
+     * @param onComplete  A callback to execute upon successful hiding of the events.
+     */
     private void hideOrganizerEvents(String organizerId, Runnable onComplete) {
         db.collection("events")
                 .whereEqualTo("organizerId", organizerId)
@@ -271,6 +325,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Prompts the admin to confirm the deletion of an uploaded image.
+     *
+     * @param item     The image item selected.
+     * @param position The position of the item in the list.
+     */
     private void confirmDeleteImage(AdminImageItem item, int position) {
         if (item == null || item.getImageUrl().isEmpty()) {
             Toast.makeText(this, "Image unavailable", Toast.LENGTH_SHORT).show();
@@ -285,6 +345,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 .show();
     }
 
+    /**
+     * Deletes a physical file (image) from Firebase Storage.
+     *
+     * @param item     The image item containing the cloud storage URL.
+     * @param position The position of the item in the RecyclerView.
+     */
     private void deleteImage(AdminImageItem item, int position) {
         showLoading(true);
 
@@ -303,6 +369,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Detaches the cleared image URL from the respective parent document in Firestore.
+     *
+     * @param item     The image item referencing the parent document.
+     * @param position The list position to update.
+     */
     private void clearImageReference(AdminImageItem item, int position) {
         String field;
         if ("Event poster".equals(item.getImageType())) {
@@ -328,6 +400,11 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Removes a deleted image from the UI lists and updates empty states.
+     *
+     * @param position The position of the deleted image.
+     */
     private void removeImageFromList(int position) {
         if (position >= 0 && position < items.size()) {
             items.remove(position);
@@ -341,6 +418,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
         tvEmpty.setText("No uploaded images found");
     }
 
+    /**
+     * Permanently deletes a user's profile from their respective collection.
+     *
+     * @param item     The profile to be removed.
+     * @param position The position of the profile in the list.
+     */
     private void deleteProfile(AdminProfileItem item, int position) {
         if (item == null || item.getProfileId() == null || item.getProfileId().trim().isEmpty()) {
             Toast.makeText(this, "Invalid profile", Toast.LENGTH_SHORT).show();
@@ -369,6 +452,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Fully purges an organizer and cascades the deletion to all their associated events.
+     *
+     * @param item     The organizer profile to delete.
+     * @param position The list position of the item.
+     */
     private void deleteOrganizerAndEvents(AdminProfileItem item, int position) {
         String organizerId = item.getProfileId();
 
@@ -407,6 +496,11 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Updates the UI to reflect a deleted profile.
+     *
+     * @param position The index of the deleted element in the list.
+     */
     private void removeProfileFromList(int position) {
         if (position >= 0 && position < items.size()) {
             items.remove(position);
@@ -420,6 +514,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
         tvEmpty.setText("No profiles found");
     }
 
+    /**
+     * Asks the admin for confirmation before destroying a user comment.
+     *
+     * @param item     The comment in question.
+     * @param position The index of the comment in the view list.
+     */
     private void confirmDeleteComment(AdminCommentItem item, int position) {
         new MaterialAlertDialogBuilder(this)
                 .setTitle("Delete comment?")
@@ -429,6 +529,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 .show();
     }
 
+    /**
+     * Executes the deletion of a specific event comment from the Firestore backend.
+     *
+     * @param item     The comment data.
+     * @param position List index to animate out upon success.
+     */
     private void deleteComment(AdminCommentItem item, int position) {
         showLoading(true);
         db.collection("events").document(item.getEventId())
@@ -454,6 +560,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Binds layout views to internal class references.
+     */
     private void bindViews() {
         btnEvents = findViewById(R.id.btnTabEvents);
         btnProfiles = findViewById(R.id.btnTabProfiles);
@@ -476,6 +585,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
     }
 
+    /**
+     * Attaches the RecyclerView adapter and configures action callback listeners
+     * for varying item types in the list.
+     */
     private void setupRecycler() {
         adapter = new AdminBrowseAdapter(
                 items,
@@ -522,6 +635,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
     }
 
+    /**
+     * Configures click interactions for top navigation tabs.
+     */
     private void setupListeners() {
         btnEvents.setOnClickListener(v -> selectTab("events"));
         btnProfiles.setOnClickListener(v -> selectTab("profiles"));
@@ -531,6 +647,11 @@ public class AdminDashboardActivity extends AppCompatActivity {
         btnComments.setOnClickListener(v -> selectTab("comments"));
     }
 
+    /**
+     * Updates UI and fetches target data associated with the active navigation tab.
+     *
+     * @param tab The identifier of the selected tab context (e.g., "events", "profiles").
+     */
     private void selectTab(@NonNull String tab) {
         activeTab = tab;
         updateTabStyles();
@@ -551,6 +672,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Loops over navigation tabs to apply selected/unselected visual states.
+     */
     private void updateTabStyles() {
         setTabStyle(btnEvents, "events".equals(activeTab));
         setTabStyle(btnProfiles, "profiles".equals(activeTab));
@@ -560,11 +684,22 @@ public class AdminDashboardActivity extends AppCompatActivity {
         setTabStyle(btnComments, "comments".equals(activeTab));
     }
 
+    /**
+     * Adjusts the background and text color of a navigation tab element.
+     *
+     * @param tab      The tab TextView to modify.
+     * @param selected True if the tab is active.
+     */
     private void setTabStyle(TextView tab, boolean selected) {
         tab.setBackgroundResource(selected ? R.drawable.bg_tab_selected : R.drawable.bg_tab_unselected);
         tab.setTextColor(ContextCompat.getColor(this, selected ? android.R.color.black : android.R.color.darker_gray));
     }
 
+    /**
+     * Modifies the title headers to match the selected category context.
+     *
+     * @param tab The target tab identifier string.
+     */
     private void updateSectionHeader(String tab) {
         if ("events".equals(tab)) {
             tvSectionTitle.setText("All Events");
@@ -587,12 +722,24 @@ public class AdminDashboardActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Toggles visibility rules between the main content list and loading spinner.
+     *
+     * @param loading Boolean deciding whether to show progress or active content.
+     */
     private void showLoading(boolean loading) {
         progressBar.setVisibility(loading ? View.VISIBLE : View.GONE);
         recyclerView.setVisibility(loading ? View.GONE : View.VISIBLE);
         tvEmpty.setVisibility(View.GONE);
     }
 
+    /**
+     * Populates the RecyclerView adapter with freshly pulled items. Displays an empty
+     * state overlay if the results list is blank.
+     *
+     * @param newItems     The downloaded data to mount in the list.
+     * @param emptyMessage The prompt to show if there are 0 items found.
+     */
     private void showItems(List<?> newItems, String emptyMessage) {
         items.clear();
         items.addAll(newItems);
@@ -604,11 +751,21 @@ public class AdminDashboardActivity extends AppCompatActivity {
         tvEmpty.setText(emptyMessage);
     }
 
+    /**
+     * Exposes errors to the admin and halts progress indicators gracefully.
+     *
+     * @param message Internal error summary.
+     * @param e       The actual Java/Firestore Exception.
+     */
     private void showLoadError(String message, Exception e) {
         showItems(Collections.emptyList(), message);
         Toast.makeText(this, e != null ? e.getMessage() : message, Toast.LENGTH_SHORT).show();
     }
 
+    /**
+     * Iterates system totals (total active events, images, users) to populate the
+     * main status dashboard cards.
+     */
     private void loadDashboardCounts() {
         db.collection("events").get().addOnSuccessListener(snapshot ->
                 tvEventCount.setText(String.valueOf(snapshot.size())));
@@ -638,6 +795,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Fetches all events systematically sorted by most-recent registration start times.
+     */
     private void loadEvents() {
         showLoading(true);
         db.collection("events")
@@ -656,6 +816,11 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> showLoadError("Unable to load events", e));
     }
 
+    /**
+     * Fetches distinct user models from Entrant, Organizer, and Admin collections.
+     *
+     * @param organizersOnly Boolean flag that restricts queries solely to the Organizers collection.
+     */
     private void loadProfiles(boolean organizersOnly) {
         showLoading(true);
         List<AdminProfileItem> result = new ArrayList<>();
@@ -702,6 +867,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> showLoadError("Unable to load entrant profiles", e));
     }
 
+    /**
+     * Scans active events for valid poster or QR Code URL nodes and exposes them for review.
+     */
     private void loadImages() {
         showLoading(true);
         db.collection("events").get()
@@ -725,6 +893,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> showLoadError("Unable to load images", e));
     }
 
+    /**
+     * Executes a Firestore collection-group query strictly filtering for comments mapped to events.
+     */
     private void loadComments() {
         showLoading(true);
         db.collectionGroup("comments")
@@ -743,6 +914,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> showLoadError("Unable to load comments", e));
     }
 
+    /**
+     * Executes a robust collection-group lookup across the database to extract and review
+     * active or historical notifications that organziers pushed to entrants.
+     */
     private void loadNotificationLogs() {
         showLoading(true);
         db.collectionGroup("notifications")
@@ -779,16 +954,34 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> showLoadError("Unable to load notification logs", e));
     }
 
+    /**
+     * Standard Date comparison block for prioritizing newer notification logs.
+     *
+     * @param first  Primary date input.
+     * @param second Secondary date block to contrast.
+     * @return Integer indicating sort adjustment hierarchy (-1, 0, 1).
+     */
     private int compareDatesDesc(Date first, Date second) {
         long firstTime = first != null ? first.getTime() : 0L;
         long secondTime = second != null ? second.getTime() : 0L;
         return Long.compare(secondTime, firstTime);
     }
 
+    /**
+     * Basic utility helper mechanism protecting against database NullPointerExceptions.
+     *
+     * @param value Potential null-sourced input string.
+     * @return Trimmed clean string or static empty string block.
+     */
     private String safe(String value) {
         return value == null ? "" : value.trim();
     }
 
+    /**
+     * Triggers a preview dialog box enabling admins to expand and inspect an image URI.
+     *
+     * @param item AdminImageItem structure carrying URL and visual data.
+     */
     private void openImagePreview(AdminImageItem item) {
         if (item == null || item.getImageUrl().isEmpty()) {
             Toast.makeText(this, "Image unavailable", Toast.LENGTH_SHORT).show();

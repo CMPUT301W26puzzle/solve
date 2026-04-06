@@ -25,22 +25,70 @@ import java.util.Locale;
  */
 public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
+    /**
+     * Interface definition for callbacks to be invoked when an action is taken on an image item.
+     */
     public interface ImageActionListener {
+        /**
+         * Invoked when the administrator requests to view an image in full screen.
+         * @param item The image item to be viewed.
+         */
         void onViewImage(AdminImageItem item);
+
+        /**
+         * Invoked when the administrator requests to permanently delete an image.
+         * @param item The image item to be deleted.
+         * @param position The position of the item in the adapter.
+         */
         void onDeleteImage(AdminImageItem item, int position);
     }
 
+    /**
+     * Interface definition for callbacks to be invoked when an action is taken on an event item.
+     */
     public interface EventActionListener {
+        /**
+         * Invoked when the administrator requests to view the details of an event.
+         * @param item The event item to be viewed.
+         */
         void onViewEvent(AdminEventItem item);
+
+        /**
+         * Invoked when the administrator requests to permanently delete an event.
+         * @param item The event item to be deleted.
+         * @param position The position of the item in the adapter.
+         */
         void onDeleteEvent(AdminEventItem item, int position);
     }
 
+    /**
+     * Interface definition for callbacks to be invoked when an action is taken on a user profile.
+     */
     public interface ProfileActionListener {
+        /**
+         * Invoked when the administrator requests to permanently delete a user's profile.
+         * @param item The profile item to be deleted.
+         * @param position The position of the item in the adapter.
+         */
         void onDeleteProfile(AdminProfileItem item, int position);
+
+        /**
+         * Invoked when the administrator requests to ban an organizer.
+         * @param item The profile item belonging to the organizer to be banned.
+         * @param position The position of the item in the adapter.
+         */
         void onBanProfile(AdminProfileItem item, int position);
     }
 
+    /**
+     * Interface definition for callbacks to be invoked when an action is taken on an event comment.
+     */
     public interface CommentActionListener {
+        /**
+         * Invoked when the administrator requests to delete a comment.
+         * @param item The comment item to be deleted.
+         * @param position The position of the item in the adapter.
+         */
         void onDeleteComment(AdminCommentItem item, int position);
     }
 
@@ -58,6 +106,15 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     private final SimpleDateFormat dateFormat =
             new SimpleDateFormat("M/d/yyyy, h:mm:ss a", Locale.getDefault());
 
+    /**
+     * Constructs the AdminBrowseAdapter with the provided data and action listeners.
+     *
+     * @param items The heterogeneous list of items to display (events, profiles, images, logs, comments).
+     * @param imageActionListener The listener for image-related actions.
+     * @param eventActionListener The listener for event-related actions.
+     * @param profileActionListener The listener for profile-related actions.
+     * @param commentActionListener The listener for comment-related actions.
+     */
     public AdminBrowseAdapter(List<Object> items,
                               ImageActionListener imageActionListener,
                               EventActionListener eventActionListener,
@@ -70,6 +127,12 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         this.commentActionListener = commentActionListener;
     }
 
+    /**
+     * Determines the integer view type of the item at the given position to inflate the correct layout.
+     *
+     * @param position The position of the item in the data set.
+     * @return An integer representing the item's view type.
+     */
     @Override
     public int getItemViewType(int position) {
         Object item = items.get(position);
@@ -80,6 +143,13 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         return TYPE_LOG;
     }
 
+    /**
+     * Inflates the appropriate XML layout based on the mapped view type.
+     *
+     * @param parent The ViewGroup into which the new View will be added.
+     * @param viewType The view type of the new View.
+     * @return A new specialized ViewHolder containing the inflated layout.
+     */
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -99,6 +169,12 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         return new LogViewHolder(inflater.inflate(R.layout.item_admin_log, parent, false));
     }
 
+    /**
+     * Binds the data from the backing list to the corresponding view elements within the ViewHolder.
+     *
+     * @param holder The ViewHolder which should be updated to represent the contents of the item.
+     * @param position The position of the item within the adapter's data set.
+     */
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         Object item = items.get(position);
@@ -116,11 +192,23 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         }
     }
 
+    /**
+     * Returns the total number of items contained within the data set held by the adapter.
+     *
+     * @return The size of the items list.
+     */
     @Override
     public int getItemCount() {
         return items.size();
     }
 
+    /**
+     * Binds event data to an EventViewHolder and attaches action listeners.
+     *
+     * @param holder The ViewHolder designated for event presentation.
+     * @param item The AdminEventItem wrapping the core Event data.
+     * @param position The position of the item in the list layout.
+     */
     private void bindEvent(EventViewHolder holder, AdminEventItem item, int position) {
         Event event = item.getEvent();
 
@@ -148,6 +236,14 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         holder.divider.setVisibility(position == getItemCount() - 1 ? View.GONE : View.VISIBLE);
     }
 
+    /**
+     * Binds image reference data to an ImageViewHolder and attaches action listeners.
+     * Uses Glide to securely load image thumbnails.
+     *
+     * @param holder The ViewHolder designated for image presentation.
+     * @param item The AdminImageItem containing URL and metadata.
+     * @param position The position of the item in the list layout.
+     */
     private void bindImage(ImageViewHolder holder, AdminImageItem item, int position) {
         holder.tvTitle.setText(item.getTitle());
         holder.tvMeta.setText(item.getImageType());
@@ -167,6 +263,13 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         });
     }
 
+    /**
+     * Binds user profile data to a ProfileViewHolder and sets up moderation options.
+     *
+     * @param holder The ViewHolder mapped to profile rendering.
+     * @param item The AdminProfileItem encapsulating user data.
+     * @param position The position of the item in the list layout.
+     */
     private void bindProfile(ProfileViewHolder holder, AdminProfileItem item, int position) {
         holder.tvTitle.setText(valueOrFallback(item.getName(), "Unnamed user"));
         holder.tvMetaTwo.setText(valueOrFallback(item.getEmail(), "No email"));
@@ -189,6 +292,12 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         holder.divider.setVisibility(position == getItemCount() - 1 ? View.GONE : View.VISIBLE);
     }
 
+    /**
+     * Binds an immutable notification log structure into a view-only LogViewHolder.
+     *
+     * @param holder The ViewHolder mapped to historical notification logs.
+     * @param item The Log data item.
+     */
     private void bindLog(LogViewHolder holder, AdminNotificationLogItem item) {
         holder.tvTitle.setText(valueOrFallback(item.getEventName(), "Notification log"));
         holder.tvMetaOne.setText("Entrant ID: " + valueOrFallback(item.getEntrantId(), "N/A"));
@@ -200,6 +309,13 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         holder.tvMessage.setText(valueOrFallback(item.getMessage(), "No message"));
     }
 
+    /**
+     * Binds an event comment to a CommentViewHolder, exposing moderation (delete) actions.
+     *
+     * @param holder The ViewHolder designated to render the comment.
+     * @param item The AdminCommentItem encapsulating the comment text and metadata.
+     * @param position The position of the item in the list layout.
+     */
     private void bindComment(CommentViewHolder holder, AdminCommentItem item, int position) {
         holder.tvTitle.setText(valueOrFallback(item.getUserName(), "Anonymous"));
         holder.tvMetaTwo.setText(valueOrFallback(item.getText(), ""));
@@ -215,10 +331,20 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         holder.divider.setVisibility(position == getItemCount() - 1 ? View.GONE : View.VISIBLE);
     }
 
+    /**
+     * A utility method to safely process potentially null or empty text values.
+     *
+     * @param value The raw string retrieved from the item model.
+     * @param fallback The generic placeholder to utilize if the value is missing.
+     * @return Cleanly processed string output ready for rendering.
+     */
     private String valueOrFallback(String value, String fallback) {
         return value == null || value.trim().isEmpty() ? fallback : value;
     }
 
+    /**
+     * Sub-class representing structural components of a standard Event layout item.
+     */
     static class EventViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle;
         TextView tvMetaOne;
@@ -240,6 +366,9 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         }
     }
 
+    /**
+     * Sub-class representing structural components of a User Profile layout item.
+     */
     static class ProfileViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle, tvMetaTwo, tvMetaThree;
         MaterialButton btnRemove, btnBan;
@@ -256,6 +385,9 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         }
     }
 
+    /**
+     * Sub-class representing structural components of an Event Comment layout item.
+     */
     static class CommentViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle;
         TextView tvMetaTwo;
@@ -273,6 +405,9 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         }
     }
 
+    /**
+     * Sub-class representing structural components of an Image layout item.
+     */
     static class ImageViewHolder extends RecyclerView.ViewHolder {
         ImageView imageView;
         TextView tvTitle, tvMeta;
@@ -288,8 +423,9 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         }
     }
 
-
-
+    /**
+     * Sub-class representing structural components of an unmodifiable Log history layout item.
+     */
     static class LogViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle;
         TextView tvMetaOne;

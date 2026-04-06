@@ -93,13 +93,31 @@ fixed document id (idempotent within the batch).</div>
 <dd>
 <div class="block">A multi-purpose RecyclerView adapter for the Admin Dashboard.</div>
 </dd>
-<dt><a href="com/example/eventparticipation/AdminBrowseAdapter.html#%3Cinit%3E(java.util.List,com.example.eventparticipation.AdminBrowseAdapter.ImageClickListener,com.example.eventparticipation.AdminBrowseAdapter.EventActionListener,com.example.eventparticipation.AdminBrowseAdapter.ProfileActionListener)" class="member-name-link">AdminBrowseAdapter(List, AdminBrowseAdapter.ImageClickListener, AdminBrowseAdapter.EventActionListener, AdminBrowseAdapter.ProfileActionListener)</a> - Constructor for class com.example.eventparticipation.<a href="com/example/eventparticipation/AdminBrowseAdapter.html" title="class in com.example.eventparticipation">AdminBrowseAdapter</a></dt>
-<dd>&nbsp;</dd>
+<dt><a href="com/example/eventparticipation/AdminBrowseAdapter.html#%3Cinit%3E(java.util.List,com.example.eventparticipation.AdminBrowseAdapter.ImageActionListener,com.example.eventparticipation.AdminBrowseAdapter.EventActionListener,com.example.eventparticipation.AdminBrowseAdapter.ProfileActionListener,com.example.eventparticipation.AdminBrowseAdapter.CommentActionListener)" class="member-name-link">AdminBrowseAdapter(List, AdminBrowseAdapter.ImageActionListener, AdminBrowseAdapter.EventActionListener, AdminBrowseAdapter.ProfileActionListener, AdminBrowseAdapter.CommentActionListener)</a> - Constructor for class com.example.eventparticipation.<a href="com/example/eventparticipation/AdminBrowseAdapter.html" title="class in com.example.eventparticipation">AdminBrowseAdapter</a></dt>
+<dd>
+<div class="block">Constructs the AdminBrowseAdapter with the provided data and action listeners.</div>
+</dd>
+<dt><a href="com/example/eventparticipation/AdminBrowseAdapter.CommentActionListener.html" class="type-name-link" title="interface in com.example.eventparticipation">AdminBrowseAdapter.CommentActionListener</a> - Interface in <a href="com/example/eventparticipation/package-summary.html">com.example.eventparticipation</a></dt>
+<dd>
+<div class="block">Interface definition for callbacks to be invoked when an action is taken on an event comment.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/AdminBrowseAdapter.EventActionListener.html" class="type-name-link" title="interface in com.example.eventparticipation">AdminBrowseAdapter.EventActionListener</a> - Interface in <a href="com/example/eventparticipation/package-summary.html">com.example.eventparticipation</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="com/example/eventparticipation/AdminBrowseAdapter.ImageClickListener.html" class="type-name-link" title="interface in com.example.eventparticipation">AdminBrowseAdapter.ImageClickListener</a> - Interface in <a href="com/example/eventparticipation/package-summary.html">com.example.eventparticipation</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Interface definition for callbacks to be invoked when an action is taken on an event item.</div>
+</dd>
+<dt><a href="com/example/eventparticipation/AdminBrowseAdapter.ImageActionListener.html" class="type-name-link" title="interface in com.example.eventparticipation">AdminBrowseAdapter.ImageActionListener</a> - Interface in <a href="com/example/eventparticipation/package-summary.html">com.example.eventparticipation</a></dt>
+<dd>
+<div class="block">Interface definition for callbacks to be invoked when an action is taken on an image item.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/AdminBrowseAdapter.ProfileActionListener.html" class="type-name-link" title="interface in com.example.eventparticipation">AdminBrowseAdapter.ProfileActionListener</a> - Interface in <a href="com/example/eventparticipation/package-summary.html">com.example.eventparticipation</a></dt>
+<dd>
+<div class="block">Interface definition for callbacks to be invoked when an action is taken on a user profile.</div>
+</dd>
+<dt><a href="com/example/eventparticipation/AdminCommentItem.html" class="type-name-link" title="class in com.example.eventparticipation">AdminCommentItem</a> - Class in <a href="com/example/eventparticipation/package-summary.html">com.example.eventparticipation</a></dt>
+<dd>
+<div class="block">Model representing a comment in the admin browse list.</div>
+</dd>
+<dt><a href="com/example/eventparticipation/AdminCommentItem.html#%3Cinit%3E(com.example.eventparticipation.Comment)" class="member-name-link">AdminCommentItem(Comment)</a> - Constructor for class com.example.eventparticipation.<a href="com/example/eventparticipation/AdminCommentItem.html" title="class in com.example.eventparticipation">AdminCommentItem</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/AdminDashboardActivity.html" class="type-name-link" title="class in com.example.eventparticipation">AdminDashboardActivity</a> - Class in <a href="com/example/eventparticipation/package-summary.html">com.example.eventparticipation</a></dt>
 <dd>
@@ -255,12 +273,17 @@ per entrant per event, preventing duplicate pending notifications.</div>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/CoOrganizerEventAdapter.html" class="type-name-link" title="class in com.example.eventparticipation">CoOrganizerEventAdapter</a> - Class in <a href="com/example/eventparticipation/package-summary.html">com.example.eventparticipation</a></dt>
 <dd>
-<div class="block">Adapter for events accessible to the current co-organizer.</div>
+<div class="block">Adapter for rendering a list of events accessible to the current co-organizer.</div>
 </dd>
 <dt><a href="com/example/eventparticipation/CoOrganizerEventAdapter.html#%3Cinit%3E(java.util.List,com.example.eventparticipation.CoOrganizerEventAdapter.OnEventClickListener)" class="member-name-link">CoOrganizerEventAdapter(List, CoOrganizerEventAdapter.OnEventClickListener)</a> - Constructor for class com.example.eventparticipation.<a href="com/example/eventparticipation/CoOrganizerEventAdapter.html" title="class in com.example.eventparticipation">CoOrganizerEventAdapter</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Initializes the adapter with a dataset and a click listener.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/CoOrganizerEventAdapter.OnEventClickListener.html" class="type-name-link" title="interface in com.example.eventparticipation">CoOrganizerEventAdapter.OnEventClickListener</a> - Interface in <a href="com/example/eventparticipation/package-summary.html">com.example.eventparticipation</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Interface definition for a callback to be invoked when an event card or its
+manage button is clicked.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/NotificationRepository.CoOrganizerInvitationResult.html#%3Cinit%3E(java.lang.String)" class="member-name-link">CoOrganizerInvitationResult(String)</a> - Constructor for class com.example.eventparticipation.<a href="com/example/eventparticipation/NotificationRepository.CoOrganizerInvitationResult.html" title="class in com.example.eventparticipation">NotificationRepository.CoOrganizerInvitationResult</a></dt>
 <dd>
 <div class="block">Creates a new send result.</div>
@@ -447,6 +470,8 @@ per entrant per event, preventing duplicate pending notifications.</div>
 <dd>
 <div class="block">Returns the event capacity.</div>
 </dd>
+<dt><a href="com/example/eventparticipation/AdminCommentItem.html#getComment()" class="member-name-link">getComment()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/AdminCommentItem.html" title="class in com.example.eventparticipation">AdminCommentItem</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/NotificationRepository.html#getCoOrganizerInvitationNotificationRef(java.lang.String,java.lang.String)" class="member-name-link">getCoOrganizerInvitationNotificationRef(String, String)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/NotificationRepository.html" title="class in com.example.eventparticipation">NotificationRepository</a></dt>
 <dd>
 <div class="block">Returns the fixed notification document reference used for one
@@ -476,6 +501,8 @@ co-organizer invitation per event per entrant.</div>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/AdminEventItem.html#getEvent()" class="member-name-link">getEvent()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/AdminEventItem.html" title="class in com.example.eventparticipation">AdminEventItem</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="com/example/eventparticipation/AdminCommentItem.html#getEventId()" class="member-name-link">getEventId()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/AdminCommentItem.html" title="class in com.example.eventparticipation">AdminCommentItem</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/AdminNotificationLogItem.html#getEventId()" class="member-name-link">getEventId()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/AdminNotificationLogItem.html" title="class in com.example.eventparticipation">AdminNotificationLogItem</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/Comment.html#getEventId()" class="member-name-link">getEventId()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/Comment.html" title="class in com.example.eventparticipation">Comment</a></dt>
@@ -491,6 +518,8 @@ co-organizer invitation per event per entrant.</div>
 <div class="block">Returns the facility ID.</div>
 </dd>
 <dt><a href="com/example/eventparticipation/Entrant.html#getFinalStatus()" class="member-name-link">getFinalStatus()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/Entrant.html" title="class in com.example.eventparticipation">Entrant</a></dt>
+<dd>&nbsp;</dd>
+<dt><a href="com/example/eventparticipation/AdminCommentItem.html#getId()" class="member-name-link">getId()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/AdminCommentItem.html" title="class in com.example.eventparticipation">AdminCommentItem</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/AdminNotificationLogItem.html#getId()" class="member-name-link">getId()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/AdminNotificationLogItem.html" title="class in com.example.eventparticipation">AdminNotificationLogItem</a></dt>
 <dd>&nbsp;</dd>
@@ -515,11 +544,15 @@ co-organizer invitation per event per entrant.</div>
 <dt><a href="com/example/eventparticipation/SessionManager.html#getInstance(android.content.Context)" class="member-name-link">getInstance(Context)</a> - Static method in class com.example.eventparticipation.<a href="com/example/eventparticipation/SessionManager.html" title="class in com.example.eventparticipation">SessionManager</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/AdminBrowseAdapter.html#getItemCount()" class="member-name-link">getItemCount()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/AdminBrowseAdapter.html" title="class in com.example.eventparticipation">AdminBrowseAdapter</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Returns the total number of items contained within the data set held by the adapter.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/CommentAdapter.html#getItemCount()" class="member-name-link">getItemCount()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/CommentAdapter.html" title="class in com.example.eventparticipation">CommentAdapter</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/CoOrganizerEventAdapter.html#getItemCount()" class="member-name-link">getItemCount()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/CoOrganizerEventAdapter.html" title="class in com.example.eventparticipation">CoOrganizerEventAdapter</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Returns the total number of items in the data set held by the adapter.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/EntrantAdapter.html#getItemCount()" class="member-name-link">getItemCount()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/EntrantAdapter.html" title="class in com.example.eventparticipation">EntrantAdapter</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/EntrantEventAdapter.html#getItemCount()" class="member-name-link">getItemCount()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/EntrantEventAdapter.html" title="class in com.example.eventparticipation">EntrantEventAdapter</a></dt>
@@ -533,7 +566,9 @@ co-organizer invitation per event per entrant.</div>
 <div class="block">Returns the number of notifications currently displayed.</div>
 </dd>
 <dt><a href="com/example/eventparticipation/AdminBrowseAdapter.html#getItemViewType(int)" class="member-name-link">getItemViewType(int)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/AdminBrowseAdapter.html" title="class in com.example.eventparticipation">AdminBrowseAdapter</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Determines the integer view type of the item at the given position to inflate the correct layout.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/Entrant.html#getJoinedAddress()" class="member-name-link">getJoinedAddress()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/Entrant.html" title="class in com.example.eventparticipation">Entrant</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/Entrant.html#getJoinedAt()" class="member-name-link">getJoinedAt()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/Entrant.html" title="class in com.example.eventparticipation">Entrant</a></dt>
@@ -608,6 +643,8 @@ co-organizer invitation per event per entrant.</div>
 <dd>
 <div class="block">Returns the result status.</div>
 </dd>
+<dt><a href="com/example/eventparticipation/AdminCommentItem.html#getText()" class="member-name-link">getText()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/AdminCommentItem.html" title="class in com.example.eventparticipation">AdminCommentItem</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/Comment.html#getText()" class="member-name-link">getText()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/Comment.html" title="class in com.example.eventparticipation">Comment</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/Comment.html#getTimestamp()" class="member-name-link">getTimestamp()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/Comment.html" title="class in com.example.eventparticipation">Comment</a></dt>
@@ -618,9 +655,13 @@ co-organizer invitation per event per entrant.</div>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/NotificationItem.html#getType()" class="member-name-link">getType()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="com/example/eventparticipation/AdminCommentItem.html#getUserId()" class="member-name-link">getUserId()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/AdminCommentItem.html" title="class in com.example.eventparticipation">AdminCommentItem</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/Comment.html#getUserId()" class="member-name-link">getUserId()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/Comment.html" title="class in com.example.eventparticipation">Comment</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/SessionManager.html#getUserId()" class="member-name-link">getUserId()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/SessionManager.html" title="class in com.example.eventparticipation">SessionManager</a></dt>
+<dd>&nbsp;</dd>
+<dt><a href="com/example/eventparticipation/AdminCommentItem.html#getUserName()" class="member-name-link">getUserName()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/AdminCommentItem.html" title="class in com.example.eventparticipation">AdminCommentItem</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/Comment.html#getUserName()" class="member-name-link">getUserName()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/Comment.html" title="class in com.example.eventparticipation">Comment</a></dt>
 <dd>&nbsp;</dd>
@@ -782,12 +823,20 @@ public lottery.</div>
 <dd>
 <div class="block">Called when the primary accept button is tapped.</div>
 </dd>
+<dt><a href="com/example/eventparticipation/AdminBrowseAdapter.ProfileActionListener.html#onBanProfile(com.example.eventparticipation.AdminProfileItem,int)" class="member-name-link">onBanProfile(AdminProfileItem, int)</a> - Method in interface com.example.eventparticipation.<a href="com/example/eventparticipation/AdminBrowseAdapter.ProfileActionListener.html" title="interface in com.example.eventparticipation">AdminBrowseAdapter.ProfileActionListener</a></dt>
+<dd>
+<div class="block">Invoked when the administrator requests to ban an organizer.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/AdminBrowseAdapter.html#onBindViewHolder(androidx.recyclerview.widget.RecyclerView.ViewHolder,int)" class="member-name-link">onBindViewHolder(RecyclerView.ViewHolder, int)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/AdminBrowseAdapter.html" title="class in com.example.eventparticipation">AdminBrowseAdapter</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Binds the data from the backing list to the corresponding view elements within the ViewHolder.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/CommentAdapter.html#onBindViewHolder(com.example.eventparticipation.CommentAdapter.CommentViewHolder,int)" class="member-name-link">onBindViewHolder(CommentAdapter.CommentViewHolder, int)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/CommentAdapter.html" title="class in com.example.eventparticipation">CommentAdapter</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/CoOrganizerEventAdapter.html#onBindViewHolder(com.example.eventparticipation.CoOrganizerEventAdapter.ViewHolder,int)" class="member-name-link">onBindViewHolder(CoOrganizerEventAdapter.ViewHolder, int)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/CoOrganizerEventAdapter.html" title="class in com.example.eventparticipation">CoOrganizerEventAdapter</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Called by RecyclerView to display the data at the specified position.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/EntrantAdapter.html#onBindViewHolder(com.example.eventparticipation.EntrantAdapter.EntrantViewHolder,int)" class="member-name-link">onBindViewHolder(EntrantAdapter.EntrantViewHolder, int)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/EntrantAdapter.html" title="class in com.example.eventparticipation">EntrantAdapter</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/EntrantEventAdapter.html#onBindViewHolder(com.example.eventparticipation.EntrantEventAdapter.EntrantEventViewHolder,int)" class="member-name-link">onBindViewHolder(EntrantEventAdapter.EntrantEventViewHolder, int)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/EntrantEventAdapter.html" title="class in com.example.eventparticipation">EntrantEventAdapter</a></dt>
@@ -801,20 +850,29 @@ public lottery.</div>
 <div class="block">Binds a notification item to the row UI.</div>
 </dd>
 <dt><a href="com/example/eventparticipation/AdminDashboardActivity.html#onCreate(android.os.Bundle)" class="member-name-link">onCreate(Bundle)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/AdminDashboardActivity.html" title="class in com.example.eventparticipation">AdminDashboardActivity</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Initializes the activity, binds views, sets up the RecyclerView,
+and loads initial dashboard data.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/AuthActivity.html#onCreate(android.os.Bundle)" class="member-name-link">onCreate(Bundle)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/AuthActivity.html" title="class in com.example.eventparticipation">AuthActivity</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/CameraQRActivity.html#onCreate(android.os.Bundle)" class="member-name-link">onCreate(Bundle)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/CameraQRActivity.html" title="class in com.example.eventparticipation">CameraQRActivity</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/CoOrganizerDashboardActivity.html#onCreate(android.os.Bundle)" class="member-name-link">onCreate(Bundle)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/CoOrganizerDashboardActivity.html" title="class in com.example.eventparticipation">CoOrganizerDashboardActivity</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Initializes the activity, sets up the system window insets, toolbar, UI views,
+RecyclerView, and triggers the loading of events associated with the co-organizer.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/CreateEventActivity.html#onCreate(android.os.Bundle)" class="member-name-link">onCreate(Bundle)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/CreateEventActivity.html" title="class in com.example.eventparticipation">CreateEventActivity</a></dt>
 <dd>
 <div class="block">Standard onCreate method to initialize view references, Firebase instances,
 and UI listeners.</div>
 </dd>
 <dt><a href="com/example/eventparticipation/EntrantDashboardActivity.html#onCreate(android.os.Bundle)" class="member-name-link">onCreate(Bundle)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/EntrantDashboardActivity.html" title="class in com.example.eventparticipation">EntrantDashboardActivity</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Initializes activity variables, performs a session login check, and triggers
+view bindings, RecyclerView configuration, and event loading pipelines.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/EntrantEventDetailActivity.html#onCreate(android.os.Bundle)" class="member-name-link">onCreate(Bundle)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/EntrantEventDetailActivity.html" title="class in com.example.eventparticipation">EntrantEventDetailActivity</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/EntrantListActivity.html#onCreate(android.os.Bundle)" class="member-name-link">onCreate(Bundle)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/EntrantListActivity.html" title="class in com.example.eventparticipation">EntrantListActivity</a></dt>
@@ -848,11 +906,15 @@ and UI listeners.</div>
 <dt><a href="com/example/eventparticipation/ImagePreviewDialogFragment.html#onCreateDialog(android.os.Bundle)" class="member-name-link">onCreateDialog(Bundle)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/ImagePreviewDialogFragment.html" title="class in com.example.eventparticipation">ImagePreviewDialogFragment</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/AdminBrowseAdapter.html#onCreateViewHolder(android.view.ViewGroup,int)" class="member-name-link">onCreateViewHolder(ViewGroup, int)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/AdminBrowseAdapter.html" title="class in com.example.eventparticipation">AdminBrowseAdapter</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Inflates the appropriate XML layout based on the mapped view type.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/CommentAdapter.html#onCreateViewHolder(android.view.ViewGroup,int)" class="member-name-link">onCreateViewHolder(ViewGroup, int)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/CommentAdapter.html" title="class in com.example.eventparticipation">CommentAdapter</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/CoOrganizerEventAdapter.html#onCreateViewHolder(android.view.ViewGroup,int)" class="member-name-link">onCreateViewHolder(ViewGroup, int)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/CoOrganizerEventAdapter.html" title="class in com.example.eventparticipation">CoOrganizerEventAdapter</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Called when RecyclerView needs a new <code>CoOrganizerEventAdapter.ViewHolder</code> of the given type to represent an item.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/EntrantAdapter.html#onCreateViewHolder(android.view.ViewGroup,int)" class="member-name-link">onCreateViewHolder(ViewGroup, int)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/EntrantAdapter.html" title="class in com.example.eventparticipation">EntrantAdapter</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/EntrantEventAdapter.html#onCreateViewHolder(android.view.ViewGroup,int)" class="member-name-link">onCreateViewHolder(ViewGroup, int)</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/EntrantEventAdapter.html" title="class in com.example.eventparticipation">EntrantEventAdapter</a></dt>
@@ -875,10 +937,22 @@ and UI listeners.</div>
 <dd>
 <div class="block">Called when a comment is selected for deletion.</div>
 </dd>
+<dt><a href="com/example/eventparticipation/AdminBrowseAdapter.CommentActionListener.html#onDeleteComment(com.example.eventparticipation.AdminCommentItem,int)" class="member-name-link">onDeleteComment(AdminCommentItem, int)</a> - Method in interface com.example.eventparticipation.<a href="com/example/eventparticipation/AdminBrowseAdapter.CommentActionListener.html" title="interface in com.example.eventparticipation">AdminBrowseAdapter.CommentActionListener</a></dt>
+<dd>
+<div class="block">Invoked when the administrator requests to delete a comment.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/AdminBrowseAdapter.EventActionListener.html#onDeleteEvent(com.example.eventparticipation.AdminEventItem,int)" class="member-name-link">onDeleteEvent(AdminEventItem, int)</a> - Method in interface com.example.eventparticipation.<a href="com/example/eventparticipation/AdminBrowseAdapter.EventActionListener.html" title="interface in com.example.eventparticipation">AdminBrowseAdapter.EventActionListener</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Invoked when the administrator requests to permanently delete an event.</div>
+</dd>
+<dt><a href="com/example/eventparticipation/AdminBrowseAdapter.ImageActionListener.html#onDeleteImage(com.example.eventparticipation.AdminImageItem,int)" class="member-name-link">onDeleteImage(AdminImageItem, int)</a> - Method in interface com.example.eventparticipation.<a href="com/example/eventparticipation/AdminBrowseAdapter.ImageActionListener.html" title="interface in com.example.eventparticipation">AdminBrowseAdapter.ImageActionListener</a></dt>
+<dd>
+<div class="block">Invoked when the administrator requests to permanently delete an image.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/AdminBrowseAdapter.ProfileActionListener.html#onDeleteProfile(com.example.eventparticipation.AdminProfileItem,int)" class="member-name-link">onDeleteProfile(AdminProfileItem, int)</a> - Method in interface com.example.eventparticipation.<a href="com/example/eventparticipation/AdminBrowseAdapter.ProfileActionListener.html" title="interface in com.example.eventparticipation">AdminBrowseAdapter.ProfileActionListener</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Invoked when the administrator requests to permanently delete a user's profile.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/EntrantAdapter.OnEntrantClickListener.html#onEntrantClick(com.example.eventparticipation.Entrant)" class="member-name-link">onEntrantClick(Entrant)</a> - Method in interface com.example.eventparticipation.<a href="com/example/eventparticipation/EntrantAdapter.OnEntrantClickListener.html" title="interface in com.example.eventparticipation">EntrantAdapter.OnEntrantClickListener</a></dt>
 <dd>
 <div class="block">Called when an entrant row is tapped.</div>
@@ -898,15 +972,15 @@ and UI listeners.</div>
 <dt><a href="com/example/eventparticipation/ProfileInitializer.ExistsCallback.html#onError(java.lang.Exception)" class="member-name-link">onError(Exception)</a> - Method in interface com.example.eventparticipation.<a href="com/example/eventparticipation/ProfileInitializer.ExistsCallback.html" title="interface in com.example.eventparticipation">ProfileInitializer.ExistsCallback</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/CoOrganizerEventAdapter.OnEventClickListener.html#onEventClick(com.example.eventparticipation.Event)" class="member-name-link">onEventClick(Event)</a> - Method in interface com.example.eventparticipation.<a href="com/example/eventparticipation/CoOrganizerEventAdapter.OnEventClickListener.html" title="interface in com.example.eventparticipation">CoOrganizerEventAdapter.OnEventClickListener</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Called when a specific event item has been clicked.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/EntrantEventAdapter.OnEntrantEventClickListener.html#onEventClick(com.example.eventparticipation.Event)" class="member-name-link">onEventClick(Event)</a> - Method in interface com.example.eventparticipation.<a href="com/example/eventparticipation/EntrantEventAdapter.OnEntrantEventClickListener.html" title="interface in com.example.eventparticipation">EntrantEventAdapter.OnEntrantEventClickListener</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/OnEventClickListener.html" class="type-name-link" title="interface in com.example.eventparticipation">OnEventClickListener</a> - Interface in <a href="com/example/eventparticipation/package-summary.html">com.example.eventparticipation</a></dt>
 <dd>
 <div class="block">Listener interface for organizer event card actions.</div>
 </dd>
-<dt><a href="com/example/eventparticipation/AdminBrowseAdapter.ImageClickListener.html#onImageClick(com.example.eventparticipation.AdminImageItem)" class="member-name-link">onImageClick(AdminImageItem)</a> - Method in interface com.example.eventparticipation.<a href="com/example/eventparticipation/AdminBrowseAdapter.ImageClickListener.html" title="interface in com.example.eventparticipation">AdminBrowseAdapter.ImageClickListener</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/OnEventClickListener.html#onLotteryClick(com.example.eventparticipation.Event)" class="member-name-link">onLotteryClick(Event)</a> - Method in interface com.example.eventparticipation.<a href="com/example/eventparticipation/OnEventClickListener.html" title="interface in com.example.eventparticipation">OnEventClickListener</a></dt>
 <dd>
 <div class="block">Called when the organizer chooses to run the lottery for the selected event.</div>
@@ -932,7 +1006,10 @@ and UI listeners.</div>
 <dt><a href="com/example/eventparticipation/ProfileInitializer.ExistsCallback.html#onResult(boolean)" class="member-name-link">onResult(boolean)</a> - Method in interface com.example.eventparticipation.<a href="com/example/eventparticipation/ProfileInitializer.ExistsCallback.html" title="interface in com.example.eventparticipation">ProfileInitializer.ExistsCallback</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/EntrantDashboardActivity.html#onResume()" class="member-name-link">onResume()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/EntrantDashboardActivity.html" title="class in com.example.eventparticipation">EntrantDashboardActivity</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Refreshes the events loaded from Firestore anytime the activity regains focus
+to keep waitlist metrics and event availability completely up to date.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/EntrantMyEventsActivity.html#onResume()" class="member-name-link">onResume()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/EntrantMyEventsActivity.html" title="class in com.example.eventparticipation">EntrantMyEventsActivity</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/OrganizerDashboardActivity.html#onResume()" class="member-name-link">onResume()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/OrganizerDashboardActivity.html" title="class in com.example.eventparticipation">OrganizerDashboardActivity</a></dt>
@@ -948,7 +1025,9 @@ and UI listeners.</div>
 <div class="block">Called when the profile already exists or was created successfully.</div>
 </dd>
 <dt><a href="com/example/eventparticipation/CoOrganizerDashboardActivity.html#onSupportNavigateUp()" class="member-name-link">onSupportNavigateUp()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/CoOrganizerDashboardActivity.html" title="class in com.example.eventparticipation">CoOrganizerDashboardActivity</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Responds to the user clicking the "Up" action button in the App Bar.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/EntrantListActivity.html#onSupportNavigateUp()" class="member-name-link">onSupportNavigateUp()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/EntrantListActivity.html" title="class in com.example.eventparticipation">EntrantListActivity</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/example/eventparticipation/WaitlistMapActivity.html#onSupportNavigateUp()" class="member-name-link">onSupportNavigateUp()</a> - Method in class com.example.eventparticipation.<a href="com/example/eventparticipation/WaitlistMapActivity.html" title="class in com.example.eventparticipation">WaitlistMapActivity</a></dt>
@@ -958,7 +1037,13 @@ and UI listeners.</div>
 <div class="block">Called when the organizer wants to open the event detail view.</div>
 </dd>
 <dt><a href="com/example/eventparticipation/AdminBrowseAdapter.EventActionListener.html#onViewEvent(com.example.eventparticipation.AdminEventItem)" class="member-name-link">onViewEvent(AdminEventItem)</a> - Method in interface com.example.eventparticipation.<a href="com/example/eventparticipation/AdminBrowseAdapter.EventActionListener.html" title="interface in com.example.eventparticipation">AdminBrowseAdapter.EventActionListener</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Invoked when the administrator requests to view the details of an event.</div>
+</dd>
+<dt><a href="com/example/eventparticipation/AdminBrowseAdapter.ImageActionListener.html#onViewImage(com.example.eventparticipation.AdminImageItem)" class="member-name-link">onViewImage(AdminImageItem)</a> - Method in interface com.example.eventparticipation.<a href="com/example/eventparticipation/AdminBrowseAdapter.ImageActionListener.html" title="interface in com.example.eventparticipation">AdminBrowseAdapter.ImageActionListener</a></dt>
+<dd>
+<div class="block">Invoked when the administrator requests to view an image in full screen.</div>
+</dd>
 <dt><a href="com/example/eventparticipation/OrganizerDashboardActivity.html" class="type-name-link" title="class in com.example.eventparticipation">OrganizerDashboardActivity</a> - Class in <a href="com/example/eventparticipation/package-summary.html">com.example.eventparticipation</a></dt>
 <dd>
 <div class="block">Organizer dashboard screen that displays summary statistics and event cards.</div>
