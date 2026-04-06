@@ -1,22 +1,18 @@
 package com.example.eventparticipation;
 
 import android.content.Intent;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.content.Intent;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.firebase.firestore.WriteBatch;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
@@ -27,6 +23,23 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Main control panel for Administrator users.
+ *
+ * <p>Provides a tabbed interface allowing admins to browse and moderate events,
+ * user profiles, uploaded images, and system notification logs.</p>
+ *
+ * <p>Relevant user stories:</p>
+ * <ul>
+ * <li>US 03.01.01 Remove events</li>
+ * <li>US 03.02.01 Remove profiles</li>
+ * <li>US 03.03.01 Remove uploaded images</li>
+ * <li>US 03.04.01 Browse events</li>
+ * <li>US 03.05.01 Browse profiles</li>
+ * <li>US 03.06.01 Browse uploaded images</li>
+ * <li>US 03.08.01 Review notification logs</li>
+ * </ul>
+ */
 public class AdminDashboardActivity extends AppCompatActivity {
 
     private TextView btnEvents;
@@ -34,6 +47,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
     private TextView btnImages;
     private TextView btnOrganizers;
     private TextView btnLogs;
+    private TextView btnComments;
 
     private TextView tvEventCount;
     private TextView tvUserCount;
@@ -66,6 +80,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         loadDashboardCounts();
         selectTab("profiles");
     }
+
     private void openEvent(AdminEventItem item) {
         if (item == null || item.getEvent() == null) {
             Toast.makeText(this, "Event unavailable", Toast.LENGTH_SHORT).show();
@@ -79,6 +94,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         intent.putExtra("ORGANIZER_ID", event.getOrganizerId());
         startActivity(intent);
     }
+
     private void confirmDeleteEvent(AdminEventItem item, int position) {
         if (item == null || item.getEvent() == null) {
             Toast.makeText(this, "Event unavailable", Toast.LENGTH_SHORT).show();
@@ -94,6 +110,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 .setPositiveButton("Delete", (dialog, which) -> deleteEvent(item, position))
                 .show();
     }
+
     private void deleteEvent(AdminEventItem item, int position) {
         Event event = item.getEvent();
         if (event == null || event.getId() == null || event.getId().trim().isEmpty()) {
@@ -167,6 +184,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         } catch (Exception ignored) {
         }
     }
+
     private void removeEventFromList(int position) {
         if (position >= 0 && position < items.size()) {
             items.remove(position);
@@ -331,24 +349,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         showLoading(true);
         String profileId = item.getProfileId();
 
-        if ("organizer".equals(item.getRole())) {
-            deleteOrganizerAndEvents(item, position);
-        } else {
-            String collection = item.getRole() + "s";
-            db.collection(collection)
-                    .document(profileId)
-                    .delete()
-                    .addOnSuccessListener(unused -> {
-                        removeProfileFromList(position);
-                        loadDashboardCounts();
-                        Toast.makeText(this, "Profile deleted", Toast.LENGTH_SHORT).show();
-                    })
-                    .addOnFailureListener(e -> {
-                        showLoading(false);
-                        Toast.makeText(this, "Failed to delete profile", Toast.LENGTH_SHORT).show();
-                    });
-        }
-    }
+        String collection = item.getRole() + "s";
 
     private void deleteOrganizerAndEvents(AdminProfileItem item, int position) {
         String organizerId = item.getProfileId();
@@ -401,12 +402,47 @@ public class AdminDashboardActivity extends AppCompatActivity {
         tvEmpty.setText("No profiles found");
     }
 
+    private void confirmDeleteComment(AdminCommentItem item, int position) {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Delete comment?")
+                .setMessage("Are you sure you want to remove this comment?")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Delete", (dialog, which) -> deleteComment(item, position))
+                .show();
+    }
+
+    private void deleteComment(AdminCommentItem item, int position) {
+        showLoading(true);
+        db.collection("events").document(item.getEventId())
+                .collection("comments").document(item.getId())
+                .delete()
+                .addOnSuccessListener(unused -> {
+                    if (position >= 0 && position < items.size()) {
+                        items.remove(position);
+                        adapter.notifyItemRemoved(position);
+                        adapter.notifyItemRangeChanged(position, items.size() - position);
+                    }
+                    showLoading(false);
+                    Toast.makeText(this, "Comment deleted", Toast.LENGTH_SHORT).show();
+                    if (items.isEmpty()) {
+                        recyclerView.setVisibility(View.GONE);
+                        tvEmpty.setVisibility(View.VISIBLE);
+                        tvEmpty.setText("No comments found");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    showLoading(false);
+                    Toast.makeText(this, "Failed to delete comment", Toast.LENGTH_SHORT).show();
+                });
+    }
+
     private void bindViews() {
         btnEvents = findViewById(R.id.btnTabEvents);
         btnProfiles = findViewById(R.id.btnTabProfiles);
         btnImages = findViewById(R.id.btnTabImages);
         btnOrganizers = findViewById(R.id.btnTabOrganizers);
         btnLogs = findViewById(R.id.btnTabLogs);
+        btnComments = findViewById(R.id.btnTabComments);
 
         tvEventCount = findViewById(R.id.tvEventCount);
         tvUserCount = findViewById(R.id.tvUserCount);
@@ -452,10 +488,11 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     public void onDeleteProfile(AdminProfileItem item, int position) {
                         confirmDeleteProfile(item, position);
                     }
-
+                },
+                new AdminBrowseAdapter.CommentActionListener() {
                     @Override
-                    public void onBanProfile(AdminProfileItem item, int position) {
-                        banOrganizer(item, position);
+                    public void onDeleteComment(AdminCommentItem item, int position) {
+                        confirmDeleteComment(item, position);
                     }
                 }
         );
@@ -469,6 +506,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         btnImages.setOnClickListener(v -> selectTab("images"));
         btnOrganizers.setOnClickListener(v -> selectTab("organizers"));
         btnLogs.setOnClickListener(v -> selectTab("logs"));
+        btnComments.setOnClickListener(v -> selectTab("comments"));
     }
 
     private void selectTab(@NonNull String tab) {
@@ -484,6 +522,8 @@ public class AdminDashboardActivity extends AppCompatActivity {
             loadImages();
         } else if ("organizers".equals(tab)) {
             loadProfiles(true);
+        } else if ("comments".equals(tab)) {
+            loadComments();
         } else {
             loadNotificationLogs();
         }
@@ -495,6 +535,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         setTabStyle(btnImages, "images".equals(activeTab));
         setTabStyle(btnOrganizers, "organizers".equals(activeTab));
         setTabStyle(btnLogs, "logs".equals(activeTab));
+        setTabStyle(btnComments, "comments".equals(activeTab));
     }
 
     private void setTabStyle(TextView tab, boolean selected) {
@@ -515,6 +556,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
         } else if ("organizers".equals(tab)) {
             tvSectionTitle.setText("Organizer Profiles");
             tvSectionSubtitle.setText("Review organizer accounts");
+        } else if ("comments".equals(tab)) {
+            tvSectionTitle.setText("All Comments");
+            tvSectionSubtitle.setText("Browse and moderate all event comments");
         } else {
             tvSectionTitle.setText("Notification Logs");
             tvSectionSubtitle.setText("Review logs of all notifications sent to entrants");
@@ -657,6 +701,24 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     showItems(result, "No uploaded images found");
                 })
                 .addOnFailureListener(e -> showLoadError("Unable to load images", e));
+    }
+
+    private void loadComments() {
+        showLoading(true);
+        db.collectionGroup("comments")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    List<AdminCommentItem> result = new ArrayList<>();
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        Comment comment = doc.toObject(Comment.class);
+                        if (comment != null) {
+                            comment.setId(doc.getId());
+                            result.add(new AdminCommentItem(comment));
+                        }
+                    }
+                    showItems(result, "No comments found");
+                })
+                .addOnFailureListener(e -> showLoadError("Unable to load comments", e));
     }
 
     private void loadNotificationLogs() {

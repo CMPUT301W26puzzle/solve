@@ -18,7 +18,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Entrant notifications screen.
+ * Activity displaying a history of all notifications received by an entrant.
+ *
+ * <p>Relevant user stories:</p>
+ * <ul>
+ * <li>US 01.04.01 Receive notification when chosen (won lottery)</li>
+ * <li>US 01.04.02 Receive notification when not chosen (lost lottery)</li>
+ * <li>US 01.05.06 Receive notification for private event invite</li>
+ * <li>US 01.09.01 Receive notification for co-organizer invite</li>
+ * </ul>
  */
 public class EntrantNotificationsActivity extends BaseEntrantActivity implements NotificationAdapter.Listener {
 

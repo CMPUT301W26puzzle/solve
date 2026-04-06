@@ -2,6 +2,8 @@ package com.example.eventparticipation;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -30,7 +32,6 @@ public class SelectRoleActivity extends AppCompatActivity {
                     .get()
                     .addOnSuccessListener(doc -> {
                         if (!doc.exists()) {
-                            // Fix for stale sessions
                             session.logout();
                             setContentView(R.layout.activity_select_role);
                             setupRoleButtons();
@@ -69,33 +70,34 @@ public class SelectRoleActivity extends AppCompatActivity {
         String deviceId = DeviceIdProvider.getId(this);
 
         if (!DeviceIdProvider.isValidId(deviceId)) {
-            android.widget.Toast.makeText(this, "Failed to get Device ID", android.widget.Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Unable to verify device ID", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        ProfileInitializer initializer = new ProfileInitializer();
-        initializer.checkEntrantProfileExists(deviceId, new ProfileInitializer.ExistsCallback() {
-            @Override
-            public void onResult(boolean exists) {
-                if (exists) {
-                    // Profile exists! Save session and go straight to dashboard.
-                    SessionManager.getInstance(SelectRoleActivity.this).saveSession(deviceId, "entrant");
-                    routeToDashboard("entrant");
-                } else {
-                    // First time user. Send to Profile Setup.
-                    Intent intent = new Intent(SelectRoleActivity.this, ProfileSetupActivity.class);
-                    intent.putExtra(ProfileSetupActivity.EXTRA_ROLE, "entrant");
-                    intent.putExtra(ProfileSetupActivity.EXTRA_PROFILE_ID, deviceId);
-                    startActivity(intent);
-                    finish();
-                }
-            }
+        FirebaseFirestore.getInstance().collection("entrants").document(deviceId).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        // Profile exists! Silent login directly to Dashboard.
+                        SessionManager.getInstance(this).saveSession(deviceId, "entrant");
 
-            @Override
-            public void onError(Exception e) {
-                android.widget.Toast.makeText(SelectRoleActivity.this, "Network error. Try again.", android.widget.Toast.LENGTH_SHORT).show();
-            }
-        });
+                        Intent intent = new Intent(this, EntrantDashboardActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        startActivity(intent);
+                        finish();
+                    } else {
+                        // New device! Route to ProfileSetupActivity
+                        Intent intent = new Intent(this, ProfileSetupActivity.class);
+
+                        // USE THE EXPECTED EXTRA KEYS HERE:
+                        intent.putExtra(ProfileSetupActivity.EXTRA_ROLE, "entrant");
+                        intent.putExtra(ProfileSetupActivity.EXTRA_PROFILE_ID, deviceId);
+
+                        startActivity(intent);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to connect to server.", Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void goToAuth(String role) {

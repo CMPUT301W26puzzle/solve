@@ -21,7 +21,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Activity for viewing and updating profile information and logging out.
+ * Activity for viewing and modifying user profile information.
+ *
+ * <p>Allows users to update their contact details, manage notification
+ * preferences, access co-organizer features, or permanently delete their account.</p>
+ *
+ * <p>Relevant user stories:</p>
+ * <ul>
+ * <li>US 01.02.02 Update profile information</li>
+ * <li>US 01.02.04 Delete profile</li>
+ * <li>US 01.04.03 Opt out of notifications</li>
+ * </ul>
  */
 public class ProfileActivity extends BaseOrganizerActivity {
 

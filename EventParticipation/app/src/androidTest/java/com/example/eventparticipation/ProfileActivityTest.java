@@ -31,62 +31,104 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Instrumentation tests for `ProfileActivity` covering UI validation, profile loading and saving,
- * and account deletion behavior with Firestore.
+ * UI and Integration tests for {@link ProfileActivity}.
+ *
+ * <p><b>Purpose & Role:</b> This test class verifies the UI validation, profile loading,
+ * profile saving, and account deletion behaviors of the Entrant's profile screen. It uses
+ * {@link ActivityScenario} to launch the Activity in isolation and direct Firestore calls
+ * to verify backend data state modifications.</p>
+ *
+ * <p>Relevant User Stories:</p>
+ * <ul>
+ * <li>US 01.02.01 - As an entrant, I want to provide my personal information in the app.</li>
+ * <li>US 01.02.02 - As an entrant, I want to update information on my profile.</li>
+ * <li>US 01.02.04 - As an entrant, I want to delete my profile.</li>
+ * </ul>
  */
 @RunWith(AndroidJUnit4.class)
 public class ProfileActivityTest {
 
+    /** Hardcoded Entrant ID used exclusively for isolating test data in Firestore. */
     private static final String TEST_ENTRANT_ID = "test-entrant-profile-001";
+
+    /** Hardcoded Event ID used to test waitlist removals during account deletion. */
     private static final String TEST_EVENT_1 = "test-event-001";
+
+    /** Hardcoded Event ID used to test waitlist removals during account deletion. */
     private static final String TEST_EVENT_2 = "test-event-002";
 
+    /** Reference to the Firestore database instance used for setup and assertions. */
     private FirebaseFirestore db;
 
+    /**
+     * Sets up the testing environment before each test runs.
+     * Mocks the user session to prevent the Activity from redirecting to the login screen,
+     * and initializes dummy event documents required for deletion tests.
+     *
+     * @throws Exception if Firestore data population is interrupted or fails.
+     */
     @Before
     public void setUp() throws Exception {
-        // MOCK THE SESSION SO PROFILE ACTIVITY DOESN'T REDIRECT TO LOGIN
+        // Mock the session so Profile Activity doesn't redirect to login
         Context context = ApplicationProvider.getApplicationContext();
         SessionManager.getInstance(context).saveSession(TEST_ENTRANT_ID, "entrant");
 
         db = FirebaseFirestore.getInstance();
 
+        // FIX: Create a mock profile in Firestore so the Activity doesn't think
+        // the account was deleted and force a logout/redirect to SelectRoleActivity.
+        Map<String, Object> profile = new HashMap<>();
+        profile.put("entrantId", TEST_ENTRANT_ID);
+        profile.put("role", "entrant");
+        profile.put("name", "Test User");
+        profile.put("email", "test@example.com");
+        profile.put("phone", "1234567890");
+
+        Tasks.await(db.collection("entrants").document(TEST_ENTRANT_ID).set(profile), 10, TimeUnit.SECONDS);
+
         Map<String, Object> event = new HashMap<>();
         event.put("title", "Test Event");
 
+        // Pre-populate events needed for testing waitlist cascading deletes
         Tasks.await(db.collection("events").document(TEST_EVENT_1).set(event), 10, TimeUnit.SECONDS);
         Tasks.await(db.collection("events").document(TEST_EVENT_2).set(event), 10, TimeUnit.SECONDS);
     }
 
+    /**
+     * Cleans up the testing environment after each test runs.
+     * Clears the mocked session to prevent data leakage into other test suites.
+     */
     @After
     public void tearDown() {
-        // CLEAR THE SESSION AFTER THE TEST
         Context context = ApplicationProvider.getApplicationContext();
         SessionManager.getInstance(context).clearSession();
     }
 
     /**
-     * Waits briefly for the profile screen to finish loading data.
+     * Pauses the main thread briefly to allow the profile screen to finish
+     * fetching and displaying data from Firestore.
      */
     private void waitForProfileLoad() {
         SystemClock.sleep(1500);
     }
 
     /**
-     * Returns text from an input field.
+     * Helper method to safely extract text from a {@link TextInputEditText}.
      *
-     * @param editText the input field
-     * @return the current text value
+     * @param editText The input field to read from.
+     * @return The current String value of the field, or an empty string if null.
      */
     private String getText(TextInputEditText editText) {
         return editText.getText() == null ? "" : editText.getText().toString();
     }
 
     /**
-     * Invokes a private method on ProfileActivity by name.
+     * Utility method utilizing Java Reflection to invoke a private method within the Activity.
+     * Used primarily to trigger the protected {@code deleteAccount()} logic.
      *
-     * @param activity the profile activity instance
-     * @param methodName the method name to invoke
+     * @param activity   The instance of the ProfileActivity.
+     * @param methodName The exact string name of the private method to invoke.
+     * @throws RuntimeException if the method cannot be found or accessed.
      */
     private void invokePrivateMethod(ProfileActivity activity, String methodName) {
         try {
@@ -99,9 +141,10 @@ public class ProfileActivityTest {
     }
 
     /**
-     * Launches ProfileActivity with a test entrant ID.
+     * Launches the {@link ProfileActivity} and passes the required test entrant ID
+     * through the Intent to ensure the Activity loads the isolated test data.
      *
-     * @return an activity scenario for ProfileActivity
+     * @return The {@link ActivityScenario} managing the activity lifecycle.
      */
     private ActivityScenario<ProfileActivity> launchProfileActivity() {
         Intent intent = new Intent(
@@ -113,12 +156,14 @@ public class ProfileActivityTest {
     }
 
     /**
-     * Waits until a Firestore document reaches the expected existence state.
+     * Actively polls a Firestore document until it matches the expected existence state
+     * or a timeout is reached. Useful for verifying asynchronous database writes.
      *
-     * @param docRef the document reference to observe
-     * @param shouldExist true if the document should exist; false otherwise
-     * @return the latest document snapshot
-     * @throws Exception if the expected state is not reached in time
+     * @param docRef      The Firestore DocumentReference to observe.
+     * @param shouldExist True if the document is expected to exist, false if it should be deleted.
+     * @return The final {@link DocumentSnapshot} reflecting the expected state.
+     * @throws AssertionError if the document does not reach the expected state within 10 seconds.
+     * @throws Exception if the Firestore read task is interrupted.
      */
     private DocumentSnapshot waitForDocumentState(DocumentReference docRef, boolean shouldExist) throws Exception {
         long deadline = System.currentTimeMillis() + 10000;
@@ -129,16 +174,18 @@ public class ProfileActivityTest {
             if (snapshot.exists() == shouldExist) {
                 return snapshot;
             }
-
             SystemClock.sleep(300);
         }
-
         throw new AssertionError("Timed out waiting for document state: " + docRef.getPath());
     }
 
+    /**
+     * Tests that all primary UI components (text fields, buttons, labels) are
+     * successfully bound and visible when the Activity is created.
+     */
     @Test
     public void profileScreen_displaysMainViews() {
-        try (ActivityScenario<ProfileActivity> scenario = ActivityScenario.launch(ProfileActivity.class)) {
+        try (ActivityScenario<ProfileActivity> scenario = launchProfileActivity()) {
             waitForProfileLoad();
 
             scenario.onActivity(activity -> {
@@ -152,9 +199,13 @@ public class ProfileActivityTest {
         }
     }
 
+    /**
+     * Tests input validation: verifies that submitting the form with an empty name
+     * triggers the appropriate localized error message on the EditText.
+     */
     @Test
     public void saveProfile_emptyName_showsNameError() {
-        try (ActivityScenario<ProfileActivity> scenario = ActivityScenario.launch(ProfileActivity.class)) {
+        try (ActivityScenario<ProfileActivity> scenario = launchProfileActivity()) {
             waitForProfileLoad();
 
             scenario.onActivity(activity -> {
@@ -174,9 +225,13 @@ public class ProfileActivityTest {
         }
     }
 
+    /**
+     * Tests input validation: verifies that submitting the form with an empty email
+     * triggers the appropriate localized error message on the EditText.
+     */
     @Test
     public void saveProfile_emptyEmail_showsEmailError() {
-        try (ActivityScenario<ProfileActivity> scenario = ActivityScenario.launch(ProfileActivity.class)) {
+        try (ActivityScenario<ProfileActivity> scenario = launchProfileActivity()) {
             waitForProfileLoad();
 
             scenario.onActivity(activity -> {
@@ -196,9 +251,13 @@ public class ProfileActivityTest {
         }
     }
 
+    /**
+     * Tests input validation: verifies that submitting the form with a poorly formatted
+     * email string triggers an invalid email error on the EditText.
+     */
     @Test
     public void saveProfile_invalidEmail_showsEmailError() {
-        try (ActivityScenario<ProfileActivity> scenario = ActivityScenario.launch(ProfileActivity.class)) {
+        try (ActivityScenario<ProfileActivity> scenario = launchProfileActivity()) {
             waitForProfileLoad();
 
             scenario.onActivity(activity -> {
@@ -218,9 +277,13 @@ public class ProfileActivityTest {
         }
     }
 
+    /**
+     * Tests input validation: verifies that submitting the form with a phone number
+     * that does not meet the 10-digit requirement triggers an error on the EditText.
+     */
     @Test
     public void saveProfile_invalidPhone_showsPhoneError() {
-        try (ActivityScenario<ProfileActivity> scenario = ActivityScenario.launch(ProfileActivity.class)) {
+        try (ActivityScenario<ProfileActivity> scenario = launchProfileActivity()) {
             waitForProfileLoad();
 
             scenario.onActivity(activity -> {
@@ -231,7 +294,7 @@ public class ProfileActivityTest {
 
                 etName.setText("Blake");
                 etEmail.setText("test@example.com");
-                etPhone.setText("123456789");
+                etPhone.setText("123456789"); // Missing one digit
 
                 btnSave.performClick();
 
@@ -240,6 +303,12 @@ public class ProfileActivityTest {
         }
     }
 
+    /**
+     * Integration test: verifies that submitting the form with fully valid inputs
+     * successfully constructs and uploads the profile map to the Firestore database.
+     *
+     * @throws Exception if Firestore synchronization times out or fails.
+     */
     @Test
     public void saveProfile_validInput_writesProfileDocument() throws Exception {
         try (ActivityScenario<ProfileActivity> scenario = launchProfileActivity()) {
@@ -258,6 +327,7 @@ public class ProfileActivityTest {
                 btnSave.performClick();
             });
 
+            // Assert that the database successfully receives the payload
             DocumentSnapshot snapshot = waitForDocumentState(
                     db.collection("entrants").document(TEST_ENTRANT_ID),
                     true
@@ -272,24 +342,20 @@ public class ProfileActivityTest {
         }
     }
 
+    /**
+     * Integration test for User Story US 01.02.04: verifies that executing the account
+     * deletion sequence successfully removes the user's primary profile document AND
+     * cascades to remove them from any event waitlists they were joined to.
+     *
+     * @throws Exception if Firestore data population or verification times out or fails.
+     */
     @Test
     public void deleteAccount_removesProfileAndWaitingListEntries() throws Exception {
-        Map<String, Object> profile = new HashMap<>();
-        profile.put("entrantId", TEST_ENTRANT_ID);
-        profile.put("role", "entrant");
-        profile.put("name", "Delete Me");
-        profile.put("email", "delete@example.com");
-        profile.put("phone", "7801234567");
-
+        // 1. Inject fake waitlist entries across multiple events for this user
         Map<String, Object> waitingEntry = new HashMap<>();
         waitingEntry.put("deviceId", TEST_ENTRANT_ID);
         waitingEntry.put("status", "waiting");
         waitingEntry.put("joinedAt", System.currentTimeMillis());
-
-        Tasks.await(
-                db.collection("entrants").document(TEST_ENTRANT_ID).set(profile),
-                10, TimeUnit.SECONDS
-        );
 
         Tasks.await(
                 db.collection("events").document(TEST_EVENT_1)
@@ -305,11 +371,13 @@ public class ProfileActivityTest {
                 10, TimeUnit.SECONDS
         );
 
+        // 2. Launch the activity and invoke the deletion logic
         try (ActivityScenario<ProfileActivity> scenario = launchProfileActivity()) {
             waitForProfileLoad();
 
             scenario.onActivity(activity -> invokePrivateMethod(activity, "deleteAccount"));
 
+            // 3. Assert that all traces of the user are wiped from the database
             DocumentSnapshot profileSnapshot = waitForDocumentState(
                     db.collection("entrants").document(TEST_ENTRANT_ID),
                     false
