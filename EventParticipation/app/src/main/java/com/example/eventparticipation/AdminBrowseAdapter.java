@@ -53,6 +53,7 @@ public class AdminBrowseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     private final List<Object> items;
     private final EventActionListener eventActionListener;
     private final ProfileActionListener profileActionListener;
+    private final ImageActionListener imageActionListener;
     private final CommentActionListener commentActionListener;
     private final SimpleDateFormat dateFormat =
             new SimpleDateFormat("M/d/yyyy, h:mm:ss a", Locale.getDefault());

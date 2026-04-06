@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -348,8 +349,25 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
         showLoading(true);
         String profileId = item.getProfileId();
-
         String collection = item.getRole() + "s";
+
+        if ("organizer".equals(item.getRole())) {
+            deleteOrganizerAndEvents(item, position);
+        } else {
+            db.collection(collection)
+                    .document(profileId)
+                    .delete()
+                    .addOnSuccessListener(unused -> {
+                        removeProfileFromList(position);
+                        loadDashboardCounts();
+                        Toast.makeText(this, "Profile deleted", Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e -> {
+                        showLoading(false);
+                        Toast.makeText(this, "Failed to delete profile", Toast.LENGTH_SHORT).show();
+                    });
+        }
+    }
 
     private void deleteOrganizerAndEvents(AdminProfileItem item, int position) {
         String organizerId = item.getProfileId();
@@ -487,6 +505,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     @Override
                     public void onDeleteProfile(AdminProfileItem item, int position) {
                         confirmDeleteProfile(item, position);
+                    }
+                    @Override
+                    public void onBanProfile(AdminProfileItem item, int position) {
+                        banOrganizer(item, position);
                     }
                 },
                 new AdminBrowseAdapter.CommentActionListener() {
