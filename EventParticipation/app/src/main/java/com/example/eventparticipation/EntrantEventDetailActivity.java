@@ -1,27 +1,37 @@
 package com.example.eventparticipation;
 
+import android.content.ContentValues;
+import android.content.Intent;
 import android.content.res.ColorStateList;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Typeface;
+import android.graphics.pdf.PdfDocument;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
-import android.widget.ImageButton;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 
-import java.util.ArrayList;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -39,20 +49,15 @@ import java.util.Map;
  * - selectionStatus: waiting / selected / cancelled
  * - responseStatus: pending / accepted / declined
  * - finalStatus: enrolled
- *
- * <p>Relevant user stories:</p>
- * <ul>
- *     <li>US 01.01.01 - Join waiting list</li>
- *     <li>US 01.01.02 - Leave waiting list</li>
- *     <li>US 01.05.04 - View enrollment and waiting counts</li>
- *     <li>US 01.08.01 - Post a comment on an event</li>
- *     <li>US 01.08.02 - View comments on an event</li>
- * </ul>
  */
 public class EntrantEventDetailActivity extends AppCompatActivity {
 
     private String eventId;
     private String entrantId;
+
+    // Stored for PDF Ticket generation
+    private Event currentEvent;
+    private String currentEntrantName = "Attendee";
 
     private ImageView ivEventPoster;
     private TextView tvEventName;
@@ -68,17 +73,12 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
     private TextView tvEnrolledWaiting;
     private TextView tvRegistrationDeadline;
     private TextView tvAbout;
-    private TextView tvCommentsEmpty;
+    private TextView tvLotteryGuidelines;
     private MaterialButton btnJoinLeave;
-    private ImageButton btnPostComment;
-    private TextInputEditText etComment;
-    private RecyclerView rvComments;
+    private MaterialButton btnDownloadTicket; // New PDF Button
 
     private FirebaseFirestore db;
     private boolean isOnWaitingList = false;
-    private String currentEntrantName = "Anonymous entrant";
-    private final List<EventComment> comments = new ArrayList<>();
-    private EventCommentAdapter commentAdapter;
 
     private final SimpleDateFormat dateFormat =
             new SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault());
@@ -93,19 +93,35 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_entrant_event_detail);
 
         db = FirebaseFirestore.getInstance();
-        entrantId = DeviceIdProvider.getId(this);
+        SessionManager session = SessionManager.getInstance(this);
+        if (!session.isLoggedIn()) {
+            Toast.makeText(this, "Please log in first", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, SelectRoleActivity.class));
+            finish();
+            return;
+        }
+        entrantId = session.getUserId();
         eventId = getIntent().getStringExtra("EVENT_ID");
 
         initViews();
-        setupCommentsRecyclerView();
+        fetchEntrantName(); // Fetch user's name for the ticket
         loadEventFromIntent();
-        loadEntrantProfile();
-        loadComments();
         checkWaitingListStatus();
     }
 
     /**
-     * Binds layout views and sets up click listeners.
+     * Fetches the current user's name from Firestore for the PDF Ticket.
+     */
+    private void fetchEntrantName() {
+        db.collection("entrants").document(entrantId).get().addOnSuccessListener(doc -> {
+            if (doc.exists() && doc.contains("name")) {
+                currentEntrantName = doc.getString("name");
+            }
+        });
+    }
+
+    /**
+     * Binds layout views and sets up back button and join/leave button.
      */
     private void initViews() {
         ivEventPoster = findViewById(R.id.ivEventPoster);
@@ -122,38 +138,64 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         tvEnrolledWaiting = findViewById(R.id.tvEnrolledWaiting);
         tvRegistrationDeadline = findViewById(R.id.tvRegistrationDeadline);
         tvAbout = findViewById(R.id.tvAbout);
-        tvCommentsEmpty = findViewById(R.id.tvCommentsEmpty);
+        tvLotteryGuidelines = findViewById(R.id.tvLotteryGuidelines);
         btnJoinLeave = findViewById(R.id.btnJoinLeave);
-        btnPostComment = findViewById(R.id.btnPostComment);
-        etComment = findViewById(R.id.etComment);
-        rvComments = findViewById(R.id.rvComments);
+
+        // Initialize PDF Ticket Button
+        btnDownloadTicket = findViewById(R.id.btnDownloadTicket);
+        btnDownloadTicket.setVisibility(View.GONE); // Hidden by default
+        btnDownloadTicket.setOnClickListener(v -> generateAndSavePdfTicket());
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
         btnJoinLeave.setOnClickListener(v -> {
-            if (isOnWaitingList) {
+            if ("Respond to Invitation".equals(btnJoinLeave.getText().toString())) {
+                showResponseDialog();
+            } else if (isOnWaitingList) {
                 leaveWaitingList();
             } else {
                 joinWaitingList();
             }
         });
-
-        btnPostComment.setOnClickListener(v -> postComment());
     }
 
-    /**
-     * Configures the comments RecyclerView.
-     */
-    private void setupCommentsRecyclerView() {
-        commentAdapter = new EventCommentAdapter(comments, this::handleCommentLongPress);
-        rvComments.setLayoutManager(new LinearLayoutManager(this));
-        rvComments.setAdapter(commentAdapter);
+    private void showResponseDialog() {
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("You Won the Lottery!")
+                .setMessage("Do you want to accept this invitation and enroll in the event?")
+                .setPositiveButton("Accept", (dialog, which) -> acceptInvitation())
+                .setNegativeButton("Decline", (dialog, which) -> {
+                    if (eventId != null) {
+                        DocumentReference eventRef = db.collection("events").document(eventId);
+                        DocumentReference waitRef = eventRef.collection("waitlist").document(entrantId);
+                        declineSelectedInvitation(eventRef, waitRef);
+                    }
+                })
+                .show();
     }
 
-    /**
-     * Populates the UI using Event passed via Intent extras.
-     * Falls back to Firestore fetch if no extras are present.
-     */
+    private void acceptInvitation() {
+        if (eventId == null) return;
+        DocumentReference eventRef = db.collection("events").document(eventId);
+        DocumentReference waitRef = eventRef.collection("waitlist").document(entrantId);
+
+        waitRef.update(
+                "responseStatus", "accepted",
+                "finalStatus", "enrolled",
+                "respondedAt", FieldValue.serverTimestamp()
+        ).addOnSuccessListener(unused -> {
+            eventRef.update(
+                    "enrolledCount", FieldValue.increment(1),
+                    "selectedCount", FieldValue.increment(-1)
+            );
+            isOnWaitingList = true;
+            updateButton();
+            Toast.makeText(this, "Successfully enrolled!", Toast.LENGTH_SHORT).show();
+        }).addOnFailureListener(e ->
+                Toast.makeText(this, "Failed to accept invitation", Toast.LENGTH_SHORT).show()
+        );
+    }
+
     private void loadEventFromIntent() {
         tvEventName.setText(getIntent().getStringExtra("EVENT_NAME") != null
                 ? getIntent().getStringExtra("EVENT_NAME")
@@ -182,22 +224,18 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Loads full event data from Firestore.
-     */
     private void loadEventFromFirestore(String eventId) {
         db.collection("events")
                 .document(eventId)
                 .get()
                 .addOnSuccessListener(doc -> {
-                    if (!doc.exists()) {
-                        return;
-                    }
+                    if (!doc.exists()) return;
 
                     Event event = doc.toObject(Event.class);
-                    if (event == null) {
-                        return;
-                    }
+                    if (event == null) return;
+
+                    event.setId(doc.getId()); // Ensure ID is set
+                    currentEvent = event;     // Store locally for PDF generation
 
                     tvEventName.setText(event.getName());
 
@@ -223,6 +261,12 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                         );
                     }
 
+                    String guidelines = doc.getString("lotteryGuidelines");
+                    if (guidelines != null && !guidelines.isEmpty()) {
+                        tvLotteryGuidelines.setText("Lottery Guidelines:\n" + guidelines);
+                        tvLotteryGuidelines.setVisibility(View.VISIBLE);
+                    }
+
                     if (event.getPosterUrl() != null && !event.getPosterUrl().isEmpty()) {
                         Glide.with(this)
                                 .load(event.getPosterUrl())
@@ -232,161 +276,8 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                 });
     }
 
-    /**
-     * Loads the current entrant profile name for comment posting.
-     */
-    private void loadEntrantProfile() {
-        db.collection("entrants")
-                .document(entrantId)
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    String entrantName = documentSnapshot.getString("name");
-                    if (entrantName != null && !entrantName.trim().isEmpty()) {
-                        currentEntrantName = entrantName.trim();
-                    }
-                });
-    }
-
-    /**
-     * Loads comments for the current event.
-     */
-    private void loadComments() {
-        if (eventId == null) {
-            tvCommentsEmpty.setVisibility(TextView.VISIBLE);
-            rvComments.setVisibility(RecyclerView.GONE);
-            return;
-        }
-
-        db.collection("events")
-                .document(eventId)
-                .collection("comments")
-                .orderBy("createdAt")
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    comments.clear();
-
-                    for (QueryDocumentSnapshot doc : querySnapshot) {
-                        EventComment comment = doc.toObject(EventComment.class);
-                        if (comment == null) {
-                            continue;
-                        }
-
-                        comment.setCommentId(doc.getId());
-                        comments.add(comment);
-                    }
-
-                    commentAdapter.notifyDataSetChanged();
-                    updateCommentsEmptyState();
-                })
-                .addOnFailureListener(e -> {
-                    updateCommentsEmptyState();
-                    Toast.makeText(this, "Failed to load comments", Toast.LENGTH_SHORT).show();
-                });
-    }
-
-    /**
-     * Posts a new comment for the current event.
-     */
-    private void postComment() {
-        if (eventId == null) {
-            Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String commentText = EventCommentLogic.normalizeCommentText(
-                etComment.getText() != null ? etComment.getText().toString() : null
-        );
-
-        if (!EventCommentLogic.isCommentTextValid(commentText)) {
-            Toast.makeText(this, "Comment cannot be empty", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        DocumentReference commentRef = db.collection("events")
-                .document(eventId)
-                .collection("comments")
-                .document();
-
-        Map<String, Object> commentData = new HashMap<>();
-        commentData.put("commentId", commentRef.getId());
-        commentData.put("entrantId", entrantId);
-        commentData.put("entrantName", EventCommentLogic.resolveAuthorName(currentEntrantName));
-        commentData.put("text", commentText);
-        commentData.put("createdAt", FieldValue.serverTimestamp());
-
-        commentRef.set(commentData)
-                .addOnSuccessListener(unused -> {
-                    etComment.setText("");
-                    loadComments();
-                    Toast.makeText(this, "Comment posted", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to post comment", Toast.LENGTH_SHORT).show()
-                );
-    }
-
-    /**
-     * Handles long press actions on a comment.
-     *
-     * @param comment pressed comment
-     */
-    private void handleCommentLongPress(EventComment comment) {
-        if (!EventCommentLogic.canDeleteComment(entrantId, comment)) {
-            return;
-        }
-
-        new MaterialAlertDialogBuilder(this)
-                .setTitle("Delete comment?")
-                .setMessage("This will permanently remove your comment.")
-                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
-                .setPositiveButton("Delete", (dialog, which) -> deleteComment(comment))
-                .show();
-    }
-
-    /**
-     * Deletes a comment owned by the current entrant.
-     *
-     * @param comment comment to delete
-     */
-    private void deleteComment(EventComment comment) {
-        if (eventId == null || comment == null || comment.getCommentId() == null) {
-            return;
-        }
-
-        db.collection("events")
-                .document(eventId)
-                .collection("comments")
-                .document(comment.getCommentId())
-                .delete()
-                .addOnSuccessListener(unused -> {
-                    loadComments();
-                    Toast.makeText(this, "Comment deleted", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to delete comment", Toast.LENGTH_SHORT).show()
-                );
-    }
-
-    /**
-     * Updates visibility for the comments empty state.
-     */
-    private void updateCommentsEmptyState() {
-        if (comments.isEmpty()) {
-            tvCommentsEmpty.setVisibility(TextView.VISIBLE);
-            rvComments.setVisibility(RecyclerView.GONE);
-        } else {
-            tvCommentsEmpty.setVisibility(TextView.GONE);
-            rvComments.setVisibility(RecyclerView.VISIBLE);
-        }
-    }
-
-    /**
-     * Checks Firestore to see whether this entrant currently has an active waitlist entry.
-     */
     private void checkWaitingListStatus() {
-        if (eventId == null) {
-            return;
-        }
+        if (eventId == null) return;
 
         db.collection("events")
                 .document(eventId)
@@ -406,9 +297,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> updateButton());
     }
 
-    /**
-     * Adds this entrant to the event waitlist unless they are a co-organizer.
-     */
     private void joinWaitingList() {
         if (eventId == null) {
             Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
@@ -421,11 +309,15 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
             List<String> coOrganizerIds = (List<String>) eventDoc.get("coOrganizerIds");
 
             if (coOrganizerIds != null && coOrganizerIds.contains(entrantId)) {
-                Toast.makeText(
-                        this,
-                        "Co-organizers cannot join the entrant pool for this event",
-                        Toast.LENGTH_LONG
-                ).show();
+                Toast.makeText(this, "Co-organizers cannot join the entrant pool.", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            Long limit = eventDoc.getLong("waitlistLimit");
+            Long currentWaiting = eventDoc.getLong("waitingCount");
+
+            if (limit != null && currentWaiting != null && currentWaiting >= limit) {
+                Toast.makeText(this, "The waiting list is currently full.", Toast.LENGTH_LONG).show();
                 return;
             }
 
@@ -434,7 +326,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
             waitlistEntry.put("entrantId", entrantId);
             waitlistEntry.put("joinedAt", new Date());
 
-            // New status model
             waitlistEntry.put("selectionStatus", "waiting");
             waitlistEntry.put("responseStatus", null);
             waitlistEntry.put("finalStatus", null);
@@ -456,13 +347,8 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         );
     }
 
-    /**
-     * Removes this entrant from the waitlist, or declines a pending invitation if selected.
-     */
     private void leaveWaitingList() {
-        if (eventId == null) {
-            return;
-        }
+        if (eventId == null) return;
 
         DocumentReference eventRef = db.collection("events").document(eventId);
         DocumentReference waitRef = eventRef.collection("waitlist").document(entrantId);
@@ -485,13 +371,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * Declines a selected invitation.
-     *
-     * Manual replacement flow:
-     * - mark this entrant declined
-     * - organizer later decides whether to draw a replacement
-     */
     private void declineSelectedInvitation(DocumentReference eventRef, DocumentReference waitRef) {
         waitRef.update(
                         "selectionStatus", "selected",
@@ -511,9 +390,6 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                 );
     }
 
-    /**
-     * Marks pending selected notifications as declined.
-     */
     private void markInvitationNotificationsDeclined() {
         db.collection("entrants")
                 .document(entrantId)
@@ -523,9 +399,7 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                 .whereEqualTo("actionStatus", NotificationItem.ACTION_PENDING)
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
-                    if (querySnapshot.isEmpty()) {
-                        return;
-                    }
+                    if (querySnapshot.isEmpty()) return;
 
                     com.google.firebase.firestore.WriteBatch batch = db.batch();
                     for (DocumentSnapshot notificationDoc : querySnapshot.getDocuments()) {
@@ -539,14 +413,12 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                 });
     }
 
-    /**
-     * Updates the button label and color based on entrant status for this event.
-     */
     private void updateButton() {
         if (eventId == null) {
             btnJoinLeave.setText("Join Waiting List");
             btnJoinLeave.setEnabled(true);
             btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF000000));
+            if (btnDownloadTicket != null) btnDownloadTicket.setVisibility(View.GONE);
             return;
         }
 
@@ -565,15 +437,20 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                             btnJoinLeave.setText("Enrolled");
                             btnJoinLeave.setEnabled(false);
                             btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF6B7280));
-                        } else if ("selected".equals(selectionStatus)
-                                && "pending".equals(responseStatus)) {
-                            btnJoinLeave.setText("Decline Invitation");
+
+                            // Show the PDF Ticket download button!
+                            if (btnDownloadTicket != null) btnDownloadTicket.setVisibility(View.VISIBLE);
+
+                        } else if ("selected".equals(selectionStatus) && "pending".equals(responseStatus)) {
+                            btnJoinLeave.setText("Respond to Invitation");
                             btnJoinLeave.setEnabled(true);
-                            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFFCC0000));
+                            btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF4CAF50)); // Green
+                            if (btnDownloadTicket != null) btnDownloadTicket.setVisibility(View.GONE);
                         } else {
                             btnJoinLeave.setText("Leave Waiting List");
                             btnJoinLeave.setEnabled(true);
                             btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFFCC0000));
+                            if (btnDownloadTicket != null) btnDownloadTicket.setVisibility(View.GONE);
                         }
                     })
                     .addOnFailureListener(e -> {
@@ -582,9 +459,144 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                         btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFFCC0000));
                     });
         } else {
+            // They are not on the waiting list (or declined, etc.)
             btnJoinLeave.setText("Join Waiting List");
             btnJoinLeave.setEnabled(true);
             btnJoinLeave.setBackgroundTintList(ColorStateList.valueOf(0xFF000000));
+            if (btnDownloadTicket != null) btnDownloadTicket.setVisibility(View.GONE);
+        }
+    }
+
+    /**
+     * Generates a PDF ticket using the Android Canvas API and saves it to the Downloads folder.
+     */
+    private void generateAndSavePdfTicket() {
+        if (currentEvent == null) {
+            Toast.makeText(this, "Event data not fully loaded yet.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 1. Create the PdfDocument and PageInfo (A4 approx size)
+        PdfDocument pdfDocument = new PdfDocument();
+        int pageHeight = 842;
+        int pageWidth = 595;
+        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create();
+        PdfDocument.Page page = pdfDocument.startPage(pageInfo);
+
+        // 2. Setup Canvas and Paint
+        Canvas canvas = page.getCanvas();
+        Paint paint = new Paint();
+
+        // Draw White Background
+        paint.setColor(Color.WHITE);
+        canvas.drawRect(0, 0, pageWidth, pageHeight, paint);
+
+        // Draw a decorative border
+        paint.setColor(Color.parseColor("#3F51B5")); // Primary Color
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(10);
+        canvas.drawRect(20, 20, pageWidth - 20, pageHeight - 20, paint);
+
+        // Draw Header Text
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.BLACK);
+        paint.setTextSize(40f);
+        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        paint.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText("OFFICIAL EVENT TICKET", pageWidth / 2f, 100, paint);
+
+        // Draw Event Details
+        paint.setTextSize(24f);
+        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
+        paint.setTextAlign(Paint.Align.LEFT);
+
+        int startX = 60;
+        int startY = 200;
+        int lineSpacing = 40;
+
+        String safeEventName = currentEvent.getName() != null ? currentEvent.getName() : "Unnamed Event";
+        String safeEventId = currentEvent.getId() != null ? currentEvent.getId() : eventId;
+
+        canvas.drawText("Event Name: " + safeEventName, startX, startY, paint);
+        canvas.drawText("Attendee: " + currentEntrantName, startX, startY + lineSpacing, paint);
+        canvas.drawText("Status: ADMIT ONE (Enrolled)", startX, startY + (lineSpacing * 2), paint);
+        canvas.drawText("Ticket ID: " + safeEventId.substring(0, Math.min(8, safeEventId.length())).toUpperCase(), startX, startY + (lineSpacing * 3), paint);
+
+        // 3. Draw the QR Code using your existing QRCodeGenerator class
+        try {
+            // Generate a QR code linking to the event
+            String qrData = "https://eventparticipation.com/event?id=" + safeEventId;
+            Bitmap qrBitmap = QRCodeGenerator.generateQRCode(qrData, 250);
+
+            if (qrBitmap != null) {
+                // Draw the Bitmap onto the PDF Canvas
+                int qrX = (pageWidth - 250) / 2; // Center horizontally
+                int qrY = startY + (lineSpacing * 5);
+                canvas.drawBitmap(qrBitmap, qrX, qrY, null);
+
+                paint.setTextAlign(Paint.Align.CENTER);
+                paint.setTextSize(16f);
+                paint.setColor(Color.DKGRAY);
+                canvas.drawText("Scan at the door for entry", pageWidth / 2f, qrY + 280, paint);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // 4. Finish the page
+        pdfDocument.finishPage(page);
+
+        // 5. Save the PDF to the device's Downloads folder
+        String fileName = "Ticket_" + safeEventName.replaceAll("[^a-zA-Z0-9.-]", "_") + ".pdf";
+        savePdfToDownloads(pdfDocument, fileName);
+    }
+
+    /**
+     * Handles saving the file using Scoped Storage (MediaStore) for Android 10+
+     * or standard File I/O for older versions.
+     */
+    private void savePdfToDownloads(PdfDocument pdfDocument, String fileName) {
+        OutputStream fos = null;
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Modern Android (API 29+): Use MediaStore
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.Downloads.DISPLAY_NAME, fileName);
+                values.put(MediaStore.Downloads.MIME_TYPE, "application/pdf");
+                values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+
+                Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                if (uri != null) {
+                    fos = getContentResolver().openOutputStream(uri);
+                }
+            } else {
+                // Older Android: Save directly to external storage Downloads folder
+                File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                if (!downloadsDir.exists()) downloadsDir.mkdirs();
+
+                File file = new File(downloadsDir, fileName);
+                fos = new FileOutputStream(file);
+            }
+
+            if (fos != null) {
+                pdfDocument.writeTo(fos);
+                Toast.makeText(this, "Ticket saved to Downloads folder!", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this, "Failed to create file.", Toast.LENGTH_SHORT).show();
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Error saving ticket: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        } finally {
+            pdfDocument.close();
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 }

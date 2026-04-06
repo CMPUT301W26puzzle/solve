@@ -7,6 +7,7 @@ import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.isNotEnabled;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 
+import android.content.Context;
 import android.content.Intent;
 
 import androidx.test.core.app.ActivityScenario;
@@ -17,6 +18,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -57,7 +59,19 @@ public class ManageEventActivityUploadPosterTest {
                 5,
                 TimeUnit.SECONDS
         );
+
+        // MOCK THE SESSION SO THE ACTIVITY DOESN'T REDIRECT TO LOGIN
+        Context context = ApplicationProvider.getApplicationContext();
+        SessionManager.getInstance(context).saveSession(ORG_ID, "organizer");
     }
+
+    @After
+    public void tearDown() {
+        // CLEAR THE SESSION AFTER THE TEST
+        Context context = ApplicationProvider.getApplicationContext();
+        SessionManager.getInstance(context).clearSession();
+    }
+
     @Test
     public void uploadPosterButton_isDisabled_whenPosterAlreadyExists() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), ManageEventActivity.class);

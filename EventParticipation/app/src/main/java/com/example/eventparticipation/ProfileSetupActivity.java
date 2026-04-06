@@ -74,6 +74,10 @@ public class ProfileSetupActivity extends AppCompatActivity {
         tvSubtitle.setText("New users need a name and email before continuing.");
     }
 
+    /**
+     * Validates input, merges the new profile data into Firestore, and saves
+     * the local session before routing the user to their dashboard.
+     */
     private void saveProfile() {
         String name = getInputText(etName);
         String email = getInputText(etEmail);
@@ -118,6 +122,9 @@ public class ProfileSetupActivity extends AppCompatActivity {
                 .document(profileId)
                 .set(profile, SetOptions.merge())
                 .addOnSuccessListener(unused -> {
+                    // NEW: Save the session so the user remains logged in for future app launches
+                    SessionManager.getInstance(this).saveSession(profileId, role);
+
                     setLoading(false);
                     openDestination();
                 })
@@ -132,7 +139,9 @@ public class ProfileSetupActivity extends AppCompatActivity {
         if ("organizer".equals(role)) {
             intent = new Intent(this, OrganizerDashboardActivity.class);
         } else if ("admin".equals(role)) {
-            intent = new Intent(this, AdminDashboardActivity.class);
+            Toast.makeText(this, "Admin dashboard coming soon", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
         } else {
             intent = new Intent(this, EntrantDashboardActivity.class);
         }

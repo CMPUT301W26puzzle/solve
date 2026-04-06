@@ -25,6 +25,7 @@
 
     <!-- Main Content -->
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/nestedScrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
@@ -365,6 +366,7 @@
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp">
 
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -378,6 +380,15 @@
                         android:text="Actions"
                         android:textSize="18sp"
                         android:textStyle="bold" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnViewComments"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="View Event Comments"
+                        app:cornerRadius="8dp" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnRunLottery"
@@ -398,14 +409,35 @@
                         app:icon="@drawable/ic_refresh" />
 
                     <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnInviteUser"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Invite User (Private)"
+                        app:icon="@drawable/ic_add" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnMassNotification"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Send Mass Notification"
+                        app:icon="@drawable/belllogo" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCancelEntrant"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Cancel an Entrant"
+                        app:icon="@drawable/ic_close" />
+
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnAssignCoOrganizer"
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:text="Assign Co-organizer"
-                        app:icon="@drawable/ic_users"
-                        app:cornerRadius="8dp" />
+                        app:cornerRadius="8dp"
+                        app:icon="@drawable/ic_users" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnShowQRCode"
@@ -426,6 +458,7 @@
                         app:cornerRadius="8dp"
                         app:icon="@drawable/ic_edit" />
 
+
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnExportCsv"
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
@@ -435,7 +468,6 @@
                         android:text="Export Enrolled CSV"
                         app:cornerRadius="8dp"
                         app:icon="@drawable/ic_download" />
-
 
 
                 </LinearLayout>

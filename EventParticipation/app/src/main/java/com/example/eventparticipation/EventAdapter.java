@@ -89,7 +89,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         holder.btnManageEvent.setOnClickListener(v -> listener.onManageClick(event));
         holder.btnViewEntrants.setOnClickListener(v -> listener.onEntrantsClick(event));
         holder.btnRunLottery.setOnClickListener(v -> listener.onLotteryClick(event));
-        holder.btnShowQR.setOnClickListener(v -> listener.onQRCodeClick(event));
         holder.btnViewEvent.setOnClickListener(v -> listener.onViewClick(event));
     }
 
@@ -126,8 +125,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         /** Button triggering lottery flow. */
         LinearLayout btnRunLottery;
 
-        /** Button opening QR code view. */
-        LinearLayout btnShowQR;
 
         /** Button opening event detail view. */
         LinearLayout btnViewEvent;
@@ -145,7 +142,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             btnManageEvent = itemView.findViewById(R.id.btnManageEvent);
             btnViewEntrants = itemView.findViewById(R.id.btnViewEntrants);
             btnRunLottery = itemView.findViewById(R.id.btnRunLottery);
-            btnShowQR = itemView.findViewById(R.id.btnShowQR);
             btnViewEvent = itemView.findViewById(R.id.btnViewEvent);
         }
     }

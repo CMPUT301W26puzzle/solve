@@ -3,6 +3,10 @@ package com.example.eventparticipation;
 import static androidx.test.espresso.intent.Intents.intended;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
+import static androidx.test.espresso.intent.Intents.intending;
+import static androidx.test.espresso.intent.matcher.IntentMatchers.anyIntent;
+import android.app.Activity;
+import android.app.Instrumentation.ActivityResult;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.intent.Intents;
@@ -33,20 +37,33 @@ public class OrganizerDashboardIntentTest {
     /** Fixed test organizer id used across all dashboard intent tests. */
     private static final String ORGANIZER_ID = "organizer_demo_001";
 
-    /**
-     * Initializes Espresso Intents before each test.
-     */
     @Before
     public void setUp() {
+        // Clean up just in case a previous test crashed
+        try {
+            Intents.release();
+        } catch (Exception e) {
+            // Ignored
+        }
+
         Intents.init();
+
+        intending(hasComponent(ManageEventActivity.class.getName()))
+                .respondWith(new ActivityResult(Activity.RESULT_OK, null));
+
+        intending(hasComponent(EntrantListActivity.class.getName()))
+                .respondWith(new ActivityResult(Activity.RESULT_OK, null));
+
+        android.content.Context context = androidx.test.core.app.ApplicationProvider.getApplicationContext();
+        SessionManager.getInstance(context).saveSession("test_organizer_id", "organizer");
     }
 
-    /**
-     * Releases Espresso Intents after each test.
-     */
     @After
     public void tearDown() {
         Intents.release();
+
+        android.content.Context context = androidx.test.core.app.ApplicationProvider.getApplicationContext();
+        SessionManager.getInstance(context).clearSession();
     }
 
     /**

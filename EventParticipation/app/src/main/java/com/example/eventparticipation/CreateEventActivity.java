@@ -1,5 +1,6 @@
 package com.example.eventparticipation;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -75,6 +76,9 @@ public class CreateEventActivity extends AppCompatActivity {
     /** Entry point for Firebase Storage operations. */
     private FirebaseStorage storage;
 
+    /** Switch to toggle private event */
+    private SwitchCompat swPrivate;
+
     /**
      * Launcher for the GET_CONTENT intent to pick images from the device gallery.
      */
@@ -95,13 +99,15 @@ public class CreateEventActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_event);
 
-        organizerId = DeviceIdProvider.getId(this);
-
-        if (!DeviceIdProvider.isValidId(organizerId)) {
-            Toast.makeText(this, "Failed to get device ID", Toast.LENGTH_SHORT).show();
+        SessionManager session = SessionManager.getInstance(this);
+        if (!session.isLoggedIn()) {
+            Toast.makeText(this, "Please log in first", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, SelectRoleActivity.class));
             finish();
             return;
         }
+
+        organizerId = session.getUserId();
 
         db = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
@@ -120,6 +126,7 @@ public class CreateEventActivity extends AppCompatActivity {
         imgPoster = findViewById(R.id.imgEventPoster);
         btnDates = findViewById(R.id.btnDateRange);
         btnSave = findViewById(R.id.btnSaveEvent);
+        swPrivate = findViewById(R.id.switchPrivateEvent);
     }
 
     /**
@@ -164,21 +171,28 @@ public class CreateEventActivity extends AppCompatActivity {
                 } catch (NumberFormatException ignored) {}
             }
 
+            boolean isPrivateEvent = swPrivate != null && swPrivate.isChecked();
+
             saveToFirestore(
                     etName.getText().toString().trim(), // name
-                    null,                               // facilityId (default "")
+                    "",                                 // description (TODO: Link to UI)
+                    null,                               // facilityId
+                    0.0,                                // price (TODO: Link to UI)
                     null,                               // posterUrl
-                    null,                               // qrCodeUrl (default "")
+                    null,                               // qrCodeUrl
                     "University of Alberta",            // venueAddress
                     swGeo.isChecked(),                  // geolocationRequired
+                    0,                                  // capacity (TODO: Link to UI)
                     0,                                  // enrolledCount
                     0,                                  // waitingCount
                     0,                                  // selectedCount
                     53.5232,                            // venueLat
                     -113.5263,                          // venueLng
+                    new Date(),                         // startTime (TODO: Link to UI)
                     regStart,                           // registrationStart
                     regEnd,                             // registrationEnd
-                    parsedLimit                         // waitlistLimit
+                    parsedLimit,                        // waitlistLimit
+                    isPrivateEvent                      // isPrivate
             );
         }
     }
@@ -188,7 +202,9 @@ public class CreateEventActivity extends AppCompatActivity {
      * document upon success, passing all necessary fields to saveToFirestore.
      */
     private void uploadAndSave() {
-        String path = "posters/" + System.currentTimeMillis() + ".jpg";
+        // Use a consistent ID format for posters to prevent storage leaks when updating later
+        String newEventId = db.collection("events").document().getId();
+        String path = "posters/" + newEventId + ".jpg";
         StorageReference ref = storage.getReference().child(path);
 
         String address = "";
@@ -204,6 +220,7 @@ public class CreateEventActivity extends AppCompatActivity {
         }
 
         final Integer finalWaitlistLimit = parsedLimit;
+        final boolean isPrivateEvent = swPrivate != null && swPrivate.isChecked();
 
         ref.putFile(selectedImageUri)
                 .continueWithTask(task -> {
@@ -212,22 +229,31 @@ public class CreateEventActivity extends AppCompatActivity {
                     }
                     return ref.getDownloadUrl();
                 })
-                .addOnSuccessListener(uri -> saveToFirestore(
-                        etName.getText().toString().trim(), // name
-                        null,                               // facilityId
-                        uri.toString(),                     // posterUrl
-                        null,                               // qrCodeUrl
-                        address,                            // venueAddress
-                        swGeo.isChecked(),                  // geolocationRequired
-                        0,                                  // enrolledCount
-                        0,                                  // waitingCount
-                        0,                                  // selectedCount
-                        lat,                                // venueLat
-                        lng,                                // venueLng
-                        regStart,                           // registrationStart
-                        regEnd,                             // registrationEnd
-                        finalWaitlistLimit                  // waitlistLimit
-                ))
+                .addOnSuccessListener(uri -> {
+                    // Temporarily store the generated ID so saveToFirestore uses it
+                    saveToFirestoreWithId(
+                            newEventId,
+                            etName.getText().toString().trim(),
+                            "",
+                            null,
+                            0.0,
+                            uri.toString(),
+                            null,
+                            address,
+                            swGeo.isChecked(),
+                            0,
+                            0,
+                            0,
+                            0,
+                            lat,
+                            lng,
+                            new Date(),
+                            regStart,
+                            regEnd,
+                            finalWaitlistLimit,
+                            isPrivateEvent
+                    );
+                })
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
@@ -235,66 +261,81 @@ public class CreateEventActivity extends AppCompatActivity {
     /**
      * Packages the event details into a map and saves it as a new document in Firestore.
      * Every possible field from the Event model is accepted as an input parameter.
-     * If any parameter is passed as null, the method applies a safe default to ensure
-     * the resulting document strictly matches the Event.java model, preventing
-     * NullPointerExceptions in the UI adapters.
+     * Applies safe defaults to prevent NullPointerExceptions in the UI adapters.
      *
      * @param name                The display name or title of the event.
+     * @param description         The detailed text description of the event.
      * @param facilityId          The ID of the facility where this event is being hosted.
+     * @param price               The numerical cost to attend the event.
      * @param posterUrl           The cloud storage download URL for the event's promotional poster.
      * @param qrCodeUrl           The cloud storage download URL for the generated QR code.
      * @param venueAddress        The physical address or location name of the event venue.
-     * @param geolocationRequired Flag indicating whether an entrant must provide their geolocation to join the waitlist.
+     * @param geolocationRequired Flag indicating whether an entrant must provide their geolocation.
+     * @param capacity            The maximum number of entrants who can enroll and attend the event.
      * @param enrolledCount       The current number of entrants who have been successfully enrolled.
      * @param waitingCount        The current number of entrants waiting on the waitlist.
      * @param selectedCount       The count of entrants currently selected by the lottery.
      * @param venueLat            The double-precision latitude of the venue location.
      * @param venueLng            The double-precision longitude of the venue location.
+     * @param startTime           The date and time when the actual event begins.
      * @param registrationStart   The date and time when the waitlist registration period opens.
      * @param registrationEnd     The date and time when the waitlist registration period closes.
-     * @param waitlistLimit       An optional cap on the maximum number of entrants allowed on the waitlist (null for unlimited).
+     * @param waitlistLimit       An optional cap on the maximum number of entrants allowed on the waitlist.
+     * @param isPrivate           Flag indicating if the event should be hidden from public listings.
      */
     private void saveToFirestore(
-            String name,
-            String facilityId,
-            String posterUrl,
-            String qrCodeUrl,
-            String venueAddress,
-            Boolean geolocationRequired,
-            Integer enrolledCount,
-            Integer waitingCount,
-            Integer selectedCount,
-            Double venueLat,
-            Double venueLng,
-            Date registrationStart,
-            Date registrationEnd,
-            Integer waitlistLimit) {
+            String name, String description, String facilityId, Double price,
+            String posterUrl, String qrCodeUrl, String venueAddress,
+            Boolean geolocationRequired, Integer capacity, Integer enrolledCount,
+            Integer waitingCount, Integer selectedCount, Double venueLat, Double venueLng,
+            Date startTime, Date registrationStart, Date registrationEnd,
+            Integer waitlistLimit, Boolean isPrivate) {
+
+        String newEventId = db.collection("events").document().getId();
+        saveToFirestoreWithId(newEventId, name, description, facilityId, price, posterUrl, qrCodeUrl, venueAddress, geolocationRequired, capacity, enrolledCount, waitingCount, selectedCount, venueLat, venueLng, startTime, registrationStart, registrationEnd, waitlistLimit, isPrivate);
+    }
+
+    /** Internal helper to enforce ID matching if poster was already uploaded. */
+    private void saveToFirestoreWithId(
+            String newEventId, String name, String description, String facilityId, Double price,
+            String posterUrl, String qrCodeUrl, String venueAddress,
+            Boolean geolocationRequired, Integer capacity, Integer enrolledCount,
+            Integer waitingCount, Integer selectedCount, Double venueLat, Double venueLng,
+            Date startTime, Date registrationStart, Date registrationEnd,
+            Integer waitlistLimit, Boolean isPrivate) {
+
+        if (registrationStart == null || registrationEnd == null) {
+            Toast.makeText(this, "Registration dates are required.", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         Map<String, Object> map = new HashMap<>();
 
+        map.put("id", newEventId);
         map.put("name", name != null ? name : "");
+        map.put("description", description != null ? description : "");
         map.put("organizerId", this.organizerId != null ? this.organizerId : "");
         map.put("facilityId", facilityId != null ? facilityId : "");
+        map.put("price", price != null ? price : 0.0);
         map.put("posterUrl", posterUrl != null ? posterUrl : "");
         map.put("qrCodeUrl", qrCodeUrl != null ? qrCodeUrl : "");
         map.put("venueAddress", venueAddress != null ? venueAddress : "");
 
         map.put("geolocationRequired", geolocationRequired != null ? geolocationRequired : false);
 
+        map.put("capacity", capacity != null ? capacity : 0);
         map.put("enrolledCount", enrolledCount != null ? enrolledCount : 0);
         map.put("waitingCount", waitingCount != null ? waitingCount : 0);
         map.put("selectedCount", selectedCount != null ? selectedCount : 0);
         map.put("venueLat", venueLat != null ? venueLat : 0.0);
         map.put("venueLng", venueLng != null ? venueLng : 0.0);
 
-        Date fallbackDate = new Date();
-        map.put("registrationStart", registrationStart != null ? registrationStart : fallbackDate);
-        map.put("registrationEnd", registrationEnd != null ? registrationEnd : fallbackDate);
+        map.put("startTime", startTime != null ? startTime : new Date());
+        map.put("registrationStart", registrationStart);
+        map.put("registrationEnd", registrationEnd);
 
         map.put("waitlistLimit", waitlistLimit);
-
-        String newEventId = db.collection("events").document().getId();
-        map.put("id", newEventId);
+        map.put("isPrivate", isPrivate != null ? isPrivate : false);
 
         DocumentReference eventRef = db.collection("events").document(newEventId);
 
@@ -311,10 +352,16 @@ public class CreateEventActivity extends AppCompatActivity {
                             .document(newEventId)
                             .set(organizerEventMap)
                             .addOnSuccessListener(unusedIndex -> {
-                                uploadQRCode(newEventId, this.organizerId, eventRef);
+                                // only generate QR if the event is PUBLIC
+                                if (isPrivate != null && !isPrivate) {
+                                    uploadQRCode(newEventId, this.organizerId, eventRef);
+                                } else {
+                                    Toast.makeText(this, "Private Event successfully created!", Toast.LENGTH_SHORT).show();
+                                    finish();
+                                }
                             })
                             .addOnFailureListener(e ->
-                                    Toast.makeText(this, "Event created, but organizer index failed to save: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(this, "Event created, but organizer index failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
                             );
                 })
                 .addOnFailureListener(e ->
@@ -328,7 +375,8 @@ public class CreateEventActivity extends AppCompatActivity {
      */
     private void uploadQRCode(String eventId, String orgId, DocumentReference docRef) {
         try {
-            Bitmap qrCode = QRCodeGenerator.generateQRCode(eventId, 500);
+            String deepLinkUrl = "https://eventparticipation.com/event?id=" + eventId;
+            Bitmap qrCode = QRCodeGenerator.generateQRCode(deepLinkUrl, 500);
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             qrCode.compress(Bitmap.CompressFormat.PNG, 100, baos);

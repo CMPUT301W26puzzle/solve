@@ -29,12 +29,6 @@ public interface OnEventClickListener {
      */
     void onLotteryClick(Event event);
 
-    /**
-     * Called when the organizer wants to display the QR code for the selected event.
-     *
-     * @param event event associated with the clicked item
-     */
-    void onQRCodeClick(Event event);
 
     /**
      * Called when the organizer wants to open the event detail view.

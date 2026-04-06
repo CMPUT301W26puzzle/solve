@@ -7,12 +7,15 @@ import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 
+import android.content.Context;
 import android.content.Intent;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -21,6 +24,20 @@ import java.util.Date;
 
 @RunWith(AndroidJUnit4.class)
 public class EntrantNotificationsActivityTest {
+
+    @Before
+    public void setUp() {
+        // Inject a mock user session so the app doesn't crash when querying Firestore!
+        Context context = ApplicationProvider.getApplicationContext();
+        SessionManager.getInstance(context).saveSession("test_entrant_123", "entrant");
+    }
+
+    @After
+    public void tearDown() {
+        // Clear the session so it doesn't pollute other tests
+        Context context = ApplicationProvider.getApplicationContext();
+        SessionManager.getInstance(context).clearSession();
+    }
 
     @Test
     public void selectedNotification_showsInvitationActions() {
@@ -33,10 +50,15 @@ public class EntrantNotificationsActivityTest {
     }
 
     @Test
-    public void acceptInvitation_updatesCardState() {
+    public void acceptInvitation_updatesCardState() throws InterruptedException {
         try (ActivityScenario<EntrantNotificationsActivity> scenario =
                      ActivityScenario.launch(makeIntent(makeSelectedNotification()))) {
+
             onView(withText("Accept Invitation")).perform(click());
+
+            // Wait briefly for the Firestore update and UI callback to complete
+            Thread.sleep(1000);
+
             onView(withText("Invitation accepted")).check(matches(isDisplayed()));
         }
     }

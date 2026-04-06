@@ -5,6 +5,7 @@ import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.closeSoftKeyboard;
 import static androidx.test.espresso.action.ViewActions.replaceText;
+import static androidx.test.espresso.action.ViewActions.scrollTo;
 import static androidx.test.espresso.action.ViewActions.typeText;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.intent.Intents.intending;
@@ -22,6 +23,7 @@ import android.app.Instrumentation;
 import android.content.Intent;
 import android.net.Uri;
 
+import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.intent.Intents;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -35,24 +37,33 @@ import org.junit.runner.RunWith;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
-
+import static android.app.Activity.RESULT_OK;
 /**
  * UI Tests for Event Creation User Stories.
  */
 @RunWith(AndroidJUnit4.class)
 public class CreateEventActivityTest {
-
-    @Rule
-    public ActivityScenarioRule<CreateEventActivity> activityRule = new ActivityScenarioRule<>(CreateEventActivity.class);
+    private ActivityScenario<CreateEventActivity> scenario;
 
     @Before
     public void setUp() {
         Intents.init();
+
+        android.content.Context context = androidx.test.core.app.ApplicationProvider.getApplicationContext();
+        SessionManager.getInstance(context).saveSession("test_organizer_id", "organizer");
+        scenario = ActivityScenario.launch(CreateEventActivity.class);
     }
 
     @After
     public void tearDown() {
+        if (scenario != null) {
+            scenario.close();
+        }
+
         Intents.release();
+
+        android.content.Context context = androidx.test.core.app.ApplicationProvider.getApplicationContext();
+        SessionManager.getInstance(context).clearSession();
     }
 
     /**
@@ -117,6 +128,13 @@ public class CreateEventActivityTest {
         onView(withId(R.id.etEventName))
                 .perform(typeText("Annual Tech Symposium"), closeSoftKeyboard());
 
+        onView(withId(R.id.btnDateRange)).perform(click());
+        onView(withContentDescription(containsString("Today")))
+                .perform(click());
+        clickTomorrow();
+        onView(withId(com.google.android.material.R.id.confirm_button))
+                .check(matches(isEnabled()))
+                .perform(click());
         onView(withId(R.id.btnSaveEvent))
                 .perform(click());
 
@@ -173,5 +191,17 @@ public class CreateEventActivityTest {
 
         onView(withContentDescription(containsString(tomorrow)))
                 .perform(click());
+    }
+
+    /**
+     * US 02.01.02: Create a private event.
+     * Verifies that the organizer can toggle the private event switch.
+     */
+    @Test
+    public void testTogglePrivateEvent() {
+        // Find the switch, scroll to it to ensure it's on screen, click it, and verify it's checked
+        onView(withId(R.id.switchPrivateEvent))
+                .perform(scrollTo(), click())
+                .check(matches(isChecked()));
     }
 }

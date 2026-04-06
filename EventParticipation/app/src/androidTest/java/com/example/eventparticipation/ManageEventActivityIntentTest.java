@@ -9,6 +9,7 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static org.hamcrest.Matchers.allOf;
 
+import android.content.Context;
 import android.content.Intent;
 
 import androidx.test.core.app.ActivityScenario;
@@ -33,37 +34,49 @@ public class ManageEventActivityIntentTest {
     @Before
     public void setUp() {
         Intents.init();
+
+        Context context = ApplicationProvider.getApplicationContext();
+        // Mock the session before launching any activity
+        SessionManager.getInstance(context).saveSession(ORGANIZER_ID, "organizer");
     }
 
     @After
     public void tearDown() {
         Intents.release();
+
+        Context context = ApplicationProvider.getApplicationContext();
+        // Clear the session after the test completes
+        SessionManager.getInstance(context).clearSession();
     }
 
     @Test
     public void clickingViewEntrants_launchesEntrantListActivity() {
-        ActivityScenario.launch(validIntent());
+        // Use try-with-resources to automatically close the scenario after the test
+        try (ActivityScenario<ManageEventActivity> scenario = ActivityScenario.launch(validIntent())) {
 
-        onView(withId(R.id.btnViewEntrants)).perform(scrollTo(), click());
+            onView(withId(R.id.btnViewEntrants)).perform(scrollTo(), click());
 
-        intended(allOf(
-                hasComponent(EntrantListActivity.class.getName()),
-                hasExtra("EVENT_ID", EVENT_ID),
-                hasExtra("ORGANIZER_ID", ORGANIZER_ID)
-        ));
+            intended(allOf(
+                    hasComponent(EntrantListActivity.class.getName()),
+                    hasExtra("EVENT_ID", EVENT_ID),
+                    hasExtra("ORGANIZER_ID", ORGANIZER_ID)
+            ));
+        }
     }
 
     @Test
     public void clickingViewMap_launchesWaitlistMapActivity() {
-        ActivityScenario.launch(validIntent());
+        // Use try-with-resources to automatically close the scenario after the test
+        try (ActivityScenario<ManageEventActivity> scenario = ActivityScenario.launch(validIntent())) {
 
-        onView(withId(R.id.btnViewMap)).perform(scrollTo(), click());
+            onView(withId(R.id.btnViewMap)).perform(scrollTo(), click());
 
-        intended(allOf(
-                hasComponent(WaitlistMapActivity.class.getName()),
-                hasExtra("EVENT_ID", EVENT_ID),
-                hasExtra("ORGANIZER_ID", ORGANIZER_ID)
-        ));
+            intended(allOf(
+                    hasComponent(WaitlistMapActivity.class.getName()),
+                    hasExtra("EVENT_ID", EVENT_ID),
+                    hasExtra("ORGANIZER_ID", ORGANIZER_ID)
+            ));
+        }
     }
 
     private Intent validIntent() {

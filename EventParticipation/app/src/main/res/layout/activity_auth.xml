@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="32dp"
+    android:gravity="center"
+    android:background="#F6F7FB">
+
+    <TextView
+        android:id="@+id/tvAuthTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Login"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:textColor="#111111"
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/tvAuthSubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Enter your credentials to continue"
+        android:textSize="16sp"
+        android:textColor="#666666"
+        android:layout_marginBottom="32dp"/>
+
+    <LinearLayout
+        android:id="@+id/layoutRegisterFields"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <EditText
+            android:id="@+id/etAuthName"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:hint="Full Name"
+            android:inputType="textPersonName"
+            android:background="@android:drawable/editbox_background"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp"/>
+
+        <EditText
+            android:id="@+id/etAuthPhone"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:hint="Phone Number (Optional)"
+            android:inputType="phone"
+            android:background="@android:drawable/editbox_background"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp"/>
+    </LinearLayout>
+
+    <EditText
+        android:id="@+id/etAuthEmail"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:hint="Email Address"
+        android:inputType="textEmailAddress"
+        android:background="@android:drawable/editbox_background"
+        android:padding="16dp"
+        android:layout_marginBottom="16dp"/>
+
+    <EditText
+        android:id="@+id/etAuthPassword"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:hint="Password"
+        android:inputType="textPassword"
+        android:background="@android:drawable/editbox_background"
+        android:padding="16dp"
+        android:layout_marginBottom="32dp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSubmitAuth"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="Login"
+        android:textSize="16sp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnToggleMode"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Need an account? Register here"
+        android:layout_marginTop="8dp"/>
+
+</LinearLayout>
