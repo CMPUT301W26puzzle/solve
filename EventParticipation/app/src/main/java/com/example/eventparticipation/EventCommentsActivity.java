@@ -76,7 +76,7 @@ public class EventCommentsActivity extends AppCompatActivity {
         // Admins are there to moderate, hide the input box
         if (isAdmin && layoutCommentInput != null) {
             layoutCommentInput.setVisibility(View.GONE);
-        } fix
+        }
 
         commentList = new ArrayList<>();
         adapter = new CommentAdapter(commentList, currentUserId, isOrganizer, isAdmin, this::confirmDeleteComment);
