@@ -12,6 +12,7 @@ import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
+import static androidx.test.espresso.action.ViewActions.scrollTo;
 
 import android.content.Context;
 import android.content.Intent;
@@ -45,7 +46,7 @@ public class EntrantEventDetailActivityTest {
     private final String TEST_EVENT_ID = "test_001";
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         db = FirebaseFirestore.getInstance();
         Context context = ApplicationProvider.getApplicationContext();
         SessionManager.getInstance(context).saveSession(TEST_ENTRANT_ID, "entrant");
@@ -53,20 +54,30 @@ public class EntrantEventDetailActivityTest {
         // Create a dummy user profile so the comment name resolves correctly
         Map<String, Object> userMap = new HashMap<>();
         userMap.put("name", "Test Entrant User");
-        Tasks.await(db.collection("entrants").document(TEST_ENTRANT_ID).set(userMap), 5, TimeUnit.SECONDS);
+
+        try {
+            Tasks.await(db.collection("entrants").document(TEST_ENTRANT_ID).set(userMap), 5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            System.out.println("Firestore sync timed out, relying on local cache.");
+        }
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         // Cleanup comments and test user to avoid polluting the database
         if (db != null) {
-            db.collection("events").document(TEST_EVENT_ID).collection("comments").get()
-                    .addOnSuccessListener(querySnapshot -> {
-                        for (com.google.firebase.firestore.DocumentSnapshot doc : querySnapshot) {
-                            doc.getReference().delete();
-                        }
-                    });
-            db.collection("entrants").document(TEST_ENTRANT_ID).delete();
+            try {
+                // Fire and forget cleanup
+                db.collection("events").document(TEST_EVENT_ID).collection("comments").get()
+                        .addOnSuccessListener(querySnapshot -> {
+                            for (com.google.firebase.firestore.DocumentSnapshot doc : querySnapshot) {
+                                doc.getReference().delete();
+                            }
+                        });
+                db.collection("entrants").document(TEST_ENTRANT_ID).delete();
+            } catch (Exception e) {
+                System.out.println("Cleanup failed or delayed.");
+            }
         }
 
         Context context = ApplicationProvider.getApplicationContext();
@@ -168,10 +179,10 @@ public class EntrantEventDetailActivityTest {
 
             // Scroll to the comment input field, type text, and close keyboard
             onView(withId(R.id.etComment))
-                    .perform(typeText(uniqueComment), closeSoftKeyboard());
+                    .perform(scrollTo(), typeText(uniqueComment), closeSoftKeyboard());
 
             // Click the Post button
-            onView(withId(R.id.btnPostComment)).perform(click());
+            onView(withId(R.id.btnPostComment)).perform(scrollTo(), click());
 
             // Wait briefly for Firestore to process and RecyclerView to update
             Thread.sleep(2000);
@@ -180,10 +191,10 @@ public class EntrantEventDetailActivityTest {
             onView(withText(uniqueComment)).check(matches(isDisplayed()));
 
             // Verify Entrant self-deletion rule: click delete on their own comment
-            onView(withId(R.id.btnDeleteComment)).perform(click());
+            onView(withId(R.id.btnDeleteComment)).perform(scrollTo(), click());
 
             // Confirm the deletion in the Material Dialog
-            onView(withText("Delete")).perform(click());
+            onView(withText("Delete")).perform(scrollTo(), click());
 
             // Wait briefly for Firestore to delete the item
             Thread.sleep(2000);
