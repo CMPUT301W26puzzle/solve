@@ -16,6 +16,12 @@ public class NotificationItem implements Serializable {
     public static final String TYPE_COORGANIZER_ASSIGNED = "coorganizer_assigned";
     public static final String TYPE_COORGANIZER_INVITATION = "coorganizer_invitation";
 
+    /**
+     * Sent when an organizer directly invites an entrant to a private event,
+     * bypassing the public lottery. The entrant must accept or decline.
+     */
+    public static final String TYPE_PRIVATE_INVITE = "private_invite";
+
     public static final String ACTION_PENDING = "pending";
     public static final String ACTION_ACCEPTED = "accepted";
     public static final String ACTION_DECLINED = "declined";

@@ -33,6 +33,14 @@ public class NotificationActionHelper {
         return "You have been assigned as a co-organizer for " + safeEventName + ".";
     }
 
+    public static String buildPrivateInviteMessage(String eventName) {
+        String safeEventName = eventName == null || eventName.trim().isEmpty()
+                ? "an event"
+                : eventName.trim();
+        return "🎟️ You have been personally invited to \"" + safeEventName
+                + "\". Please accept or decline your invitation.";
+    }
+
     public static String buildCoOrganizerInvitationMessage(String eventName) {
         String safeEventName = eventName == null || eventName.trim().isEmpty()
                 ? "the event"
@@ -46,6 +54,7 @@ public class NotificationActionHelper {
                 && item.isActionRequired()
                 && NotificationItem.ACTION_PENDING.equals(item.getActionStatus())
                 && (NotificationItem.TYPE_SELECTED.equals(item.getType())
+                || NotificationItem.TYPE_PRIVATE_INVITE.equals(item.getType())
                 || NotificationItem.TYPE_COORGANIZER_INVITATION.equals(item.getType()));
     }
 
@@ -62,6 +71,10 @@ public class NotificationActionHelper {
             return "Accept Co-organizer Invite";
         }
 
+        if (NotificationItem.TYPE_PRIVATE_INVITE.equals(item.getType())) {
+            return "Accept Private Invite";
+        }
+
         return "Accept Invitation";
     }
 
@@ -72,17 +85,19 @@ public class NotificationActionHelper {
 
         boolean isCoOrganizerInvitation =
                 NotificationItem.TYPE_COORGANIZER_INVITATION.equals(item.getType());
+        boolean isPrivateInvite =
+                NotificationItem.TYPE_PRIVATE_INVITE.equals(item.getType());
 
         if (NotificationItem.ACTION_ACCEPTED.equals(item.getActionStatus())) {
-            return isCoOrganizerInvitation
-                    ? "Co-organizer invitation accepted"
-                    : "Invitation accepted";
+            if (isCoOrganizerInvitation) return "Co-organizer invitation accepted";
+            if (isPrivateInvite) return "Private invitation accepted";
+            return "Invitation accepted";
         }
 
         if (NotificationItem.ACTION_DECLINED.equals(item.getActionStatus())) {
-            return isCoOrganizerInvitation
-                    ? "Co-organizer invitation declined"
-                    : "Invitation declined";
+            if (isCoOrganizerInvitation) return "Co-organizer invitation declined";
+            if (isPrivateInvite) return "Private invitation declined";
+            return "Invitation declined";
         }
 
         return "";
