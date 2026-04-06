@@ -2,19 +2,26 @@ package com.example.eventparticipation;
 
 import android.content.res.ColorStateList;
 import android.os.Bundle;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import java.util.ArrayList;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -32,6 +39,15 @@ import java.util.Map;
  * - selectionStatus: waiting / selected / cancelled
  * - responseStatus: pending / accepted / declined
  * - finalStatus: enrolled
+ *
+ * <p>Relevant user stories:</p>
+ * <ul>
+ *     <li>US 01.01.01 - Join waiting list</li>
+ *     <li>US 01.01.02 - Leave waiting list</li>
+ *     <li>US 01.05.04 - View enrollment and waiting counts</li>
+ *     <li>US 01.08.01 - Post a comment on an event</li>
+ *     <li>US 01.08.02 - View comments on an event</li>
+ * </ul>
  */
 public class EntrantEventDetailActivity extends AppCompatActivity {
 
@@ -52,10 +68,17 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
     private TextView tvEnrolledWaiting;
     private TextView tvRegistrationDeadline;
     private TextView tvAbout;
+    private TextView tvCommentsEmpty;
     private MaterialButton btnJoinLeave;
+    private ImageButton btnPostComment;
+    private TextInputEditText etComment;
+    private RecyclerView rvComments;
 
     private FirebaseFirestore db;
     private boolean isOnWaitingList = false;
+    private String currentEntrantName = "Anonymous entrant";
+    private final List<EventComment> comments = new ArrayList<>();
+    private EventCommentAdapter commentAdapter;
 
     private final SimpleDateFormat dateFormat =
             new SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault());
@@ -74,12 +97,15 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         eventId = getIntent().getStringExtra("EVENT_ID");
 
         initViews();
+        setupCommentsRecyclerView();
         loadEventFromIntent();
+        loadEntrantProfile();
+        loadComments();
         checkWaitingListStatus();
     }
 
     /**
-     * Binds layout views and sets up back button and join/leave button.
+     * Binds layout views and sets up click listeners.
      */
     private void initViews() {
         ivEventPoster = findViewById(R.id.ivEventPoster);
@@ -96,7 +122,11 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
         tvEnrolledWaiting = findViewById(R.id.tvEnrolledWaiting);
         tvRegistrationDeadline = findViewById(R.id.tvRegistrationDeadline);
         tvAbout = findViewById(R.id.tvAbout);
+        tvCommentsEmpty = findViewById(R.id.tvCommentsEmpty);
         btnJoinLeave = findViewById(R.id.btnJoinLeave);
+        btnPostComment = findViewById(R.id.btnPostComment);
+        etComment = findViewById(R.id.etComment);
+        rvComments = findViewById(R.id.rvComments);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
@@ -107,6 +137,17 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                 joinWaitingList();
             }
         });
+
+        btnPostComment.setOnClickListener(v -> postComment());
+    }
+
+    /**
+     * Configures the comments RecyclerView.
+     */
+    private void setupCommentsRecyclerView() {
+        commentAdapter = new EventCommentAdapter(comments, this::handleCommentLongPress);
+        rvComments.setLayoutManager(new LinearLayoutManager(this));
+        rvComments.setAdapter(commentAdapter);
     }
 
     /**
@@ -189,6 +230,154 @@ public class EntrantEventDetailActivity extends AppCompatActivity {
                                 .into(ivEventPoster);
                     }
                 });
+    }
+
+    /**
+     * Loads the current entrant profile name for comment posting.
+     */
+    private void loadEntrantProfile() {
+        db.collection("entrants")
+                .document(entrantId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    String entrantName = documentSnapshot.getString("name");
+                    if (entrantName != null && !entrantName.trim().isEmpty()) {
+                        currentEntrantName = entrantName.trim();
+                    }
+                });
+    }
+
+    /**
+     * Loads comments for the current event.
+     */
+    private void loadComments() {
+        if (eventId == null) {
+            tvCommentsEmpty.setVisibility(TextView.VISIBLE);
+            rvComments.setVisibility(RecyclerView.GONE);
+            return;
+        }
+
+        db.collection("events")
+                .document(eventId)
+                .collection("comments")
+                .orderBy("createdAt")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    comments.clear();
+
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        EventComment comment = doc.toObject(EventComment.class);
+                        if (comment == null) {
+                            continue;
+                        }
+
+                        comment.setCommentId(doc.getId());
+                        comments.add(comment);
+                    }
+
+                    commentAdapter.notifyDataSetChanged();
+                    updateCommentsEmptyState();
+                })
+                .addOnFailureListener(e -> {
+                    updateCommentsEmptyState();
+                    Toast.makeText(this, "Failed to load comments", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    /**
+     * Posts a new comment for the current event.
+     */
+    private void postComment() {
+        if (eventId == null) {
+            Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String commentText = EventCommentLogic.normalizeCommentText(
+                etComment.getText() != null ? etComment.getText().toString() : null
+        );
+
+        if (!EventCommentLogic.isCommentTextValid(commentText)) {
+            Toast.makeText(this, "Comment cannot be empty", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        DocumentReference commentRef = db.collection("events")
+                .document(eventId)
+                .collection("comments")
+                .document();
+
+        Map<String, Object> commentData = new HashMap<>();
+        commentData.put("commentId", commentRef.getId());
+        commentData.put("entrantId", entrantId);
+        commentData.put("entrantName", EventCommentLogic.resolveAuthorName(currentEntrantName));
+        commentData.put("text", commentText);
+        commentData.put("createdAt", FieldValue.serverTimestamp());
+
+        commentRef.set(commentData)
+                .addOnSuccessListener(unused -> {
+                    etComment.setText("");
+                    loadComments();
+                    Toast.makeText(this, "Comment posted", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to post comment", Toast.LENGTH_SHORT).show()
+                );
+    }
+
+    /**
+     * Handles long press actions on a comment.
+     *
+     * @param comment pressed comment
+     */
+    private void handleCommentLongPress(EventComment comment) {
+        if (!EventCommentLogic.canDeleteComment(entrantId, comment)) {
+            return;
+        }
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Delete comment?")
+                .setMessage("This will permanently remove your comment.")
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .setPositiveButton("Delete", (dialog, which) -> deleteComment(comment))
+                .show();
+    }
+
+    /**
+     * Deletes a comment owned by the current entrant.
+     *
+     * @param comment comment to delete
+     */
+    private void deleteComment(EventComment comment) {
+        if (eventId == null || comment == null || comment.getCommentId() == null) {
+            return;
+        }
+
+        db.collection("events")
+                .document(eventId)
+                .collection("comments")
+                .document(comment.getCommentId())
+                .delete()
+                .addOnSuccessListener(unused -> {
+                    loadComments();
+                    Toast.makeText(this, "Comment deleted", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to delete comment", Toast.LENGTH_SHORT).show()
+                );
+    }
+
+    /**
+     * Updates visibility for the comments empty state.
+     */
+    private void updateCommentsEmptyState() {
+        if (comments.isEmpty()) {
+            tvCommentsEmpty.setVisibility(TextView.VISIBLE);
+            rvComments.setVisibility(RecyclerView.GONE);
+        } else {
+            tvCommentsEmpty.setVisibility(TextView.GONE);
+            rvComments.setVisibility(RecyclerView.VISIBLE);
+        }
     }
 
     /**
