@@ -26,7 +26,7 @@
             android:value="AIzaSyAQyWamTqPjrZFluuRUGfjOKuppb57Irqs" />
 
         <activity
-            android:name=".SelectRoleActivity"
+            android:name=".universal.SelectRoleActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -34,24 +34,24 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".OrganizerDashboardActivity" android:exported="false" />
-        <activity android:name=".ManageEventActivity" android:exported="false" />
-        <activity android:name=".EntrantListActivity" android:exported="false" />
-        <activity android:name=".WaitlistMapActivity" android:exported="false" />
-        <activity android:name=".CreateEventActivity" android:exported="false" />
-        <activity android:name=".EntrantDashboardActivity" android:exported="false" />
-        <activity android:name=".EntrantEventDetailActivity" android:exported="false" />
-        <activity android:name=".EntrantMyEventsActivity" android:exported="false" />
-        <activity android:name=".EntrantNotificationsActivity" android:exported="false" />
-        <activity android:name=".ProfileActivity" android:exported="false" />
-        <activity android:name=".ProfileSetupActivity" android:exported="false" />
-        <activity android:name=".CameraQRActivity" android:exported="false" />
-        <activity android:name=".EntrantQRCodeActivity" android:exported="false" />
-        <activity android:name=".InfoPopup" android:exported="false" android:theme="@style/PopUp"/>
-        <activity android:name=".AdminDashboardActivity" android:exported="false" />
-        <activity android:name=".CoOrganizerDashboardActivity" />
-        <activity android:name=".EventCommentsActivity" android:exported="false" />
-        <activity android:name=".AuthActivity" android:exported="false" />
+        <activity android:name=".organizer.OrganizerDashboardActivity" android:exported="false" />
+        <activity android:name=".organizer.ManageEventActivity" android:exported="false" />
+        <activity android:name=".organizer.EntrantListActivity" android:exported="false" />
+        <activity android:name=".organizer.WaitlistMapActivity" android:exported="false" />
+        <activity android:name=".organizer.CreateEventActivity" android:exported="false" />
+        <activity android:name=".user.EntrantDashboardActivity" android:exported="false" />
+        <activity android:name=".user.EntrantEventDetailActivity" android:exported="false" />
+        <activity android:name=".user.EntrantMyEventsActivity" android:exported="false" />
+        <activity android:name=".user.EntrantNotificationsActivity" android:exported="false" />
+        <activity android:name=".user.ProfileActivity" android:exported="false" />
+        <activity android:name=".user.ProfileSetupActivity" android:exported="false" />
+        <activity android:name=".user.CameraQRActivity" android:exported="false" />
+        <activity android:name=".user.EntrantQRCodeActivity" android:exported="false" />
+        <activity android:name=".universal.InfoPopup" android:exported="false" android:theme="@style/PopUp"/>
+        <activity android:name=".admin.AdminDashboardActivity" android:exported="false" />
+        <activity android:name=".organizer.CoOrganizerDashboardActivity" />
+        <activity android:name=".user.EventCommentsActivity" android:exported="false" />
+        <activity android:name=".universal.AuthActivity" android:exported="false" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"

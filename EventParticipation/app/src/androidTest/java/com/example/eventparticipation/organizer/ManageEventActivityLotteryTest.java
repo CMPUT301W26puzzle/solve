@@ -1,0 +1,163 @@
+package com.example.eventparticipation.organizer;
+
+import static androidx.test.espresso.Espresso.onView;
+import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.action.ViewActions.closeSoftKeyboard;
+import static androidx.test.espresso.action.ViewActions.replaceText;
+import static androidx.test.espresso.action.ViewActions.scrollTo;
+import static androidx.test.espresso.assertion.ViewAssertions.matches;
+import static androidx.test.espresso.matcher.RootMatchers.isDialog;
+import static androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom;
+import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
+import static androidx.test.espresso.matcher.ViewMatchers.withId;
+import static androidx.test.espresso.matcher.ViewMatchers.withText;
+
+import android.content.Context;
+import android.content.Intent;
+import android.widget.EditText;
+
+import androidx.test.core.app.ActivityScenario;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.espresso.matcher.ViewMatchers;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.filters.LargeTest;
+
+import com.example.eventparticipation.R;
+import com.example.eventparticipation.universal.SessionManager;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * Instrumented tests for the Lottery and Waitlist management features
+ * inside ManageEventActivity.
+ */
+@RunWith(AndroidJUnit4.class)
+@LargeTest
+public class ManageEventActivityLotteryTest {
+
+    private static final String EVENT_ID = "test_event_123";
+    private static final String ORG_ID = "test_organizer_123";
+
+    @Before
+    public void setUp() throws Exception {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        Map<String, Object> dummyEvent = new HashMap<>();
+        dummyEvent.put("id", EVENT_ID);
+        dummyEvent.put("name", "Lottery Test Event");
+        dummyEvent.put("organizerId", ORG_ID);
+        dummyEvent.put("waitlistLimit", 100);
+
+        Tasks.await(
+                db.collection("events")
+                        .document(EVENT_ID)
+                        .set(dummyEvent, SetOptions.merge()),
+                15,
+                TimeUnit.SECONDS
+        );
+
+        // MOCK THE SESSION SO THE ACTIVITY DOESN'T REDIRECT TO LOGIN
+        Context context = ApplicationProvider.getApplicationContext();
+        SessionManager.getInstance(context).saveSession(ORG_ID, "organizer");
+    }
+
+    @After
+    public void tearDown() {
+        // CLEAR THE SESSION AFTER THE TEST
+        Context context = ApplicationProvider.getApplicationContext();
+        SessionManager.getInstance(context).clearSession();
+    }
+
+    @Test
+    public void testRunLotteryDialogAppears() throws Exception {
+        Intent intent = new Intent(
+                ApplicationProvider.getApplicationContext(),
+                ManageEventActivity.class
+        );
+        intent.putExtra("EVENT_ID", EVENT_ID);
+        intent.putExtra("ORGANIZER_ID", ORG_ID);
+
+        try (ActivityScenario<ManageEventActivity> scenario = ActivityScenario.launch(intent)) {
+            Thread.sleep(2000); // Wait for Firestore permissions to load
+
+            onView(ViewMatchers.withId(R.id.btnRunLottery)).perform(scrollTo(), click());
+
+            Thread.sleep(1000); // Wait for dialog animation
+
+            onView(withText("Run Lottery"))
+                    .inRoot(isDialog())
+                    .check(matches(isDisplayed()));
+            onView(withId(android.R.id.button1))
+                    .inRoot(isDialog())
+                    .check(matches(withText("Run")))
+                    .check(matches(isDisplayed()));
+            onView(withId(android.R.id.button2))
+                    .inRoot(isDialog())
+                    .check(matches(withText("Cancel")))
+                    .check(matches(isDisplayed()));
+        }
+    }
+
+    @Test
+    public void testRunLotteryDialog_WithInput() throws Exception {
+        Intent intent = new Intent(
+                ApplicationProvider.getApplicationContext(),
+                ManageEventActivity.class
+        );
+        intent.putExtra("EVENT_ID", EVENT_ID);
+        intent.putExtra("ORGANIZER_ID", ORG_ID);
+
+        try (ActivityScenario<ManageEventActivity> scenario = ActivityScenario.launch(intent)) {
+            Thread.sleep(2000); // Wait for Firestore permissions to load
+
+            onView(withId(R.id.btnRunLottery)).perform(scrollTo(), click());
+
+            Thread.sleep(1000); // Wait for dialog animation
+
+            // Target the EditText inside the Dialog root
+            onView(isAssignableFrom(EditText.class))
+                    .inRoot(isDialog())
+                    .perform(replaceText("5"), closeSoftKeyboard());
+
+            // Target the Run button inside the Dialog root
+            onView(withId(android.R.id.button1))
+                    .inRoot(isDialog())
+                    .perform(click());
+
+            Thread.sleep(1500); // Wait for Dialog to close and Firestore write
+
+            onView(withId(R.id.btnRunLottery)).check(matches(isDisplayed()));
+        }
+    }
+
+    @Test
+    public void testDrawReplacementButtonExists() throws Exception {
+        Intent intent = new Intent(
+                ApplicationProvider.getApplicationContext(),
+                ManageEventActivity.class
+        );
+        intent.putExtra("EVENT_ID", EVENT_ID);
+        intent.putExtra("ORGANIZER_ID", ORG_ID);
+
+        try (ActivityScenario<ManageEventActivity> scenario = ActivityScenario.launch(intent)) {
+            Thread.sleep(2000); // Wait for Firestore permissions to load
+
+            onView(withId(R.id.btnDrawReplacement))
+                    .perform(scrollTo())
+                    .check(matches(isDisplayed()));
+
+            onView(withId(R.id.btnDrawReplacement))
+                    .check(matches(withText("Draw Replacement Applicant")));
+        }
+    }
+}

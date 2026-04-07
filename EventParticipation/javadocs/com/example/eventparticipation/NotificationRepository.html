@@ -64,14 +64,14 @@ loadScripts(document, 'script');</script>
 </li>
 <li><a href="#method-detail" tabindex="0">Method Details</a>
 <ol class="toc-list">
-<li><a href="#listenForNotifications(java.lang.String,com.example.eventparticipation.NotificationRepository.NotificationListener)" tabindex="0">listenForNotifications(String, NotificationRepository.NotificationListener)</a></li>
+<li><a href="#listenForNotifications(java.lang.String,com.example.eventparticipation.universal.NotificationRepository.NotificationListener)" tabindex="0">listenForNotifications(String, NotificationRepository.NotificationListener)</a></li>
 <li><a href="#markAsRead(java.lang.String,java.lang.String)" tabindex="0">markAsRead(String, String)</a></li>
-<li><a href="#acceptInvitation(java.lang.String,com.example.eventparticipation.NotificationItem)" tabindex="0">acceptInvitation(String, NotificationItem)</a></li>
-<li><a href="#declineInvitation(java.lang.String,com.example.eventparticipation.NotificationItem)" tabindex="0">declineInvitation(String, NotificationItem)</a></li>
+<li><a href="#acceptInvitation(java.lang.String,com.example.eventparticipation.universal.NotificationItem)" tabindex="0">acceptInvitation(String, NotificationItem)</a></li>
+<li><a href="#declineInvitation(java.lang.String,com.example.eventparticipation.universal.NotificationItem)" tabindex="0">declineInvitation(String, NotificationItem)</a></li>
 <li><a href="#hasPendingCoOrganizerInvitation(java.lang.String,java.lang.String)" tabindex="0">hasPendingCoOrganizerInvitation(String, String)</a></li>
 <li><a href="#sendCoOrganizerInvitation(java.lang.String,java.lang.String,java.lang.String)" tabindex="0">sendCoOrganizerInvitation(String, String, String)</a></li>
-<li><a href="#acceptCoOrganizerInvitation(java.lang.String,com.example.eventparticipation.NotificationItem)" tabindex="0">acceptCoOrganizerInvitation(String, NotificationItem)</a></li>
-<li><a href="#declineCoOrganizerInvitation(java.lang.String,com.example.eventparticipation.NotificationItem)" tabindex="0">declineCoOrganizerInvitation(String, NotificationItem)</a></li>
+<li><a href="#acceptCoOrganizerInvitation(java.lang.String,com.example.eventparticipation.universal.NotificationItem)" tabindex="0">acceptCoOrganizerInvitation(String, NotificationItem)</a></li>
+<li><a href="#declineCoOrganizerInvitation(java.lang.String,com.example.eventparticipation.universal.NotificationItem)" tabindex="0">declineCoOrganizerInvitation(String, NotificationItem)</a></li>
 <li><a href="#getNotificationCollection(java.lang.String)" tabindex="0">getNotificationCollection(String)</a></li>
 <li><a href="#getCoOrganizerInvitationNotificationRef(java.lang.String,java.lang.String)" tabindex="0">getCoOrganizerInvitationNotificationRef(String, String)</a></li>
 <li><a href="#buildCoOrganizerInvitationNotificationId(java.lang.String)" tabindex="0">buildCoOrganizerInvitationNotificationId(String)</a></li>
@@ -99,7 +99,7 @@ loadScripts(document, 'script');</script>
 <h1 title="Class NotificationRepository" class="title">Class NotificationRepository</h1>
 </div>
 <div class="inheritance" title="Inheritance Tree"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">java.lang.Object</a>
-<div class="inheritance">com.example.eventparticipation.NotificationRepository</div>
+<div class="inheritance">com.example.eventparticipation.universal.NotificationRepository</div>
 </div>
 <section class="class-description" id="class-description">
 <hr>
@@ -175,13 +175,13 @@ to co-organizer and removed from the waitlist.</p></div>
 <div class="table-header col-second">Method</div>
 <div class="table-header col-last">Description</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>com.google.android.gms.tasks.Task<wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Void.html" title="class or interface in java.lang" class="external-link">Void</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#acceptCoOrganizerInvitation(java.lang.String,com.example.eventparticipation.NotificationItem)" class="member-name-link">acceptCoOrganizerInvitation</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#acceptCoOrganizerInvitation(java.lang.String,com.example.eventparticipation.universal.NotificationItem)" class="member-name-link">acceptCoOrganizerInvitation</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
  <a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Accepts a co-organizer invitation.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>com.google.android.gms.tasks.Task<wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Void.html" title="class or interface in java.lang" class="external-link">Void</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#acceptInvitation(java.lang.String,com.example.eventparticipation.NotificationItem)" class="member-name-link">acceptInvitation</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#acceptInvitation(java.lang.String,com.example.eventparticipation.universal.NotificationItem)" class="member-name-link">acceptInvitation</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
  <a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Accepts a regular event invitation.</div>
@@ -279,13 +279,13 @@ per entrant per event, preventing duplicate pending notifications.</div>
 <div class="block">Builds notification data for a regular selected invitation.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>com.google.android.gms.tasks.Task<wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Void.html" title="class or interface in java.lang" class="external-link">Void</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#declineCoOrganizerInvitation(java.lang.String,com.example.eventparticipation.NotificationItem)" class="member-name-link">declineCoOrganizerInvitation</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#declineCoOrganizerInvitation(java.lang.String,com.example.eventparticipation.universal.NotificationItem)" class="member-name-link">declineCoOrganizerInvitation</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
  <a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Declines a co-organizer invitation.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>com.google.android.gms.tasks.Task<wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Void.html" title="class or interface in java.lang" class="external-link">Void</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#declineInvitation(java.lang.String,com.example.eventparticipation.NotificationItem)" class="member-name-link">declineInvitation</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#declineInvitation(java.lang.String,com.example.eventparticipation.universal.NotificationItem)" class="member-name-link">declineInvitation</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
  <a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Declines a regular event invitation.</div>
@@ -321,7 +321,7 @@ co-organizer invitation per event per entrant.</div>
 for the given event.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>com.google.firebase.firestore.ListenerRegistration</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#listenForNotifications(java.lang.String,com.example.eventparticipation.NotificationRepository.NotificationListener)" class="member-name-link">listenForNotifications</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#listenForNotifications(java.lang.String,com.example.eventparticipation.universal.NotificationRepository.NotificationListener)" class="member-name-link">listenForNotifications</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
  <a href="NotificationRepository.NotificationListener.html" title="interface in com.example.eventparticipation">NotificationRepository.NotificationListener</a>&nbsp;listener)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Starts listening for entrant notifications ordered by newest first.</div>
@@ -396,7 +396,7 @@ already exists for this entrant and event.</div>
 <h2>Method Details</h2>
 <ul class="member-list">
 <li>
-<section class="detail" id="listenForNotifications(java.lang.String,com.example.eventparticipation.NotificationRepository.NotificationListener)">
+<section class="detail" id="listenForNotifications(java.lang.String,com.example.eventparticipation.universal.NotificationRepository.NotificationListener)">
 <h3>listenForNotifications</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">com.google.firebase.firestore.ListenerRegistration</span>&nbsp;<span class="element-name">listenForNotifications</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
@@ -430,7 +430,7 @@ already exists for this entrant and event.</div>
 </section>
 </li>
 <li>
-<section class="detail" id="acceptInvitation(java.lang.String,com.example.eventparticipation.NotificationItem)">
+<section class="detail" id="acceptInvitation(java.lang.String,com.example.eventparticipation.universal.NotificationItem)">
 <h3>acceptInvitation</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">com.google.android.gms.tasks.Task&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Void.html" title="class or interface in java.lang" class="external-link">Void</a>&gt;</span>&nbsp;<span class="element-name">acceptInvitation</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
@@ -454,7 +454,7 @@ already exists for this entrant and event.</div>
 </section>
 </li>
 <li>
-<section class="detail" id="declineInvitation(java.lang.String,com.example.eventparticipation.NotificationItem)">
+<section class="detail" id="declineInvitation(java.lang.String,com.example.eventparticipation.universal.NotificationItem)">
 <h3>declineInvitation</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">com.google.android.gms.tasks.Task&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Void.html" title="class or interface in java.lang" class="external-link">Void</a>&gt;</span>&nbsp;<span class="element-name">declineInvitation</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
@@ -527,7 +527,7 @@ notification document id per entrant and event.</p></div>
 </section>
 </li>
 <li>
-<section class="detail" id="acceptCoOrganizerInvitation(java.lang.String,com.example.eventparticipation.NotificationItem)">
+<section class="detail" id="acceptCoOrganizerInvitation(java.lang.String,com.example.eventparticipation.universal.NotificationItem)">
 <h3>acceptCoOrganizerInvitation</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">com.google.android.gms.tasks.Task&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Void.html" title="class or interface in java.lang" class="external-link">Void</a>&gt;</span>&nbsp;<span class="element-name">acceptCoOrganizerInvitation</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
@@ -541,7 +541,7 @@ notification document id per entrant and event.</p></div>
     <li>notification action status becomes accepted</li>
 </ul>
 
-<p>This is separate from <a href="#acceptInvitation(java.lang.String,com.example.eventparticipation.NotificationItem)"><code>acceptInvitation(String, NotificationItem)</code></a>
+<p>This is separate from <a href="#acceptInvitation(java.lang.String,com.example.eventparticipation.universal.NotificationItem)"><code>acceptInvitation(String, NotificationItem)</code></a>
 because accepting a co-organizer invitation does not enroll the entrant into
 the event.</p></div>
 <dl class="notes">
@@ -555,7 +555,7 @@ the event.</p></div>
 </section>
 </li>
 <li>
-<section class="detail" id="declineCoOrganizerInvitation(java.lang.String,com.example.eventparticipation.NotificationItem)">
+<section class="detail" id="declineCoOrganizerInvitation(java.lang.String,com.example.eventparticipation.universal.NotificationItem)">
 <h3>declineCoOrganizerInvitation</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">com.google.android.gms.tasks.Task&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Void.html" title="class or interface in java.lang" class="external-link">Void</a>&gt;</span>&nbsp;<span class="element-name">declineCoOrganizerInvitation</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,

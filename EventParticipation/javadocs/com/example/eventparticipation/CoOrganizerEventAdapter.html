@@ -58,13 +58,13 @@ loadScripts(document, 'script');</script>
 <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
 <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
 <ol class="toc-list">
-<li><a href="#%3Cinit%3E(java.util.List,com.example.eventparticipation.CoOrganizerEventAdapter.OnEventClickListener)" tabindex="0">CoOrganizerEventAdapter(List, CoOrganizerEventAdapter.OnEventClickListener)</a></li>
+<li><a href="#%3Cinit%3E(java.util.List,com.example.eventparticipation.organizer.CoOrganizerEventAdapter.OnEventClickListener)" tabindex="0">CoOrganizerEventAdapter(List, CoOrganizerEventAdapter.OnEventClickListener)</a></li>
 </ol>
 </li>
 <li><a href="#method-detail" tabindex="0">Method Details</a>
 <ol class="toc-list">
 <li><a href="#onCreateViewHolder(android.view.ViewGroup,int)" tabindex="0">onCreateViewHolder(ViewGroup, int)</a></li>
-<li><a href="#onBindViewHolder(com.example.eventparticipation.CoOrganizerEventAdapter.ViewHolder,int)" tabindex="0">onBindViewHolder(CoOrganizerEventAdapter.ViewHolder, int)</a></li>
+<li><a href="#onBindViewHolder(com.example.eventparticipation.organizer.CoOrganizerEventAdapter.ViewHolder,int)" tabindex="0">onBindViewHolder(CoOrganizerEventAdapter.ViewHolder, int)</a></li>
 <li><a href="#getItemCount()" tabindex="0">getItemCount()</a></li>
 </ol>
 </li>
@@ -76,15 +76,15 @@ loadScripts(document, 'script');</script>
 <h1 title="Class CoOrganizerEventAdapter" class="title">Class CoOrganizerEventAdapter</h1>
 </div>
 <div class="inheritance" title="Inheritance Tree"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">java.lang.Object</a>
-<div class="inheritance">androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.CoOrganizerEventAdapter.ViewHolder&gt;
-<div class="inheritance">com.example.eventparticipation.CoOrganizerEventAdapter</div>
+<div class="inheritance">androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.organizer.CoOrganizerEventAdapter.ViewHolder&gt;
+<div class="inheritance">com.example.eventparticipation.organizer.CoOrganizerEventAdapter</div>
 </div>
 </div>
 <section class="class-description" id="class-description">
 <hr>
 <div class="horizontal-scroll">
 <div class="type-signature"><span class="modifiers">public class </span><span class="element-name type-name-label">CoOrganizerEventAdapter</span>
-<span class="extends-implements">extends androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.CoOrganizerEventAdapter.ViewHolder&gt;</span></div>
+<span class="extends-implements">extends androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.organizer.CoOrganizerEventAdapter.ViewHolder&gt;</span></div>
 <div class="block">Adapter for rendering a list of events accessible to the current co-organizer.
 * <p>This adapter is responsible for displaying the event cards on the co-organizer
 dashboard, mapping event data (like name, venue, and participation counts) to the
@@ -122,7 +122,7 @@ manage button is clicked.</div>
 <div class="summary-table two-column-summary">
 <div class="table-header col-first">Constructor</div>
 <div class="table-header col-last">Description</div>
-<div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(java.util.List,com.example.eventparticipation.CoOrganizerEventAdapter.OnEventClickListener)" class="member-name-link">CoOrganizerEventAdapter</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="Event.html" title="class in com.example.eventparticipation">Event</a>&gt;&nbsp;events,
+<div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(java.util.List,com.example.eventparticipation.organizer.CoOrganizerEventAdapter.OnEventClickListener)" class="member-name-link">CoOrganizerEventAdapter</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="Event.html" title="class in com.example.eventparticipation">Event</a>&gt;&nbsp;events,
  <a href="CoOrganizerEventAdapter.OnEventClickListener.html" title="interface in com.example.eventparticipation">CoOrganizerEventAdapter.OnEventClickListener</a>&nbsp;listener)</code></div>
 <div class="col-last even-row-color">
 <div class="block">Initializes the adapter with a dataset and a click listener.</div>
@@ -147,12 +147,12 @@ manage button is clicked.</div>
 <div class="block">Returns the total number of items in the data set held by the adapter.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onBindViewHolder(com.example.eventparticipation.CoOrganizerEventAdapter.ViewHolder,int)" class="member-name-link">onBindViewHolder</a><wbr>(com.example.eventparticipation.CoOrganizerEventAdapter.ViewHolder&nbsp;holder,
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onBindViewHolder(com.example.eventparticipation.organizer.CoOrganizerEventAdapter.ViewHolder,int)" class="member-name-link">onBindViewHolder</a><wbr>(com.example.eventparticipation.organizer.CoOrganizerEventAdapter.ViewHolder&nbsp;holder,
  int&nbsp;position)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Called by RecyclerView to display the data at the specified position.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>com.example.eventparticipation.CoOrganizerEventAdapter.ViewHolder</code></div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>com.example.eventparticipation.organizer.CoOrganizerEventAdapter.ViewHolder</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onCreateViewHolder(android.view.ViewGroup,int)" class="member-name-link">onCreateViewHolder</a><wbr>(android.view.ViewGroup&nbsp;parent,
  int&nbsp;viewType)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
@@ -179,7 +179,7 @@ manage button is clicked.</div>
 <h2>Constructor Details</h2>
 <ul class="member-list">
 <li>
-<section class="detail" id="&lt;init&gt;(java.util.List,com.example.eventparticipation.CoOrganizerEventAdapter.OnEventClickListener)">
+<section class="detail" id="&lt;init&gt;(java.util.List,com.example.eventparticipation.organizer.CoOrganizerEventAdapter.OnEventClickListener)">
 <h3>CoOrganizerEventAdapter</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">CoOrganizerEventAdapter</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="Event.html" title="class in com.example.eventparticipation">Event</a>&gt;&nbsp;events,
@@ -206,14 +206,14 @@ manage button is clicked.</div>
 <h3>onCreateViewHolder</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="annotations">@NonNull
-</span><span class="modifiers">public</span>&nbsp;<span class="return-type">com.example.eventparticipation.CoOrganizerEventAdapter.ViewHolder</span>&nbsp;<span class="element-name">onCreateViewHolder</span><wbr><span class="parameters">(@NonNull
+</span><span class="modifiers">public</span>&nbsp;<span class="return-type">com.example.eventparticipation.organizer.CoOrganizerEventAdapter.ViewHolder</span>&nbsp;<span class="element-name">onCreateViewHolder</span><wbr><span class="parameters">(@NonNull
  android.view.ViewGroup&nbsp;parent,
  int&nbsp;viewType)</span></div>
 <div class="block">Called when RecyclerView needs a new <code>CoOrganizerEventAdapter.ViewHolder</code> of the given type to represent an item.
 * @param parent   The ViewGroup into which the new View will be added after it is bound to an adapter position.</div>
 <dl class="notes">
 <dt>Specified by:</dt>
-<dd><code>onCreateViewHolder</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.CoOrganizerEventAdapter.ViewHolder&gt;</code></dd>
+<dd><code>onCreateViewHolder</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.organizer.CoOrganizerEventAdapter.ViewHolder&gt;</code></dd>
 <dt>Parameters:</dt>
 <dd><code>viewType</code> - The view type of the new View.</dd>
 <dt>Returns:</dt>
@@ -223,18 +223,18 @@ manage button is clicked.</div>
 </section>
 </li>
 <li>
-<section class="detail" id="onBindViewHolder(com.example.eventparticipation.CoOrganizerEventAdapter.ViewHolder,int)">
+<section class="detail" id="onBindViewHolder(com.example.eventparticipation.organizer.CoOrganizerEventAdapter.ViewHolder,int)">
 <h3>onBindViewHolder</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onBindViewHolder</span><wbr><span class="parameters">(@NonNull
- com.example.eventparticipation.CoOrganizerEventAdapter.ViewHolder&nbsp;holder,
+ com.example.eventparticipation.organizer.CoOrganizerEventAdapter.ViewHolder&nbsp;holder,
  int&nbsp;position)</span></div>
 <div class="block">Called by RecyclerView to display the data at the specified position.
 * <p>This method updates the contents of the <code>RecyclerView.ViewHolder.itemView</code> to reflect the item at the
 given position, binding event metadata and attaching click listeners to interact with it.</p></div>
 <dl class="notes">
 <dt>Specified by:</dt>
-<dd><code>onBindViewHolder</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.CoOrganizerEventAdapter.ViewHolder&gt;</code></dd>
+<dd><code>onBindViewHolder</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.organizer.CoOrganizerEventAdapter.ViewHolder&gt;</code></dd>
 <dt>Parameters:</dt>
 <dd><code>holder</code> - The ViewHolder which should be updated to represent the contents of the item at the given position in the data set.</dd>
 <dd><code>position</code> - The position of the item within the adapter's data set.</dd>
@@ -251,7 +251,7 @@ given position, binding event metadata and attaching click listeners to interact
 * @return The total number of events in the list. Returns 0 if the list is null.</div>
 <dl class="notes">
 <dt>Specified by:</dt>
-<dd><code>getItemCount</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.CoOrganizerEventAdapter.ViewHolder&gt;</code></dd>
+<dd><code>getItemCount</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.organizer.CoOrganizerEventAdapter.ViewHolder&gt;</code></dd>
 </dl>
 </div>
 </section>

@@ -58,13 +58,13 @@ loadScripts(document, 'script');</script>
 <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
 <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
 <ol class="toc-list">
-<li><a href="#%3Cinit%3E(java.util.List,com.example.eventparticipation.OnEventClickListener)" tabindex="0">EventAdapter(List, OnEventClickListener)</a></li>
+<li><a href="#%3Cinit%3E(java.util.List,com.example.eventparticipation.universal.OnEventClickListener)" tabindex="0">EventAdapter(List, OnEventClickListener)</a></li>
 </ol>
 </li>
 <li><a href="#method-detail" tabindex="0">Method Details</a>
 <ol class="toc-list">
 <li><a href="#onCreateViewHolder(android.view.ViewGroup,int)" tabindex="0">onCreateViewHolder(ViewGroup, int)</a></li>
-<li><a href="#onBindViewHolder(com.example.eventparticipation.EventAdapter.EventViewHolder,int)" tabindex="0">onBindViewHolder(EventAdapter.EventViewHolder, int)</a></li>
+<li><a href="#onBindViewHolder(com.example.eventparticipation.organizer.EventAdapter.EventViewHolder,int)" tabindex="0">onBindViewHolder(EventAdapter.EventViewHolder, int)</a></li>
 <li><a href="#getItemCount()" tabindex="0">getItemCount()</a></li>
 </ol>
 </li>
@@ -76,15 +76,15 @@ loadScripts(document, 'script');</script>
 <h1 title="Class EventAdapter" class="title">Class EventAdapter</h1>
 </div>
 <div class="inheritance" title="Inheritance Tree"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">java.lang.Object</a>
-<div class="inheritance">androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.EventAdapter.EventViewHolder&gt;
-<div class="inheritance">com.example.eventparticipation.EventAdapter</div>
+<div class="inheritance">androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.organizer.EventAdapter.EventViewHolder&gt;
+<div class="inheritance">com.example.eventparticipation.organizer.EventAdapter</div>
 </div>
 </div>
 <section class="class-description" id="class-description">
 <hr>
 <div class="horizontal-scroll">
 <div class="type-signature"><span class="modifiers">public class </span><span class="element-name type-name-label">EventAdapter</span>
-<span class="extends-implements">extends androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.EventAdapter.EventViewHolder&gt;</span></div>
+<span class="extends-implements">extends androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.organizer.EventAdapter.EventViewHolder&gt;</span></div>
 <div class="block">RecyclerView adapter for displaying events on the organizer dashboard.
 
 <p>The adapter renders basic event information and forwards card actions through
@@ -110,7 +110,7 @@ loadScripts(document, 'script');</script>
 <div class="summary-table two-column-summary">
 <div class="table-header col-first">Constructor</div>
 <div class="table-header col-last">Description</div>
-<div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(java.util.List,com.example.eventparticipation.OnEventClickListener)" class="member-name-link">EventAdapter</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="Event.html" title="class in com.example.eventparticipation">Event</a>&gt;&nbsp;events,
+<div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(java.util.List,com.example.eventparticipation.universal.OnEventClickListener)" class="member-name-link">EventAdapter</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="Event.html" title="class in com.example.eventparticipation">Event</a>&gt;&nbsp;events,
  <a href="OnEventClickListener.html" title="interface in com.example.eventparticipation">OnEventClickListener</a>&nbsp;listener)</code></div>
 <div class="col-last even-row-color">
 <div class="block">Creates an event adapter.</div>
@@ -135,12 +135,12 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns the number of event rows displayed by the adapter.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onBindViewHolder(com.example.eventparticipation.EventAdapter.EventViewHolder,int)" class="member-name-link">onBindViewHolder</a><wbr>(com.example.eventparticipation.EventAdapter.EventViewHolder&nbsp;holder,
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onBindViewHolder(com.example.eventparticipation.organizer.EventAdapter.EventViewHolder,int)" class="member-name-link">onBindViewHolder</a><wbr>(com.example.eventparticipation.organizer.EventAdapter.EventViewHolder&nbsp;holder,
  int&nbsp;position)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Binds event data and click listeners to the row at the given position.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>com.example.eventparticipation.EventAdapter.EventViewHolder</code></div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>com.example.eventparticipation.organizer.EventAdapter.EventViewHolder</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onCreateViewHolder(android.view.ViewGroup,int)" class="member-name-link">onCreateViewHolder</a><wbr>(android.view.ViewGroup&nbsp;parent,
  int&nbsp;viewType)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
@@ -167,7 +167,7 @@ loadScripts(document, 'script');</script>
 <h2>Constructor Details</h2>
 <ul class="member-list">
 <li>
-<section class="detail" id="&lt;init&gt;(java.util.List,com.example.eventparticipation.OnEventClickListener)">
+<section class="detail" id="&lt;init&gt;(java.util.List,com.example.eventparticipation.universal.OnEventClickListener)">
 <h3>EventAdapter</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">EventAdapter</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="Event.html" title="class in com.example.eventparticipation">Event</a>&gt;&nbsp;events,
@@ -194,13 +194,13 @@ loadScripts(document, 'script');</script>
 <h3>onCreateViewHolder</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="annotations">@NonNull
-</span><span class="modifiers">public</span>&nbsp;<span class="return-type">com.example.eventparticipation.EventAdapter.EventViewHolder</span>&nbsp;<span class="element-name">onCreateViewHolder</span><wbr><span class="parameters">(@NonNull
+</span><span class="modifiers">public</span>&nbsp;<span class="return-type">com.example.eventparticipation.organizer.EventAdapter.EventViewHolder</span>&nbsp;<span class="element-name">onCreateViewHolder</span><wbr><span class="parameters">(@NonNull
  android.view.ViewGroup&nbsp;parent,
  int&nbsp;viewType)</span></div>
 <div class="block">Inflates a single organizer event item view.</div>
 <dl class="notes">
 <dt>Specified by:</dt>
-<dd><code>onCreateViewHolder</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.EventAdapter.EventViewHolder&gt;</code></dd>
+<dd><code>onCreateViewHolder</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.organizer.EventAdapter.EventViewHolder&gt;</code></dd>
 <dt>Parameters:</dt>
 <dd><code>parent</code> - parent view group</dd>
 <dd><code>viewType</code> - item view type</dd>
@@ -211,16 +211,16 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
-<section class="detail" id="onBindViewHolder(com.example.eventparticipation.EventAdapter.EventViewHolder,int)">
+<section class="detail" id="onBindViewHolder(com.example.eventparticipation.organizer.EventAdapter.EventViewHolder,int)">
 <h3>onBindViewHolder</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onBindViewHolder</span><wbr><span class="parameters">(@NonNull
- com.example.eventparticipation.EventAdapter.EventViewHolder&nbsp;holder,
+ com.example.eventparticipation.organizer.EventAdapter.EventViewHolder&nbsp;holder,
  int&nbsp;position)</span></div>
 <div class="block">Binds event data and click listeners to the row at the given position.</div>
 <dl class="notes">
 <dt>Specified by:</dt>
-<dd><code>onBindViewHolder</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.EventAdapter.EventViewHolder&gt;</code></dd>
+<dd><code>onBindViewHolder</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.organizer.EventAdapter.EventViewHolder&gt;</code></dd>
 <dt>Parameters:</dt>
 <dd><code>holder</code> - row view holder</dd>
 <dd><code>position</code> - adapter position</dd>
@@ -236,7 +236,7 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns the number of event rows displayed by the adapter.</div>
 <dl class="notes">
 <dt>Specified by:</dt>
-<dd><code>getItemCount</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.EventAdapter.EventViewHolder&gt;</code></dd>
+<dd><code>getItemCount</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.organizer.EventAdapter.EventViewHolder&gt;</code></dd>
 <dt>Returns:</dt>
 <dd>event count</dd>
 </dl>

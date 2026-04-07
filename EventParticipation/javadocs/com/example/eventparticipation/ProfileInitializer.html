@@ -63,13 +63,13 @@ loadScripts(document, 'script');</script>
 </li>
 <li><a href="#method-detail" tabindex="0">Method Details</a>
 <ol class="toc-list">
-<li><a href="#ensureEntrantProfileExists(java.lang.String,com.example.eventparticipation.ProfileInitializer.Callback)" tabindex="0">ensureEntrantProfileExists(String, ProfileInitializer.Callback)</a></li>
-<li><a href="#ensureOrganizerProfileExists(java.lang.String,com.example.eventparticipation.ProfileInitializer.Callback)" tabindex="0">ensureOrganizerProfileExists(String, ProfileInitializer.Callback)</a></li>
-<li><a href="#ensureAdminProfileExists(java.lang.String,com.example.eventparticipation.ProfileInitializer.Callback)" tabindex="0">ensureAdminProfileExists(String, ProfileInitializer.Callback)</a></li>
-<li><a href="#checkEntrantProfileExists(java.lang.String,com.example.eventparticipation.ProfileInitializer.ExistsCallback)" tabindex="0">checkEntrantProfileExists(String, ProfileInitializer.ExistsCallback)</a></li>
-<li><a href="#checkOrganizerProfileExists(java.lang.String,com.example.eventparticipation.ProfileInitializer.ExistsCallback)" tabindex="0">checkOrganizerProfileExists(String, ProfileInitializer.ExistsCallback)</a></li>
-<li><a href="#checkAdminProfileExists(java.lang.String,com.example.eventparticipation.ProfileInitializer.ExistsCallback)" tabindex="0">checkAdminProfileExists(String, ProfileInitializer.ExistsCallback)</a></li>
-<li><a href="#deleteProfile(java.lang.String,java.lang.String,com.example.eventparticipation.ProfileInitializer.Callback)" tabindex="0">deleteProfile(String, String, ProfileInitializer.Callback)</a></li>
+<li><a href="#ensureEntrantProfileExists(java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.Callback)" tabindex="0">ensureEntrantProfileExists(String, ProfileInitializer.Callback)</a></li>
+<li><a href="#ensureOrganizerProfileExists(java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.Callback)" tabindex="0">ensureOrganizerProfileExists(String, ProfileInitializer.Callback)</a></li>
+<li><a href="#ensureAdminProfileExists(java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.Callback)" tabindex="0">ensureAdminProfileExists(String, ProfileInitializer.Callback)</a></li>
+<li><a href="#checkEntrantProfileExists(java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.ExistsCallback)" tabindex="0">checkEntrantProfileExists(String, ProfileInitializer.ExistsCallback)</a></li>
+<li><a href="#checkOrganizerProfileExists(java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.ExistsCallback)" tabindex="0">checkOrganizerProfileExists(String, ProfileInitializer.ExistsCallback)</a></li>
+<li><a href="#checkAdminProfileExists(java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.ExistsCallback)" tabindex="0">checkAdminProfileExists(String, ProfileInitializer.ExistsCallback)</a></li>
+<li><a href="#deleteProfile(java.lang.String,java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.Callback)" tabindex="0">deleteProfile(String, String, ProfileInitializer.Callback)</a></li>
 </ol>
 </li>
 </ol>
@@ -80,7 +80,7 @@ loadScripts(document, 'script');</script>
 <h1 title="Class ProfileInitializer" class="title">Class ProfileInitializer</h1>
 </div>
 <div class="inheritance" title="Inheritance Tree"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">java.lang.Object</a>
-<div class="inheritance">com.example.eventparticipation.ProfileInitializer</div>
+<div class="inheritance">com.example.eventparticipation.universal.ProfileInitializer</div>
 </div>
 <section class="class-description" id="class-description">
 <hr>
@@ -149,44 +149,44 @@ and creating it if it does not.
 <div class="table-header col-second">Method</div>
 <div class="table-header col-last">Description</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#checkAdminProfileExists(java.lang.String,com.example.eventparticipation.ProfileInitializer.ExistsCallback)" class="member-name-link">checkAdminProfileExists</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;adminId,
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#checkAdminProfileExists(java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.ExistsCallback)" class="member-name-link">checkAdminProfileExists</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;adminId,
  <a href="ProfileInitializer.ExistsCallback.html" title="interface in com.example.eventparticipation">ProfileInitializer.ExistsCallback</a>&nbsp;callback)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Checks whether an admin profile already exists in Firestore.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#checkEntrantProfileExists(java.lang.String,com.example.eventparticipation.ProfileInitializer.ExistsCallback)" class="member-name-link">checkEntrantProfileExists</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#checkEntrantProfileExists(java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.ExistsCallback)" class="member-name-link">checkEntrantProfileExists</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
  <a href="ProfileInitializer.ExistsCallback.html" title="interface in com.example.eventparticipation">ProfileInitializer.ExistsCallback</a>&nbsp;callback)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Checks whether an entrant profile already exists in Firestore.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#checkOrganizerProfileExists(java.lang.String,com.example.eventparticipation.ProfileInitializer.ExistsCallback)" class="member-name-link">checkOrganizerProfileExists</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;organizerId,
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#checkOrganizerProfileExists(java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.ExistsCallback)" class="member-name-link">checkOrganizerProfileExists</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;organizerId,
  <a href="ProfileInitializer.ExistsCallback.html" title="interface in com.example.eventparticipation">ProfileInitializer.ExistsCallback</a>&nbsp;callback)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Checks whether an organizer profile already exists in Firestore.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#deleteProfile(java.lang.String,java.lang.String,com.example.eventparticipation.ProfileInitializer.Callback)" class="member-name-link">deleteProfile</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;collection,
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#deleteProfile(java.lang.String,java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.Callback)" class="member-name-link">deleteProfile</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;collection,
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;id,
  <a href="ProfileInitializer.Callback.html" title="interface in com.example.eventparticipation">ProfileInitializer.Callback</a>&nbsp;callback)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Deletes a profile from firestore collection.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#ensureAdminProfileExists(java.lang.String,com.example.eventparticipation.ProfileInitializer.Callback)" class="member-name-link">ensureAdminProfileExists</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;adminId,
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#ensureAdminProfileExists(java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.Callback)" class="member-name-link">ensureAdminProfileExists</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;adminId,
  <a href="ProfileInitializer.Callback.html" title="interface in com.example.eventparticipation">ProfileInitializer.Callback</a>&nbsp;callback)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Ensures that an admin profile exists in Firestore.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#ensureEntrantProfileExists(java.lang.String,com.example.eventparticipation.ProfileInitializer.Callback)" class="member-name-link">ensureEntrantProfileExists</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#ensureEntrantProfileExists(java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.Callback)" class="member-name-link">ensureEntrantProfileExists</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
  <a href="ProfileInitializer.Callback.html" title="interface in com.example.eventparticipation">ProfileInitializer.Callback</a>&nbsp;callback)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Ensures that an entrant profile exists in Firestore.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#ensureOrganizerProfileExists(java.lang.String,com.example.eventparticipation.ProfileInitializer.Callback)" class="member-name-link">ensureOrganizerProfileExists</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;organizerId,
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#ensureOrganizerProfileExists(java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.Callback)" class="member-name-link">ensureOrganizerProfileExists</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;organizerId,
  <a href="ProfileInitializer.Callback.html" title="interface in com.example.eventparticipation">ProfileInitializer.Callback</a>&nbsp;callback)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Ensures that an organizer profile exists in Firestore.</div>
@@ -226,7 +226,7 @@ and creating it if it does not.
 <h2>Method Details</h2>
 <ul class="member-list">
 <li>
-<section class="detail" id="ensureEntrantProfileExists(java.lang.String,com.example.eventparticipation.ProfileInitializer.Callback)">
+<section class="detail" id="ensureEntrantProfileExists(java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.Callback)">
 <h3>ensureEntrantProfileExists</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">ensureEntrantProfileExists</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
@@ -241,7 +241,7 @@ and creating it if it does not.
 </section>
 </li>
 <li>
-<section class="detail" id="ensureOrganizerProfileExists(java.lang.String,com.example.eventparticipation.ProfileInitializer.Callback)">
+<section class="detail" id="ensureOrganizerProfileExists(java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.Callback)">
 <h3>ensureOrganizerProfileExists</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">ensureOrganizerProfileExists</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;organizerId,
@@ -256,7 +256,7 @@ and creating it if it does not.
 </section>
 </li>
 <li>
-<section class="detail" id="ensureAdminProfileExists(java.lang.String,com.example.eventparticipation.ProfileInitializer.Callback)">
+<section class="detail" id="ensureAdminProfileExists(java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.Callback)">
 <h3>ensureAdminProfileExists</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">ensureAdminProfileExists</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;adminId,
@@ -271,7 +271,7 @@ and creating it if it does not.
 </section>
 </li>
 <li>
-<section class="detail" id="checkEntrantProfileExists(java.lang.String,com.example.eventparticipation.ProfileInitializer.ExistsCallback)">
+<section class="detail" id="checkEntrantProfileExists(java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.ExistsCallback)">
 <h3>checkEntrantProfileExists</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">checkEntrantProfileExists</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;entrantId,
@@ -286,7 +286,7 @@ and creating it if it does not.
 </section>
 </li>
 <li>
-<section class="detail" id="checkOrganizerProfileExists(java.lang.String,com.example.eventparticipation.ProfileInitializer.ExistsCallback)">
+<section class="detail" id="checkOrganizerProfileExists(java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.ExistsCallback)">
 <h3>checkOrganizerProfileExists</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">checkOrganizerProfileExists</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;organizerId,
@@ -301,7 +301,7 @@ and creating it if it does not.
 </section>
 </li>
 <li>
-<section class="detail" id="checkAdminProfileExists(java.lang.String,com.example.eventparticipation.ProfileInitializer.ExistsCallback)">
+<section class="detail" id="checkAdminProfileExists(java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.ExistsCallback)">
 <h3>checkAdminProfileExists</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">checkAdminProfileExists</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;adminId,
@@ -316,7 +316,7 @@ and creating it if it does not.
 </section>
 </li>
 <li>
-<section class="detail" id="deleteProfile(java.lang.String,java.lang.String,com.example.eventparticipation.ProfileInitializer.Callback)">
+<section class="detail" id="deleteProfile(java.lang.String,java.lang.String,com.example.eventparticipation.universal.ProfileInitializer.Callback)">
 <h3>deleteProfile</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">deleteProfile</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;collection,

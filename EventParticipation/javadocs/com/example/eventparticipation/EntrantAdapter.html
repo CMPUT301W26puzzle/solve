@@ -58,13 +58,13 @@ loadScripts(document, 'script');</script>
 <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
 <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
 <ol class="toc-list">
-<li><a href="#%3Cinit%3E(java.util.List,com.example.eventparticipation.EntrantAdapter.OnEntrantClickListener)" tabindex="0">EntrantAdapter(List, EntrantAdapter.OnEntrantClickListener)</a></li>
+<li><a href="#%3Cinit%3E(java.util.List,com.example.eventparticipation.organizer.EntrantAdapter.OnEntrantClickListener)" tabindex="0">EntrantAdapter(List, EntrantAdapter.OnEntrantClickListener)</a></li>
 </ol>
 </li>
 <li><a href="#method-detail" tabindex="0">Method Details</a>
 <ol class="toc-list">
 <li><a href="#onCreateViewHolder(android.view.ViewGroup,int)" tabindex="0">onCreateViewHolder(ViewGroup, int)</a></li>
-<li><a href="#onBindViewHolder(com.example.eventparticipation.EntrantAdapter.EntrantViewHolder,int)" tabindex="0">onBindViewHolder(EntrantAdapter.EntrantViewHolder, int)</a></li>
+<li><a href="#onBindViewHolder(com.example.eventparticipation.organizer.EntrantAdapter.EntrantViewHolder,int)" tabindex="0">onBindViewHolder(EntrantAdapter.EntrantViewHolder, int)</a></li>
 <li><a href="#getItemCount()" tabindex="0">getItemCount()</a></li>
 </ol>
 </li>
@@ -76,15 +76,15 @@ loadScripts(document, 'script');</script>
 <h1 title="Class EntrantAdapter" class="title">Class EntrantAdapter</h1>
 </div>
 <div class="inheritance" title="Inheritance Tree"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">java.lang.Object</a>
-<div class="inheritance">androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.EntrantAdapter.EntrantViewHolder&gt;
-<div class="inheritance">com.example.eventparticipation.EntrantAdapter</div>
+<div class="inheritance">androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.organizer.EntrantAdapter.EntrantViewHolder&gt;
+<div class="inheritance">com.example.eventparticipation.organizer.EntrantAdapter</div>
 </div>
 </div>
 <section class="class-description" id="class-description">
 <hr>
 <div class="horizontal-scroll">
 <div class="type-signature"><span class="modifiers">public class </span><span class="element-name type-name-label">EntrantAdapter</span>
-<span class="extends-implements">extends androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.EntrantAdapter.EntrantViewHolder&gt;</span></div>
+<span class="extends-implements">extends androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.organizer.EntrantAdapter.EntrantViewHolder&gt;</span></div>
 <div class="block">RecyclerView adapter used to display entrants in organizer waitlist screens.
 
 <p>This adapter displays entrant identity information and a single status badge.
@@ -132,7 +132,7 @@ actions such as cancelling invitations.</p>
 <div class="summary-table two-column-summary">
 <div class="table-header col-first">Constructor</div>
 <div class="table-header col-last">Description</div>
-<div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(java.util.List,com.example.eventparticipation.EntrantAdapter.OnEntrantClickListener)" class="member-name-link">EntrantAdapter</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="Entrant.html" title="class in com.example.eventparticipation">Entrant</a>&gt;&nbsp;entrants,
+<div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(java.util.List,com.example.eventparticipation.organizer.EntrantAdapter.OnEntrantClickListener)" class="member-name-link">EntrantAdapter</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="Entrant.html" title="class in com.example.eventparticipation">Entrant</a>&gt;&nbsp;entrants,
  <a href="EntrantAdapter.OnEntrantClickListener.html" title="interface in com.example.eventparticipation">EntrantAdapter.OnEntrantClickListener</a>&nbsp;listener)</code></div>
 <div class="col-last even-row-color">
 <div class="block">Creates a new adapter instance.</div>
@@ -155,10 +155,10 @@ actions such as cancelling invitations.</p>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#getItemCount()" class="member-name-link">getItemCount</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onBindViewHolder(com.example.eventparticipation.EntrantAdapter.EntrantViewHolder,int)" class="member-name-link">onBindViewHolder</a><wbr>(com.example.eventparticipation.EntrantAdapter.EntrantViewHolder&nbsp;holder,
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onBindViewHolder(com.example.eventparticipation.organizer.EntrantAdapter.EntrantViewHolder,int)" class="member-name-link">onBindViewHolder</a><wbr>(com.example.eventparticipation.organizer.EntrantAdapter.EntrantViewHolder&nbsp;holder,
  int&nbsp;position)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>com.example.eventparticipation.EntrantAdapter.EntrantViewHolder</code></div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>com.example.eventparticipation.organizer.EntrantAdapter.EntrantViewHolder</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onCreateViewHolder(android.view.ViewGroup,int)" class="member-name-link">onCreateViewHolder</a><wbr>(android.view.ViewGroup&nbsp;parent,
  int&nbsp;viewType)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
@@ -183,7 +183,7 @@ actions such as cancelling invitations.</p>
 <h2>Constructor Details</h2>
 <ul class="member-list">
 <li>
-<section class="detail" id="&lt;init&gt;(java.util.List,com.example.eventparticipation.EntrantAdapter.OnEntrantClickListener)">
+<section class="detail" id="&lt;init&gt;(java.util.List,com.example.eventparticipation.organizer.EntrantAdapter.OnEntrantClickListener)">
 <h3>EntrantAdapter</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">EntrantAdapter</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="Entrant.html" title="class in com.example.eventparticipation">Entrant</a>&gt;&nbsp;entrants,
@@ -210,26 +210,26 @@ actions such as cancelling invitations.</p>
 <h3>onCreateViewHolder</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="annotations">@NonNull
-</span><span class="modifiers">public</span>&nbsp;<span class="return-type">com.example.eventparticipation.EntrantAdapter.EntrantViewHolder</span>&nbsp;<span class="element-name">onCreateViewHolder</span><wbr><span class="parameters">(@NonNull
+</span><span class="modifiers">public</span>&nbsp;<span class="return-type">com.example.eventparticipation.organizer.EntrantAdapter.EntrantViewHolder</span>&nbsp;<span class="element-name">onCreateViewHolder</span><wbr><span class="parameters">(@NonNull
  android.view.ViewGroup&nbsp;parent,
  int&nbsp;viewType)</span></div>
 <dl class="notes">
 <dt>Specified by:</dt>
-<dd><code>onCreateViewHolder</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.EntrantAdapter.EntrantViewHolder&gt;</code></dd>
+<dd><code>onCreateViewHolder</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.organizer.EntrantAdapter.EntrantViewHolder&gt;</code></dd>
 </dl>
 </div>
 </section>
 </li>
 <li>
-<section class="detail" id="onBindViewHolder(com.example.eventparticipation.EntrantAdapter.EntrantViewHolder,int)">
+<section class="detail" id="onBindViewHolder(com.example.eventparticipation.organizer.EntrantAdapter.EntrantViewHolder,int)">
 <h3>onBindViewHolder</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onBindViewHolder</span><wbr><span class="parameters">(@NonNull
- com.example.eventparticipation.EntrantAdapter.EntrantViewHolder&nbsp;holder,
+ com.example.eventparticipation.organizer.EntrantAdapter.EntrantViewHolder&nbsp;holder,
  int&nbsp;position)</span></div>
 <dl class="notes">
 <dt>Specified by:</dt>
-<dd><code>onBindViewHolder</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.EntrantAdapter.EntrantViewHolder&gt;</code></dd>
+<dd><code>onBindViewHolder</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.organizer.EntrantAdapter.EntrantViewHolder&gt;</code></dd>
 </dl>
 </div>
 </section>
@@ -241,7 +241,7 @@ actions such as cancelling invitations.</p>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">getItemCount</span>()</div>
 <dl class="notes">
 <dt>Specified by:</dt>
-<dd><code>getItemCount</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.EntrantAdapter.EntrantViewHolder&gt;</code></dd>
+<dd><code>getItemCount</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.organizer.EntrantAdapter.EntrantViewHolder&gt;</code></dd>
 </dl>
 </div>
 </section>

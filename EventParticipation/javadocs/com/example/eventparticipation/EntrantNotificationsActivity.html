@@ -73,9 +73,9 @@ loadScripts(document, 'script');</script>
 <li><a href="#onCreate(android.os.Bundle)" tabindex="0">onCreate(Bundle)</a></li>
 <li><a href="#onStart()" tabindex="0">onStart()</a></li>
 <li><a href="#onStop()" tabindex="0">onStop()</a></li>
-<li><a href="#onNotificationClicked(com.example.eventparticipation.NotificationItem)" tabindex="0">onNotificationClicked(NotificationItem)</a></li>
-<li><a href="#onAcceptClicked(com.example.eventparticipation.NotificationItem)" tabindex="0">onAcceptClicked(NotificationItem)</a></li>
-<li><a href="#onDeclineClicked(com.example.eventparticipation.NotificationItem)" tabindex="0">onDeclineClicked(NotificationItem)</a></li>
+<li><a href="#onNotificationClicked(com.example.eventparticipation.universal.NotificationItem)" tabindex="0">onNotificationClicked(NotificationItem)</a></li>
+<li><a href="#onAcceptClicked(com.example.eventparticipation.universal.NotificationItem)" tabindex="0">onAcceptClicked(NotificationItem)</a></li>
+<li><a href="#onDeclineClicked(com.example.eventparticipation.universal.NotificationItem)" tabindex="0">onDeclineClicked(NotificationItem)</a></li>
 </ol>
 </li>
 </ol>
@@ -94,8 +94,8 @@ loadScripts(document, 'script');</script>
 <div class="inheritance">androidx.activity.ComponentActivity
 <div class="inheritance">androidx.fragment.app.FragmentActivity
 <div class="inheritance">androidx.appcompat.app.AppCompatActivity
-<div class="inheritance"><a href="BaseEntrantActivity.html" title="class in com.example.eventparticipation">com.example.eventparticipation.BaseEntrantActivity</a>
-<div class="inheritance">com.example.eventparticipation.EntrantNotificationsActivity</div>
+<div class="inheritance"><a href="BaseEntrantActivity.html" title="class in com.example.eventparticipation">com.example.eventparticipation.user.BaseEntrantActivity</a>
+<div class="inheritance">com.example.eventparticipation.user.EntrantNotificationsActivity</div>
 </div>
 </div>
 </div>
@@ -199,7 +199,7 @@ implements <a href="NotificationAdapter.Listener.html" title="interface in com.e
 <div class="table-header col-second">Method</div>
 <div class="table-header col-last">Description</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onAcceptClicked(com.example.eventparticipation.NotificationItem)" class="member-name-link">onAcceptClicked</a><wbr>(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onAcceptClicked(com.example.eventparticipation.universal.NotificationItem)" class="member-name-link">onAcceptClicked</a><wbr>(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Called when the primary accept button is tapped.</div>
 </div>
@@ -207,12 +207,12 @@ implements <a href="NotificationAdapter.Listener.html" title="interface in com.e
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onCreate(android.os.Bundle)" class="member-name-link">onCreate</a><wbr>(android.os.Bundle&nbsp;savedInstanceState)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onDeclineClicked(com.example.eventparticipation.NotificationItem)" class="member-name-link">onDeclineClicked</a><wbr>(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onDeclineClicked(com.example.eventparticipation.universal.NotificationItem)" class="member-name-link">onDeclineClicked</a><wbr>(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Called when the decline button is tapped.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onNotificationClicked(com.example.eventparticipation.NotificationItem)" class="member-name-link">onNotificationClicked</a><wbr>(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onNotificationClicked(com.example.eventparticipation.universal.NotificationItem)" class="member-name-link">onNotificationClicked</a><wbr>(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Called when the notification card itself is tapped.</div>
 </div>
@@ -226,7 +226,7 @@ implements <a href="NotificationAdapter.Listener.html" title="interface in com.e
 </div>
 </div>
 <div class="inherited-list">
-<h3 id="methods-inherited-from-class-com.example.eventparticipation.BaseEntrantActivity">Methods inherited from class&nbsp;<a href="BaseEntrantActivity.html#method-summary" title="class in com.example.eventparticipation">BaseEntrantActivity</a></h3>
+<h3 id="methods-inherited-from-class-com.example.eventparticipation.user.BaseEntrantActivity">Methods inherited from class&nbsp;<a href="BaseEntrantActivity.html#method-summary" title="class in com.example.eventparticipation">BaseEntrantActivity</a></h3>
 <code><a href="BaseEntrantActivity.html#setupBottomNav(int)" title="setupBottomNav(int)">setupBottomNav</a></code></div>
 <div class="inherited-list">
 <h3 id="methods-inherited-from-class-androidx.appcompat.app.AppCompatActivity">Methods inherited from class&nbsp;androidx.appcompat.app.AppCompatActivity</h3>
@@ -278,7 +278,7 @@ implements <a href="NotificationAdapter.Listener.html" title="interface in com.e
 <dt>See Also:</dt>
 <dd>
 <ul class="tag-list">
-<li><a href="../../../constant-values.html#com.example.eventparticipation.EntrantNotificationsActivity.EXTRA_TEST_MODE">Constant Field Values</a></li>
+<li><a href="../../../constant-values.html#com.example.eventparticipation.user.EntrantNotificationsActivity.EXTRA_TEST_MODE">Constant Field Values</a></li>
 </ul>
 </dd>
 </dl>
@@ -294,7 +294,7 @@ implements <a href="NotificationAdapter.Listener.html" title="interface in com.e
 <dt>See Also:</dt>
 <dd>
 <ul class="tag-list">
-<li><a href="../../../constant-values.html#com.example.eventparticipation.EntrantNotificationsActivity.EXTRA_TEST_NOTIFICATIONS">Constant Field Values</a></li>
+<li><a href="../../../constant-values.html#com.example.eventparticipation.user.EntrantNotificationsActivity.EXTRA_TEST_NOTIFICATIONS">Constant Field Values</a></li>
 </ul>
 </dd>
 </dl>
@@ -362,15 +362,15 @@ implements <a href="NotificationAdapter.Listener.html" title="interface in com.e
 </section>
 </li>
 <li>
-<section class="detail" id="onNotificationClicked(com.example.eventparticipation.NotificationItem)">
+<section class="detail" id="onNotificationClicked(com.example.eventparticipation.universal.NotificationItem)">
 <h3>onNotificationClicked</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onNotificationClicked</span><wbr><span class="parameters">(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</span></div>
-<div class="block"><span class="description-from-type-label">Description copied from interface:&nbsp;<code><a href="NotificationAdapter.Listener.html#onNotificationClicked(com.example.eventparticipation.NotificationItem)">NotificationAdapter.Listener</a></code></span></div>
+<div class="block"><span class="description-from-type-label">Description copied from interface:&nbsp;<code><a href="NotificationAdapter.Listener.html#onNotificationClicked(com.example.eventparticipation.universal.NotificationItem)">NotificationAdapter.Listener</a></code></span></div>
 <div class="block">Called when the notification card itself is tapped.</div>
 <dl class="notes">
 <dt>Specified by:</dt>
-<dd><code><a href="NotificationAdapter.Listener.html#onNotificationClicked(com.example.eventparticipation.NotificationItem)">onNotificationClicked</a></code>&nbsp;in interface&nbsp;<code><a href="NotificationAdapter.Listener.html" title="interface in com.example.eventparticipation">NotificationAdapter.Listener</a></code></dd>
+<dd><code><a href="NotificationAdapter.Listener.html#onNotificationClicked(com.example.eventparticipation.universal.NotificationItem)">onNotificationClicked</a></code>&nbsp;in interface&nbsp;<code><a href="NotificationAdapter.Listener.html" title="interface in com.example.eventparticipation">NotificationAdapter.Listener</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>item</code> - clicked notification</dd>
 </dl>
@@ -378,15 +378,15 @@ implements <a href="NotificationAdapter.Listener.html" title="interface in com.e
 </section>
 </li>
 <li>
-<section class="detail" id="onAcceptClicked(com.example.eventparticipation.NotificationItem)">
+<section class="detail" id="onAcceptClicked(com.example.eventparticipation.universal.NotificationItem)">
 <h3>onAcceptClicked</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onAcceptClicked</span><wbr><span class="parameters">(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</span></div>
-<div class="block"><span class="description-from-type-label">Description copied from interface:&nbsp;<code><a href="NotificationAdapter.Listener.html#onAcceptClicked(com.example.eventparticipation.NotificationItem)">NotificationAdapter.Listener</a></code></span></div>
+<div class="block"><span class="description-from-type-label">Description copied from interface:&nbsp;<code><a href="NotificationAdapter.Listener.html#onAcceptClicked(com.example.eventparticipation.universal.NotificationItem)">NotificationAdapter.Listener</a></code></span></div>
 <div class="block">Called when the primary accept button is tapped.</div>
 <dl class="notes">
 <dt>Specified by:</dt>
-<dd><code><a href="NotificationAdapter.Listener.html#onAcceptClicked(com.example.eventparticipation.NotificationItem)">onAcceptClicked</a></code>&nbsp;in interface&nbsp;<code><a href="NotificationAdapter.Listener.html" title="interface in com.example.eventparticipation">NotificationAdapter.Listener</a></code></dd>
+<dd><code><a href="NotificationAdapter.Listener.html#onAcceptClicked(com.example.eventparticipation.universal.NotificationItem)">onAcceptClicked</a></code>&nbsp;in interface&nbsp;<code><a href="NotificationAdapter.Listener.html" title="interface in com.example.eventparticipation">NotificationAdapter.Listener</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>item</code> - notification being accepted</dd>
 </dl>
@@ -394,15 +394,15 @@ implements <a href="NotificationAdapter.Listener.html" title="interface in com.e
 </section>
 </li>
 <li>
-<section class="detail" id="onDeclineClicked(com.example.eventparticipation.NotificationItem)">
+<section class="detail" id="onDeclineClicked(com.example.eventparticipation.universal.NotificationItem)">
 <h3>onDeclineClicked</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onDeclineClicked</span><wbr><span class="parameters">(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</span></div>
-<div class="block"><span class="description-from-type-label">Description copied from interface:&nbsp;<code><a href="NotificationAdapter.Listener.html#onDeclineClicked(com.example.eventparticipation.NotificationItem)">NotificationAdapter.Listener</a></code></span></div>
+<div class="block"><span class="description-from-type-label">Description copied from interface:&nbsp;<code><a href="NotificationAdapter.Listener.html#onDeclineClicked(com.example.eventparticipation.universal.NotificationItem)">NotificationAdapter.Listener</a></code></span></div>
 <div class="block">Called when the decline button is tapped.</div>
 <dl class="notes">
 <dt>Specified by:</dt>
-<dd><code><a href="NotificationAdapter.Listener.html#onDeclineClicked(com.example.eventparticipation.NotificationItem)">onDeclineClicked</a></code>&nbsp;in interface&nbsp;<code><a href="NotificationAdapter.Listener.html" title="interface in com.example.eventparticipation">NotificationAdapter.Listener</a></code></dd>
+<dd><code><a href="NotificationAdapter.Listener.html#onDeclineClicked(com.example.eventparticipation.universal.NotificationItem)">onDeclineClicked</a></code>&nbsp;in interface&nbsp;<code><a href="NotificationAdapter.Listener.html" title="interface in com.example.eventparticipation">NotificationAdapter.Listener</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>item</code> - notification being declined</dd>
 </dl>

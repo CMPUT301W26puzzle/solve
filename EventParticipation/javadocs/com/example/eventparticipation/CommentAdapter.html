@@ -58,13 +58,13 @@ loadScripts(document, 'script');</script>
 <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
 <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
 <ol class="toc-list">
-<li><a href="#%3Cinit%3E(java.util.List,java.lang.String,boolean,boolean,com.example.eventparticipation.CommentAdapter.OnCommentDeleteListener)" tabindex="0">CommentAdapter(List, String, boolean, boolean, CommentAdapter.OnCommentDeleteListener)</a></li>
+<li><a href="#%3Cinit%3E(java.util.List,java.lang.String,boolean,boolean,com.example.eventparticipation.user.CommentAdapter.OnCommentDeleteListener)" tabindex="0">CommentAdapter(List, String, boolean, boolean, CommentAdapter.OnCommentDeleteListener)</a></li>
 </ol>
 </li>
 <li><a href="#method-detail" tabindex="0">Method Details</a>
 <ol class="toc-list">
 <li><a href="#onCreateViewHolder(android.view.ViewGroup,int)" tabindex="0">onCreateViewHolder(ViewGroup, int)</a></li>
-<li><a href="#onBindViewHolder(com.example.eventparticipation.CommentAdapter.CommentViewHolder,int)" tabindex="0">onBindViewHolder(CommentAdapter.CommentViewHolder, int)</a></li>
+<li><a href="#onBindViewHolder(com.example.eventparticipation.user.CommentAdapter.CommentViewHolder,int)" tabindex="0">onBindViewHolder(CommentAdapter.CommentViewHolder, int)</a></li>
 <li><a href="#getItemCount()" tabindex="0">getItemCount()</a></li>
 </ol>
 </li>
@@ -76,15 +76,15 @@ loadScripts(document, 'script');</script>
 <h1 title="Class CommentAdapter" class="title">Class CommentAdapter</h1>
 </div>
 <div class="inheritance" title="Inheritance Tree"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">java.lang.Object</a>
-<div class="inheritance">androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.CommentAdapter.CommentViewHolder&gt;
-<div class="inheritance">com.example.eventparticipation.CommentAdapter</div>
+<div class="inheritance">androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.user.CommentAdapter.CommentViewHolder&gt;
+<div class="inheritance">com.example.eventparticipation.user.CommentAdapter</div>
 </div>
 </div>
 <section class="class-description" id="class-description">
 <hr>
 <div class="horizontal-scroll">
 <div class="type-signature"><span class="modifiers">public class </span><span class="element-name type-name-label">CommentAdapter</span>
-<span class="extends-implements">extends androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.CommentAdapter.CommentViewHolder&gt;</span></div>
+<span class="extends-implements">extends androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.user.CommentAdapter.CommentViewHolder&gt;</span></div>
 <div class="block">Unified RecyclerView adapter for displaying and managing event comments.
 
 <p><b>Purpose <span class="invalid-tag">invalid input: '&amp;'</span> Role:</b> Maps <a href="Comment.html" title="class in com.example.eventparticipation"><code>Comment</code></a> data objects to the UI. It dynamically adjusts
@@ -129,7 +129,7 @@ user's role (Entrant, Organizer, or Admin) and comment authorship.</p>
 <div class="summary-table two-column-summary">
 <div class="table-header col-first">Constructor</div>
 <div class="table-header col-last">Description</div>
-<div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(java.util.List,java.lang.String,boolean,boolean,com.example.eventparticipation.CommentAdapter.OnCommentDeleteListener)" class="member-name-link">CommentAdapter</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="Comment.html" title="class in com.example.eventparticipation">Comment</a>&gt;&nbsp;commentList,
+<div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(java.util.List,java.lang.String,boolean,boolean,com.example.eventparticipation.user.CommentAdapter.OnCommentDeleteListener)" class="member-name-link">CommentAdapter</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="Comment.html" title="class in com.example.eventparticipation">Comment</a>&gt;&nbsp;commentList,
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;currentUserId,
  boolean&nbsp;isOrganizer,
  boolean&nbsp;isAdmin,
@@ -155,10 +155,10 @@ user's role (Entrant, Organizer, or Admin) and comment authorship.</p>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#getItemCount()" class="member-name-link">getItemCount</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onBindViewHolder(com.example.eventparticipation.CommentAdapter.CommentViewHolder,int)" class="member-name-link">onBindViewHolder</a><wbr>(com.example.eventparticipation.CommentAdapter.CommentViewHolder&nbsp;holder,
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onBindViewHolder(com.example.eventparticipation.user.CommentAdapter.CommentViewHolder,int)" class="member-name-link">onBindViewHolder</a><wbr>(com.example.eventparticipation.user.CommentAdapter.CommentViewHolder&nbsp;holder,
  int&nbsp;position)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>com.example.eventparticipation.CommentAdapter.CommentViewHolder</code></div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>com.example.eventparticipation.user.CommentAdapter.CommentViewHolder</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onCreateViewHolder(android.view.ViewGroup,int)" class="member-name-link">onCreateViewHolder</a><wbr>(android.view.ViewGroup&nbsp;parent,
  int&nbsp;viewType)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
@@ -183,7 +183,7 @@ user's role (Entrant, Organizer, or Admin) and comment authorship.</p>
 <h2>Constructor Details</h2>
 <ul class="member-list">
 <li>
-<section class="detail" id="&lt;init&gt;(java.util.List,java.lang.String,boolean,boolean,com.example.eventparticipation.CommentAdapter.OnCommentDeleteListener)">
+<section class="detail" id="&lt;init&gt;(java.util.List,java.lang.String,boolean,boolean,com.example.eventparticipation.user.CommentAdapter.OnCommentDeleteListener)">
 <h3>CommentAdapter</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">CommentAdapter</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="Comment.html" title="class in com.example.eventparticipation">Comment</a>&gt;&nbsp;commentList,
@@ -216,26 +216,26 @@ user's role (Entrant, Organizer, or Admin) and comment authorship.</p>
 <h3>onCreateViewHolder</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="annotations">@NonNull
-</span><span class="modifiers">public</span>&nbsp;<span class="return-type">com.example.eventparticipation.CommentAdapter.CommentViewHolder</span>&nbsp;<span class="element-name">onCreateViewHolder</span><wbr><span class="parameters">(@NonNull
+</span><span class="modifiers">public</span>&nbsp;<span class="return-type">com.example.eventparticipation.user.CommentAdapter.CommentViewHolder</span>&nbsp;<span class="element-name">onCreateViewHolder</span><wbr><span class="parameters">(@NonNull
  android.view.ViewGroup&nbsp;parent,
  int&nbsp;viewType)</span></div>
 <dl class="notes">
 <dt>Specified by:</dt>
-<dd><code>onCreateViewHolder</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.CommentAdapter.CommentViewHolder&gt;</code></dd>
+<dd><code>onCreateViewHolder</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.user.CommentAdapter.CommentViewHolder&gt;</code></dd>
 </dl>
 </div>
 </section>
 </li>
 <li>
-<section class="detail" id="onBindViewHolder(com.example.eventparticipation.CommentAdapter.CommentViewHolder,int)">
+<section class="detail" id="onBindViewHolder(com.example.eventparticipation.user.CommentAdapter.CommentViewHolder,int)">
 <h3>onBindViewHolder</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onBindViewHolder</span><wbr><span class="parameters">(@NonNull
- com.example.eventparticipation.CommentAdapter.CommentViewHolder&nbsp;holder,
+ com.example.eventparticipation.user.CommentAdapter.CommentViewHolder&nbsp;holder,
  int&nbsp;position)</span></div>
 <dl class="notes">
 <dt>Specified by:</dt>
-<dd><code>onBindViewHolder</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.CommentAdapter.CommentViewHolder&gt;</code></dd>
+<dd><code>onBindViewHolder</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.user.CommentAdapter.CommentViewHolder&gt;</code></dd>
 </dl>
 </div>
 </section>
@@ -247,7 +247,7 @@ user's role (Entrant, Organizer, or Admin) and comment authorship.</p>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">getItemCount</span>()</div>
 <dl class="notes">
 <dt>Specified by:</dt>
-<dd><code>getItemCount</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.CommentAdapter.CommentViewHolder&gt;</code></dd>
+<dd><code>getItemCount</code>&nbsp;in class&nbsp;<code>androidx.recyclerview.widget.RecyclerView.Adapter&lt;com.example.eventparticipation.user.CommentAdapter.CommentViewHolder&gt;</code></dd>
 </dl>
 </div>
 </section>

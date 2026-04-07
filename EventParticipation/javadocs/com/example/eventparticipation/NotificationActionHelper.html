@@ -61,12 +61,12 @@ loadScripts(document, 'script');</script>
 <li><a href="#buildCoOrganizerAssignedMessage(java.lang.String)" tabindex="0">buildCoOrganizerAssignedMessage(String)</a></li>
 <li><a href="#buildPrivateInviteMessage(java.lang.String)" tabindex="0">buildPrivateInviteMessage(String)</a></li>
 <li><a href="#buildCoOrganizerInvitationMessage(java.lang.String)" tabindex="0">buildCoOrganizerInvitationMessage(String)</a></li>
-<li><a href="#shouldShowAcceptAction(com.example.eventparticipation.NotificationItem)" tabindex="0">shouldShowAcceptAction(NotificationItem)</a></li>
-<li><a href="#shouldShowDeclineAction(com.example.eventparticipation.NotificationItem)" tabindex="0">shouldShowDeclineAction(NotificationItem)</a></li>
-<li><a href="#getPrimaryActionLabel(com.example.eventparticipation.NotificationItem)" tabindex="0">getPrimaryActionLabel(NotificationItem)</a></li>
-<li><a href="#getActionStateLabel(com.example.eventparticipation.NotificationItem)" tabindex="0">getActionStateLabel(NotificationItem)</a></li>
-<li><a href="#applyAccepted(com.example.eventparticipation.NotificationItem)" tabindex="0">applyAccepted(NotificationItem)</a></li>
-<li><a href="#applyDeclined(com.example.eventparticipation.NotificationItem)" tabindex="0">applyDeclined(NotificationItem)</a></li>
+<li><a href="#shouldShowAcceptAction(com.example.eventparticipation.universal.NotificationItem)" tabindex="0">shouldShowAcceptAction(NotificationItem)</a></li>
+<li><a href="#shouldShowDeclineAction(com.example.eventparticipation.universal.NotificationItem)" tabindex="0">shouldShowDeclineAction(NotificationItem)</a></li>
+<li><a href="#getPrimaryActionLabel(com.example.eventparticipation.universal.NotificationItem)" tabindex="0">getPrimaryActionLabel(NotificationItem)</a></li>
+<li><a href="#getActionStateLabel(com.example.eventparticipation.universal.NotificationItem)" tabindex="0">getActionStateLabel(NotificationItem)</a></li>
+<li><a href="#applyAccepted(com.example.eventparticipation.universal.NotificationItem)" tabindex="0">applyAccepted(NotificationItem)</a></li>
+<li><a href="#applyDeclined(com.example.eventparticipation.universal.NotificationItem)" tabindex="0">applyDeclined(NotificationItem)</a></li>
 <li><a href="#formatRelativeTime(java.util.Date,long)" tabindex="0">formatRelativeTime(Date, long)</a></li>
 </ol>
 </li>
@@ -78,7 +78,7 @@ loadScripts(document, 'script');</script>
 <h1 title="Class NotificationActionHelper" class="title">Class NotificationActionHelper</h1>
 </div>
 <div class="inheritance" title="Inheritance Tree"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">java.lang.Object</a>
-<div class="inheritance">com.example.eventparticipation.NotificationActionHelper</div>
+<div class="inheritance">com.example.eventparticipation.universal.NotificationActionHelper</div>
 </div>
 <section class="class-description" id="class-description">
 <hr>
@@ -102,10 +102,10 @@ loadScripts(document, 'script');</script>
 <div class="table-header col-second">Method</div>
 <div class="table-header col-last">Description</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#applyAccepted(com.example.eventparticipation.NotificationItem)" class="member-name-link">applyAccepted</a><wbr>(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#applyAccepted(com.example.eventparticipation.universal.NotificationItem)" class="member-name-link">applyAccepted</a><wbr>(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#applyDeclined(com.example.eventparticipation.NotificationItem)" class="member-name-link">applyDeclined</a><wbr>(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#applyDeclined(com.example.eventparticipation.universal.NotificationItem)" class="member-name-link">applyDeclined</a><wbr>(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#buildCoOrganizerAssignedMessage(java.lang.String)" class="member-name-link">buildCoOrganizerAssignedMessage</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;eventName)</code></div>
@@ -127,16 +127,16 @@ loadScripts(document, 'script');</script>
  long&nbsp;nowMillis)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#getActionStateLabel(com.example.eventparticipation.NotificationItem)" class="member-name-link">getActionStateLabel</a><wbr>(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#getActionStateLabel(com.example.eventparticipation.universal.NotificationItem)" class="member-name-link">getActionStateLabel</a><wbr>(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#getPrimaryActionLabel(com.example.eventparticipation.NotificationItem)" class="member-name-link">getPrimaryActionLabel</a><wbr>(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#getPrimaryActionLabel(com.example.eventparticipation.universal.NotificationItem)" class="member-name-link">getPrimaryActionLabel</a><wbr>(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static boolean</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#shouldShowAcceptAction(com.example.eventparticipation.NotificationItem)" class="member-name-link">shouldShowAcceptAction</a><wbr>(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#shouldShowAcceptAction(com.example.eventparticipation.universal.NotificationItem)" class="member-name-link">shouldShowAcceptAction</a><wbr>(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static boolean</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#shouldShowDeclineAction(com.example.eventparticipation.NotificationItem)" class="member-name-link">shouldShowDeclineAction</a><wbr>(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#shouldShowDeclineAction(com.example.eventparticipation.universal.NotificationItem)" class="member-name-link">shouldShowDeclineAction</a><wbr>(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
 </div>
 </div>
@@ -196,7 +196,7 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
-<section class="detail" id="shouldShowAcceptAction(com.example.eventparticipation.NotificationItem)">
+<section class="detail" id="shouldShowAcceptAction(com.example.eventparticipation.universal.NotificationItem)">
 <h3>shouldShowAcceptAction</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">shouldShowAcceptAction</span><wbr><span class="parameters">(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</span></div>
@@ -204,7 +204,7 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
-<section class="detail" id="shouldShowDeclineAction(com.example.eventparticipation.NotificationItem)">
+<section class="detail" id="shouldShowDeclineAction(com.example.eventparticipation.universal.NotificationItem)">
 <h3>shouldShowDeclineAction</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">shouldShowDeclineAction</span><wbr><span class="parameters">(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</span></div>
@@ -212,7 +212,7 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
-<section class="detail" id="getPrimaryActionLabel(com.example.eventparticipation.NotificationItem)">
+<section class="detail" id="getPrimaryActionLabel(com.example.eventparticipation.universal.NotificationItem)">
 <h3>getPrimaryActionLabel</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">getPrimaryActionLabel</span><wbr><span class="parameters">(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</span></div>
@@ -220,7 +220,7 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
-<section class="detail" id="getActionStateLabel(com.example.eventparticipation.NotificationItem)">
+<section class="detail" id="getActionStateLabel(com.example.eventparticipation.universal.NotificationItem)">
 <h3>getActionStateLabel</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">getActionStateLabel</span><wbr><span class="parameters">(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</span></div>
@@ -228,7 +228,7 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
-<section class="detail" id="applyAccepted(com.example.eventparticipation.NotificationItem)">
+<section class="detail" id="applyAccepted(com.example.eventparticipation.universal.NotificationItem)">
 <h3>applyAccepted</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">applyAccepted</span><wbr><span class="parameters">(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</span></div>
@@ -236,7 +236,7 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
-<section class="detail" id="applyDeclined(com.example.eventparticipation.NotificationItem)">
+<section class="detail" id="applyDeclined(com.example.eventparticipation.universal.NotificationItem)">
 <h3>applyDeclined</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">applyDeclined</span><wbr><span class="parameters">(<a href="NotificationItem.html" title="class in com.example.eventparticipation">NotificationItem</a>&nbsp;item)</span></div>
