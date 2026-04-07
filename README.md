@@ -1,4 +1,4 @@
-# well-fed
+# solve
 Welcome to solve, an event lottery Android application!
 
 ## Table of Contents
